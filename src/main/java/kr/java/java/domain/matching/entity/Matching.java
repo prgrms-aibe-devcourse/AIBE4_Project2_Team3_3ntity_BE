@@ -46,7 +46,7 @@ public class Matching {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private User createdBy;
+    private User user;
 
     @CreationTimestamp
     @Column(name = "created_at")
