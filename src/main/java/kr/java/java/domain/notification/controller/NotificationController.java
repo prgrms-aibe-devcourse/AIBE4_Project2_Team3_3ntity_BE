@@ -3,11 +3,8 @@ package kr.java.java.domain.notification.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import kr.java.java.domain.notification.dto.NotificationResponse;
-import kr.java.java.domain.notification.enums.NotificationType;
 import kr.java.java.domain.notification.exception.NotificationNotFoundException;
 import kr.java.java.domain.notification.service.NotificationService;
-import kr.java.java.domain.user.entity.User;
-import kr.java.java.domain.user.exception.UserNotFoundException;
 import kr.java.java.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,17 +29,12 @@ public class NotificationController {
     @GetMapping("/{userId}")
     public ResponseEntity<List<NotificationResponse>> getNotifications(@PathVariable Long userId) {
         log.info("[알림 api] 알림 내역 조회, 유저 ID: {}", userId);
-        try {
-            if (!userRepository.existsById(userId)) {
-                throw new UserNotFoundException(userId);
-            }
-            List<NotificationResponse> notifications = notificationService.getNotifications(userId);
-            log.info("[알림 api] {} 조회 성공, 유저 ID: {}", notifications.size(), userId);
-            return ResponseEntity.ok(notifications);
-        } catch (UserNotFoundException e) {
-            log.error("[알림 api] 해당 유저를 찾을 수 없음: {}", e.getMessage());
-            throw e;
-        }
+//        if (!userRepository.existsById(userId)) {
+//            throw new UserNotFoundException(userId);
+//        }
+        List<NotificationResponse> notifications = notificationService.getNotifications(userId);
+        log.info("[알림 api] {} 조회 성공, 유저 ID: {}", notifications.size(), userId);
+        return ResponseEntity.ok(notifications);
     }
 
     @Operation(summary = "알림 읽음 처리", description = "특정 알림을 읽음 상태로 변경합니다.")
