@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/matching")
+@RequestMapping("/piece/matchings")
 @RequiredArgsConstructor
 public class MatchingController {
     private final MatchingService matchingService;
