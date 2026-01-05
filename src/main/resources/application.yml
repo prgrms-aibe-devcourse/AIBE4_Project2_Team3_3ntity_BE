@@ -5,7 +5,14 @@ spring:
     active: dev
   config:
     import: optional:file:.env[.properties]
-
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect
 springdoc:
   api-docs:
     path: /v3/api-docs
