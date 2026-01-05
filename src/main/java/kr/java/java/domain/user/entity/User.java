@@ -1,9 +1,7 @@
 package kr.java.java.domain.user.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.AccessLevel;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -13,6 +11,8 @@ import java.time.LocalDateTime;
 @Table(name = "user")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class User {
 
     @Id
@@ -29,14 +29,16 @@ public class User {
     @Column(name = "profile_image_url", columnDefinition = "TEXT")
     private String profileImageUrl;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "provider", length = 20)
-    private String provider;
+    private Provider provider;
 
     @Column(name = "provider_id", length = 255)
     private String providerId;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false, length = 20)
-    private String role;
+    private Role role;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
@@ -45,4 +47,18 @@ public class User {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    // 비즈니스 메서드
+    public void updateProfile(String nickname, String profileImageUrl) {
+        this.nickname = nickname;
+        this.profileImageUrl = profileImageUrl;
+    }
+
+    public boolean isSpaceOwner() {
+        return this.role == Role.SPACE_OWNER;
+    }
+
+    public boolean isMaker() {
+        return this.role == Role.MAKER;
+    }
 }

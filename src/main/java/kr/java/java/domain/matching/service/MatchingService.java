@@ -11,6 +11,7 @@ import kr.java.java.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -22,6 +23,7 @@ public class MatchingService {
     private final SpaceRepository spaceRepository;
     private final MatchingRepository matchingRepository;
 
+    @Transactional
     public void createMatching(MatchingRequest request, Long loginUserId){
         Space targetSpace = spaceRepository.findById(request.spaceId())
                 .orElseThrow(() -> {
@@ -42,11 +44,13 @@ public class MatchingService {
         User sender = loginUser;
         User receiver;
 
-        if(loginUser.getId().equals(targetUser.getId())){
-            receiver = targetSpace.getUser();
+        if(loginUser.getId().equals(targetSpace.getUser().getId())){
+            receiver = targetUser;
         } else{
-            receiver = loginUser;
+            receiver = targetSpace.getUser();
         }
+
+        log.info("[매칭 ID 확인] Sender ID: {}, Receiver ID: {}", sender.getId(), receiver.getId());
 
         validateMatching(targetSpace, targetUser, sender, receiver);
 
@@ -56,6 +60,8 @@ public class MatchingService {
                 .space(targetSpace)
                 .user(targetUser)
                 .message(request.message())
+                .startDate(request.startDate())
+                .months(request.months())
                 .build();
 
         matchingRepository.save(matching);
