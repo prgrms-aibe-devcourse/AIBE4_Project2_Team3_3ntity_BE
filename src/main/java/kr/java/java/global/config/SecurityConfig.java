@@ -14,10 +14,10 @@ public class SecurityConfig{
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/space/**").permitAll()
-                        .requestMatchers("piece/matchings").permitAll()
+                        .requestMatchers("/piece/space/**", "/piece/notifications/**", "/piece/users/**").permitAll()
+                        .requestMatchers("/piece/matchings").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        .anyRequest().authenticated()
+                        .anyRequest().permitAll()
                 );
         return http.build();
     }
