@@ -2,8 +2,10 @@ package kr.java.java.domain.space.entity;
 
 import jakarta.persistence.*;
 import kr.java.java.domain.matching.entity.Matching;
+import kr.java.java.domain.space.enums.SpaceStatus;
 import kr.java.java.domain.user.entity.User;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
@@ -48,8 +50,9 @@ public class Space {
     @Column(name = "price_per_month")
     private Integer pricePerMonth;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 20)
-    private String status;
+    private SpaceStatus status;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
@@ -61,4 +64,19 @@ public class Space {
 
     @OneToMany(mappedBy = "space")
     private List<Matching> matchings = new ArrayList<>();
+
+    @Builder
+    public Space(String title, String description, String category, String address, String detailAddress, BigDecimal latitude, BigDecimal longitude, Integer pricePerMonth,User user){
+        this.title = title;
+        this.description = description;
+        this.category = category;
+        this.address = address;
+        this.detailAddress = detailAddress;
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.pricePerMonth = pricePerMonth;
+        this.user = user;
+        this.status = SpaceStatus.RECRUITING;
+    }
+
 }
