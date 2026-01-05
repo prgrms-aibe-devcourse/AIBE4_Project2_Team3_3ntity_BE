@@ -69,7 +69,7 @@ public class Matching {
         this.receiver = receiver;
         this.space = space;
         this.user = user;
-        this.message = message;
+        this.message = (message != null) ? message : "메시지가 없습니다.";
         this.status = MatchStatus.WAITING;
         this.senderType = sender.getId().equals(space.getUser().getId()) ? SenderType.OWNER : SenderType.USER;
         this.startDate = startDate;
