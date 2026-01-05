@@ -43,6 +43,12 @@ public class Matching {
     @Column(name = "message", columnDefinition = "text")
     private String message;
 
+    @Column(name = "start_date", nullable = false)
+    private LocalDateTime startDate;
+
+    @Column(name = "end_date", nullable = false)
+    private LocalDateTime endDate;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "space_id", nullable = false)
     private Space space;
@@ -56,7 +62,7 @@ public class Matching {
     private LocalDateTime createdAt;
 
     @Builder
-    public Matching(User sender, User receiver, Space space, User user, String message) {
+    public Matching(User sender, User receiver, Space space, User user, String message, LocalDateTime startDate, int months) {
         this.sender = sender;
         this.receiver = receiver;
         this.space = space;
@@ -64,5 +70,7 @@ public class Matching {
         this.message = message;
         this.status = MatchStatus.WAITING;
         this.senderType = sender.getId().equals(space.getUser().getId()) ? SenderType.OWNER : SenderType.USER;
+        this.startDate = startDate;
+        this.endDate = startDate.plusMonths(months).minusDays(1);
     }
 }
