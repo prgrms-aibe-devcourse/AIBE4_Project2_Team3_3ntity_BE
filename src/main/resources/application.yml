@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: java
+  profiles:
+    active: dev
+  config:
+    import: optional:file:.env[.properties]
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
