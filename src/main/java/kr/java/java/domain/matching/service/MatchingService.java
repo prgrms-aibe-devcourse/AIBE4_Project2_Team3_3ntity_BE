@@ -1,6 +1,6 @@
 package kr.java.java.domain.matching.service;
 
-import kr.java.java.domain.matching.dto.MatchingRequest;
+import kr.java.java.domain.matching.dto.CreateMatchingRequest;
 import kr.java.java.domain.matching.entity.Matching;
 import kr.java.java.domain.matching.enums.MatchStatus;
 import kr.java.java.domain.matching.repository.MatchingRepository;
@@ -24,7 +24,7 @@ public class MatchingService {
     private final MatchingRepository matchingRepository;
 
     @Transactional
-    public void createMatching(MatchingRequest request, Long loginUserId){
+    public void createMatching(CreateMatchingRequest request, Long loginUserId){
         Space targetSpace = spaceRepository.findById(request.spaceId())
                 .orElseThrow(() -> {
                     log.error("[매칭 실패] Space 존재하지 않음 - ID: {}", request.spaceId());
