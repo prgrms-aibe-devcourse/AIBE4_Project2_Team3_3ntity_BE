@@ -1,5 +1,6 @@
 package kr.java.java.domain.review.controller;
 
+import jakarta.validation.Valid;
 import kr.java.java.domain.review.dto.ReviewCreateRequest;
 import kr.java.java.domain.review.service.ReviewService;
 import lombok.RequiredArgsConstructor;
@@ -20,8 +21,8 @@ public class ReviewController {
 
     // 리뷰 등록 API
     @PostMapping
-    public ResponseEntity<Long> createReview(@RequestBody ReviewCreateRequest request) {
-        log.info("POST /piece/reviews 요청 발생 - 작성자 ID: {}", request.getUserId());
+    public ResponseEntity<Long> createReview(@Valid @RequestBody ReviewCreateRequest request) {
+        log.info("POST /piece/reviews 요청 발생 - 작성자 ID: {}", request.userId());
 
         Long reviewId = reviewService.createReview(request);
 

@@ -1,14 +1,24 @@
 package kr.java.java.domain.review.dto;
 
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
-@Getter
-@NoArgsConstructor
-public class ReviewCreateRequest {
+public record ReviewCreateRequest(
 
-    private Long matchingId; // 어떤 매칭(이용내역)에 대한 리뷰인지
-    private Long userId;     // 작성자 ID
-    private Integer rating;  // 별점 (1~5)
-    private String content;  // 리뷰 내용
+        @NotNull(message = "매칭 ID 필수")
+        Long matchingId,
+
+        @NotNull(message = "작성자 ID 필수")
+        Long userId,
+
+        @NotNull(message = "별점 필수")
+        @Min(value = 1, message = "별점은 최소 1점")
+        @Max(value = 5, message = "별점은 최대 5점")
+        Integer rating,
+
+        @NotBlank(message = "리뷰 내용 필수")
+        String content
+) {
 }
