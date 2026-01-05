@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -46,10 +47,10 @@ public class Matching {
     private String message;
 
     @Column(name = "start_date", nullable = false)
-    private LocalDateTime startDate;
+    private LocalDate startDate;
 
     @Column(name = "end_date", nullable = false)
-    private LocalDateTime endDate;
+    private LocalDate endDate;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "space_id", nullable = false)
@@ -64,7 +65,7 @@ public class Matching {
     private LocalDateTime createdAt;
 
     @Builder
-    public Matching(User sender, User receiver, Space space, User user, String message, LocalDateTime startDate, int months) {
+    public Matching(User sender, User receiver, Space space, User user, String message, LocalDate startDate, int months) {
         this.sender = sender;
         this.receiver = receiver;
         this.space = space;
