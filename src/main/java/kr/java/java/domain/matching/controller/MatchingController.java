@@ -35,7 +35,7 @@ public class MatchingController {
         return ResponseEntity.ok(responses);
     }
 
-    @GetMapping("get-list/owner")
+    @GetMapping("get-list/host")
     public ResponseEntity<List<MatchingResponse>> getMatchingsAsOwner(
             @RequestParam(name = "userId") Long loginUserId) {
 
@@ -43,7 +43,7 @@ public class MatchingController {
         return ResponseEntity.ok(responses);
     }
 
-    @GetMapping("get-list/maker")
+    @GetMapping("get-list/user")
     public ResponseEntity<List<MatchingResponse>> getMatchingsAsMaker(
             @RequestParam(name = "userId") Long loginUserId) {
 
