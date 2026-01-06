@@ -3,9 +3,7 @@ package kr.java.java.domain.review.service;
 import kr.java.java.domain.review.dto.ReviewCreateRequest;
 import kr.java.java.domain.review.dto.ReviewResponse;
 import kr.java.java.domain.review.entity.Review;
-import kr.java.java.domain.review.exception.DuplicateReviewException;
-import kr.java.java.domain.review.exception.MatchingNotFoundException;
-import kr.java.java.domain.review.exception.UserNotFoundException;
+import kr.java.java.domain.review.exception.*;
 import kr.java.java.domain.review.repository.ReviewRepository;
 import kr.java.java.domain.user.entity.User;
 import kr.java.java.domain.user.repository.UserRepository;
@@ -92,5 +90,27 @@ public class ReviewService {
         return reviews.stream()
                 .map(ReviewResponse::from)
                 .toList();
+    }
+
+    @Transactional
+    public void deleteReview(Long reviewId, Long userId) {
+        log.info("리뷰 삭제 시작 - reviewId: {}, userId: {}", reviewId, userId);
+
+        // 1. 리뷰 조회
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> {
+                    log.error("리뷰 삭제 실패 - 존재하지 않는 리뷰 ID: {}", reviewId);
+                    return new ReviewNotFoundException("해당 리뷰를 찾을 수 없습니다.");
+                });
+
+        // 2. 작성자 권한 검증
+        if (!review.getUser().getId().equals(userId)) {
+            log.warn("리뷰 삭제 권한 없음 - 작성자: {}, 요청자: {}", review.getUser().getId(), userId);
+            throw new ReviewAccessDeniedException("본인이 작성한 리뷰만 삭제할 수 있습니다.");
+        }
+
+        // 3. 리뷰 삭제
+        reviewRepository.delete(review);
+        log.info("리뷰 삭제 완료 - reviewId: {}", reviewId);
     }
 }
