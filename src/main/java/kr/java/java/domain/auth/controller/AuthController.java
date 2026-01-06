@@ -3,8 +3,9 @@ package kr.java.java.domain.auth.controller;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import kr.java.java.domain.auth.dto.TokenResponse;
+import kr.java.java.domain.auth.exception.AuthErrorCode;
+import kr.java.java.domain.auth.exception.AuthException;
 import kr.java.java.domain.auth.jwt.JwtTokenProvider;
-import kr.java.java.domain.auth.service.AuthService;
 import kr.java.java.domain.auth.service.RefreshTokenService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -28,18 +29,21 @@ public class AuthController {
         String refreshToken = getRefreshTokenFromCookie(request);
 
         if (refreshToken == null) {
-            throw new IllegalArgumentException("Refresh Token이 없습니다.");
+            throw new AuthException(AuthErrorCode.TOKEN_NOT_FOUND);
         }
 
         if (!jwtTokenProvider.validateToken(refreshToken)) {
-            throw new IllegalArgumentException("유효하지 않은 Refresh Token입니다.");
+            throw new AuthException(AuthErrorCode.INVALID_TOKEN);
         }
 
         UUID uuid = jwtTokenProvider.getUuidFromToken(refreshToken);
 
         if (!refreshTokenService.validateRefreshToken(uuid, refreshToken)) {
-            throw new IllegalArgumentException("일치하지 않는 Refresh Token입니다.");
+            refreshTokenService.deleteRefreshToken(uuid);
+            throw new AuthException(AuthErrorCode.TOKEN_REUSE_DETECTED);
         }
+
+        refreshTokenService.deleteRefreshToken(uuid);
 
         String newAccessToken = jwtTokenProvider.createAccessToken(uuid);
         String newRefreshToken = jwtTokenProvider.createRefreshToken(uuid);

@@ -33,4 +33,15 @@ public class RefreshTokenService {
         String storedToken = getRefreshToken(uuid);
         return storedToken != null && storedToken.equals(refreshToken);
     }
+
+    public boolean validateAndRotate(UUID uuid, String oldRefreshToken) {
+        String storedToken = getRefreshToken(uuid);
+
+        if (storedToken == null || !storedToken.equals(oldRefreshToken)) {
+            deleteRefreshToken(uuid);
+            return false;
+        }
+
+        return true;
+    }
 }
