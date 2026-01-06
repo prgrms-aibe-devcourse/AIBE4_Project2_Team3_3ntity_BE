@@ -57,7 +57,7 @@ public class MatchingController {
             @PathVariable(name = "matchingId") Long matchingId,
             @RequestParam(name = "userId") Long loginUserId){
 
-        matchingService.acceptMatching(loginUserId, matchingId);
+        matchingService.acceptMatching(matchingId, loginUserId);
 
         return ResponseEntity.ok().build();
     }
