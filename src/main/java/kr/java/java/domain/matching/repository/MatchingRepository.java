@@ -5,6 +5,7 @@ import kr.java.java.domain.matching.enums.MatchStatus;
 import kr.java.java.domain.space.entity.Space;
 import kr.java.java.domain.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -22,4 +23,13 @@ public interface MatchingRepository extends JpaRepository<Matching, Long> {
 
     @Query("SELECT m FROM Matching m JOIN FETCH m.space s WHERE (m.sender.id = :userId OR m.receiver.id = :userId) AND s.user.id != :userId")
     List<Matching> findAllAsMakerId(@Param("userId") Long userId);
+
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Matching m SET m.status = :newStatus WHERE m.space.id = :spaceId AND m.status = :oldStatus AND m.id <> :matchingId")
+    int bulkUpdateStatusForOthers(
+            @Param("spaceId") Long spaceId,
+            @Param("oldStatus") MatchStatus oldStatus,
+            @Param("newStatus") MatchStatus newStatus,
+            @Param("matchingId") Long matchingId
+    );
 }
