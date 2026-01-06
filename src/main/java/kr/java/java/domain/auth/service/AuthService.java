@@ -2,6 +2,8 @@ package kr.java.java.domain.auth.service;
 
 import kr.java.java.domain.auth.dto.OAuth2UserInfo;
 import kr.java.java.domain.auth.dto.TokenResponse;
+import kr.java.java.domain.auth.exception.AuthErrorCode;
+import kr.java.java.domain.auth.exception.AuthException;
 import kr.java.java.domain.auth.jwt.JwtTokenProvider;
 import kr.java.java.domain.user.entity.Provider;
 import kr.java.java.domain.user.entity.Role;
@@ -49,14 +51,29 @@ public class AuthService extends DefaultOAuth2UserService {
 
     @Transactional
     public User saveOrUpdate(OAuth2UserInfo userInfo) {
-        Provider provider = Provider.valueOf(userInfo.getProvider());
+        if (userInfo == null || userInfo.getProviderId() == null) {
+            throw new AuthException(AuthErrorCode.INVALID_USER_INFO);
+        }
+
+        Provider provider;
+        try {
+            provider = Provider.valueOf(userInfo.getProvider());
+        } catch (IllegalArgumentException e) {
+            throw new AuthException(AuthErrorCode.INVALID_PROVIDER);
+        }
 
         User user = userRepository.findByProviderAndProviderId(provider, userInfo.getProviderId())
                 .map(entity -> {
-                    entity.updateProfile(userInfo.getName(), userInfo.getProfileImage());
+                    entity.updateProfile(
+                            userInfo.getName() != null ? userInfo.getName() : entity.getNickname(),
+                            userInfo.getProfileImage() != null ? userInfo.getProfileImage() : entity.getProfileImageUrl()
+                    );
                     return entity;
                 })
                 .orElseGet(() -> {
+                    if (userInfo.getName() == null || userInfo.getName().isEmpty()) {
+                        throw new AuthException(AuthErrorCode.MISSING_REQUIRED_FIELD);
+                    }
                     return User.builder()
                             .email(userInfo.getEmail())
                             .nickname(userInfo.getName())
@@ -87,13 +104,18 @@ public class AuthService extends DefaultOAuth2UserService {
     @Transactional
     public TokenResponse refreshAccessToken(String refreshToken) {
         if (!jwtTokenProvider.validateToken(refreshToken)) {
-            throw new IllegalArgumentException("유효하지 않은 Refresh Token입니다.");
+            throw new kr.java.java.domain.auth.exception.AuthException(
+                    kr.java.java.domain.auth.exception.AuthErrorCode.INVALID_TOKEN
+            );
         }
 
         UUID uuid = jwtTokenProvider.getUuidFromToken(refreshToken);
 
         if (!refreshTokenService.validateRefreshToken(uuid, refreshToken)) {
-            throw new IllegalArgumentException("일치하지 않는 Refresh Token입니다.");
+            refreshTokenService.deleteRefreshToken(uuid);
+            throw new kr.java.java.domain.auth.exception.AuthException(
+                    kr.java.java.domain.auth.exception.AuthErrorCode.TOKEN_REUSE_DETECTED
+            );
         }
 
         String newAccessToken = jwtTokenProvider.createAccessToken(uuid);

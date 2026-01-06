@@ -2,6 +2,8 @@ package kr.java.java.domain.auth.jwt;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import kr.java.java.domain.auth.exception.AuthErrorCode;
+import kr.java.java.domain.auth.exception.AuthException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -55,13 +57,28 @@ public class JwtTokenProvider {
 
     // 토큰에서 userId 추출
     public UUID getUuidFromToken(String token) {
-        Claims claims = Jwts.parser()
-                .verifyWith(secretKey)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
+        if (token == null || token.isEmpty()) {
+            throw new AuthException(AuthErrorCode.INVALID_TOKEN);
+        }
 
-        return UUID.fromString(claims.getSubject());
+        try {
+            Claims claims = Jwts.parser()
+                    .verifyWith(secretKey)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+
+            String subject = claims.getSubject();
+            if (subject == null || subject.isEmpty()) {
+                throw new AuthException(AuthErrorCode.INVALID_TOKEN);
+            }
+
+            return UUID.fromString(subject);
+        } catch (JwtException e) {
+            throw new AuthException(AuthErrorCode.INVALID_TOKEN);
+        } catch (IllegalArgumentException e) {
+            throw new AuthException(AuthErrorCode.INVALID_TOKEN);
+        }
     }
 
     // 토큰 유효성 검증

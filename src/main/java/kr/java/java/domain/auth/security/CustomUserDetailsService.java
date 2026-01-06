@@ -18,8 +18,16 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        UUID uuid = UUID.fromString(username);
+        if (username == null || username.isEmpty()) {
+            throw new UsernameNotFoundException("Username cannot be null or empty");
+        }
 
+        UUID uuid;
+        try {
+            uuid = UUID.fromString(username);
+        } catch (IllegalArgumentException e) {
+            throw new UsernameNotFoundException("Invalid UUID format: " + username, e);
+        }
 
         User user = userRepository.findByUuid(uuid)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with UUID: " + uuid));
@@ -32,6 +40,10 @@ public class CustomUserDetailsService implements UserDetailsService {
     }
 
     public UserDetails loadUserByUuid(UUID uuid) {
+        if (uuid == null) {
+            throw new UsernameNotFoundException("UUID cannot be null");
+        }
+
         User user = userRepository.findByUuid(uuid)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with UUID: " + uuid));
 

@@ -1,13 +1,13 @@
 package kr.java.java.global.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.servlet.http.HttpServletResponse;
 import kr.java.java.domain.auth.filter.JwtAuthenticationFilter;
+import kr.java.java.domain.auth.handler.OAuth2AuthenticationFailureHandler;
 import kr.java.java.domain.auth.jwt.JwtTokenProvider;
-import kr.java.java.domain.auth.security.CustomUserDetails;
 import kr.java.java.domain.auth.service.AuthService;
 import kr.java.java.domain.auth.service.RefreshTokenService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.web.header.writers.XXssProtectionHeaderWriter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
@@ -28,11 +28,17 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+    private static final int REFRESH_TOKEN_MAX_AGE = 7 * 24 * 60 * 60; // 7일
+
     private final AuthService authService;
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenService refreshTokenService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
     private final ObjectMapper objectMapper;
+
+    @org.springframework.beans.factory.annotation.Value("${app.cookie.secure:false}")
+    private boolean cookieSecure;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -40,6 +46,12 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+                // 보안 헤더 추가
+                .headers(headers -> headers
+                        .frameOptions(frameOptions -> frameOptions.deny())
+                        .xssProtection(xss -> xss.headerValue(XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
+                        .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'"))
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/piece/spaces/**").permitAll()
@@ -57,6 +69,7 @@ public class SecurityConfig {
                         .userInfoEndpoint(userInfo ->
                                 userInfo.userService(authService)
                         )
+                        .failureHandler(oAuth2AuthenticationFailureHandler)
                         .successHandler((request, response, authentication) -> {
 
                             kr.java.java.domain.auth.security.CustomOAuth2User oauth2User =
@@ -69,11 +82,12 @@ public class SecurityConfig {
 
                             refreshTokenService.saveRefreshToken(uuid, refreshToken);
 
+                            // Refresh Token을 Cookie에 저장 (HttpOnly로 XSS 방지)
                             ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", refreshToken)
-                                    .maxAge(7 * 24 * 60 * 60)
+                                    .maxAge(REFRESH_TOKEN_MAX_AGE)
                                     .path("/")
                                     .httpOnly(true)
-                                    .secure(false)
+                                    .secure(cookieSecure)
                                     .sameSite("Lax")
                                     .build();
 
@@ -82,6 +96,7 @@ public class SecurityConfig {
                             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
                             response.setCharacterEncoding("UTF-8");
 
+                            // Access Token을 JSON 응답 본문에 포함 (프론트엔드 메모리 저장용)
                             Map<String, Object> result = new HashMap<>();
                             result.put("accessToken", accessToken);
                             result.put("uuid", uuid.toString());
