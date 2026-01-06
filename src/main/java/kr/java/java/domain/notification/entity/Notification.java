@@ -27,7 +27,7 @@ public class Notification {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
-    private User receiver;
+    private User userId;
 
     @Column(nullable = false)
     private String content;
@@ -47,8 +47,8 @@ public class Notification {
     private LocalDateTime createdAt;
 
     @Builder
-    public Notification(User receiver, String content, String relatedUrl, NotificationType notificationType) {
-        this.receiver = receiver;
+    public Notification(User userId, String content, String relatedUrl, NotificationType notificationType) {
+        this.userId = userId;
         this.content = content;
         this.relatedUrl = relatedUrl;
         this.notificationType = notificationType;
