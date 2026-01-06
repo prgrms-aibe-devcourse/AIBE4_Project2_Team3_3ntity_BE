@@ -1,14 +1,21 @@
 package kr.java.java.domain.space.service;
 
+import kr.java.java.domain.space.dto.SpaceListResponse;
 import kr.java.java.domain.space.dto.SpaceRequest;
+import kr.java.java.domain.space.dto.SpaceResponse;
 import kr.java.java.domain.space.entity.Space;
 import kr.java.java.domain.space.exception.DuplicateSpaceException;
+import kr.java.java.domain.space.exception.NotFoundSpaceException;
+import kr.java.java.domain.space.exception.NotFoundUserException;
 import kr.java.java.domain.space.repository.SpaceRepository;
 import kr.java.java.domain.user.entity.User;
 import kr.java.java.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @Slf4j
@@ -16,6 +23,8 @@ import org.springframework.stereotype.Service;
 public class SpaceService {
     private final SpaceRepository spaceRepository;
     private final UserRepository userRepository;
+
+    @Transactional
     public void createSpace(SpaceRequest spaceRequest, Long loginUserId) {
         //TODO 로그인 유저 권한 체크하는 부분 추가 예정
         if (spaceRepository.existsByAddressAndDetailAddress(spaceRequest.address(), spaceRequest.detailAddress())) {
@@ -27,4 +36,28 @@ public class SpaceService {
         spaceRepository.save(space);
     }
 
+    @Transactional(readOnly = true)
+    public SpaceResponse getSpace(Long id) {
+        Space space = spaceRepository.findById(id)
+                .orElseThrow(() -> new NotFoundSpaceException("해당 공간이 없습니다. id=" + id));
+        return new SpaceResponse(space);
+    }
+
+    @Transactional(readOnly = true)
+    public List<SpaceListResponse> getAllSpaces(){
+        return spaceRepository.findAllByOrderByIdDesc().stream()
+                .map(SpaceListResponse::new)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<SpaceListResponse> getSpacesByUserId(Long userId) {
+        if (!userRepository.existsById(userId)) {
+            //TODO 나중에 유저에서 커스텀예외가 생기면 예외를 변경할 예정
+            throw new NotFoundUserException("존재하지 않는 유저입니다. ID: " + userId);
+        }
+        return spaceRepository.findByUserIdOrderByIdDesc(userId).stream()
+                .map(SpaceListResponse::new)
+                .toList();
+    }
 }
