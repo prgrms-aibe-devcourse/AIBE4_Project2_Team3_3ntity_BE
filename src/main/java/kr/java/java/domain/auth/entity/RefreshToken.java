@@ -5,6 +5,7 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "refresh_token")
@@ -18,8 +19,9 @@ public class RefreshToken {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
+
+    @Column(name = "user_uuid", nullable = false)
+    private UUID userUuid;
 
     @Column(name = "token", nullable = false, unique = true, length = 500)
     private String token;

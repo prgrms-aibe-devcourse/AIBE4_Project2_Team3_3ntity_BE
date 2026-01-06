@@ -65,11 +65,11 @@ public class User {
         this.profileImageUrl = profileImageUrl;
     }
 
-    public boolean isSpaceOwner() {
-        return this.role == Role.SPACE_OWNER;
+    public boolean isHost() {
+        return this.role == Role.HOST;
     }
 
-    public boolean isMaker() {
-        return this.role == Role.MAKER;
+    public boolean isUser() {
+        return this.role == Role.USER;
     }
 }

@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.UUID;
 
 @Component
 public class JwtTokenProvider {
@@ -27,12 +28,12 @@ public class JwtTokenProvider {
     }
 
     // Access Token 생성
-    public String createAccessToken(Long userId) {
+    public String createAccessToken(UUID uuid) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + accessTokenExpiration);
 
         return Jwts.builder()
-                .subject(String.valueOf(userId))
+                .subject(uuid.toString())
                 .issuedAt(now)
                 .expiration(expiryDate)
                 .signWith(secretKey)
@@ -40,12 +41,12 @@ public class JwtTokenProvider {
     }
 
     // Refresh Token 생성
-    public String createRefreshToken(Long userId) {
+    public String createRefreshToken(UUID uuid) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + refreshTokenExpiration);
 
         return Jwts.builder()
-                .subject(String.valueOf(userId))
+                .subject(uuid.toString())
                 .issuedAt(now)
                 .expiration(expiryDate)
                 .signWith(secretKey)
@@ -53,14 +54,14 @@ public class JwtTokenProvider {
     }
 
     // 토큰에서 userId 추출
-    public Long getUserIdFromToken(String token) {
+    public UUID getUuidFromToken(String token) {
         Claims claims = Jwts.parser()
                 .verifyWith(secretKey)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
 
-        return Long.parseLong(claims.getSubject());
+        return UUID.fromString(claims.getSubject());
     }
 
     // 토큰 유효성 검증
