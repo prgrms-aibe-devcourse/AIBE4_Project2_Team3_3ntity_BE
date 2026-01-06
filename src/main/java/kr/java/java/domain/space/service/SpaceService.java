@@ -7,11 +7,13 @@ import kr.java.java.domain.space.entity.Space;
 import kr.java.java.domain.space.exception.DuplicateSpaceException;
 import kr.java.java.domain.space.exception.NotFoundSpaceException;
 import kr.java.java.domain.space.exception.NotFoundUserException;
+import kr.java.java.domain.space.exception.UnAuthorizedException;
 import kr.java.java.domain.space.repository.SpaceRepository;
 import kr.java.java.domain.user.entity.User;
 import kr.java.java.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -59,5 +61,24 @@ public class SpaceService {
         return spaceRepository.findByUserIdOrderByIdDesc(userId).stream()
                 .map(SpaceListResponse::new)
                 .toList();
+    }
+
+    @Transactional
+    public void deleteSpace(Long id, Long userId) {
+
+        Space space = spaceRepository.findById(id)
+                .orElseThrow(() -> new NotFoundSpaceException("해당 공간이 없습니다. id=" + id));
+
+        if (!space.getUser().getId().equals(userId)) {
+            throw new UnAuthorizedException("삭제 권한이 없습니다.");
+        }
+
+        try {
+            spaceRepository.delete(space);
+
+        } catch (DataIntegrityViolationException e) {
+            log.error("공간 삭제 실패 (참조 데이터 존재) - ID: {}", id);
+            throw new RuntimeException("현재 예약 내역이 있어 삭제할 수 없습니다.");
+        }
     }
 }
