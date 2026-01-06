@@ -1,6 +1,7 @@
 package kr.java.java.domain.matching.service;
 
 import kr.java.java.domain.matching.dto.CreateMatchingRequest;
+import kr.java.java.domain.matching.dto.MatchingResponse;
 import kr.java.java.domain.matching.entity.Matching;
 import kr.java.java.domain.matching.enums.MatchStatus;
 import kr.java.java.domain.matching.repository.MatchingRepository;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -65,6 +67,18 @@ public class MatchingService {
                 .build();
 
         matchingRepository.save(matching);
+    }
+
+    @Transactional(readOnly = true)
+    public List<MatchingResponse> getMatchings(Long loginUserId) {
+        User loginUser = userRepository.findById(loginUserId)
+                .orElseThrow(() -> new IllegalArgumentException("User를 찾을 수 없습니다."));
+
+        List<Matching> matchings = matchingRepository.findBySenderOrReceiver(loginUser, loginUser);
+
+        return matchings.stream()
+                .map(matching -> MatchingResponse.from(matching, loginUserId))
+                .collect(Collectors.toList());
     }
 
     private void validateMatching(Space space, User targetUser, User sender, User receiver){
