@@ -3,6 +3,7 @@ package kr.java.java.domain.space.controller;
 import kr.java.java.domain.space.dto.SpaceListResponse;
 import kr.java.java.domain.space.dto.SpaceRequest;
 import kr.java.java.domain.space.dto.SpaceResponse;
+import kr.java.java.domain.space.dto.SpaceUpdateRequest;
 import kr.java.java.domain.space.service.SpaceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -56,5 +57,17 @@ public class SpaceController {
         return ResponseEntity.noContent().build();
     }
 
+    @PutMapping("/piece/spaces/{id}")
+    public ResponseEntity<SpaceResponse> updateSpace(@PathVariable Long id, @RequestBody SpaceUpdateRequest request, Long userId) {
+        log.info("공간 전체 수정 시도 - ID: {}", id);
+        SpaceResponse response = spaceService.updateSpace(id, request, 1L);
+        return ResponseEntity.ok(response);
+    }
 
+    @PatchMapping("/piece/spaces/{id}")
+    public ResponseEntity<SpaceResponse> updateSpacePartial(@PathVariable Long id, @RequestBody SpaceUpdateRequest request) {
+        log.info("공간 부분 수정 시도 - ID: {}", id);
+        SpaceResponse response = spaceService.updateSpace(id, request, 1L);
+        return ResponseEntity.ok(response);
+    }
 }

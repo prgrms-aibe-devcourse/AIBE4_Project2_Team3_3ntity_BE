@@ -3,6 +3,7 @@ package kr.java.java.domain.space.service;
 import kr.java.java.domain.space.dto.SpaceListResponse;
 import kr.java.java.domain.space.dto.SpaceRequest;
 import kr.java.java.domain.space.dto.SpaceResponse;
+import kr.java.java.domain.space.dto.SpaceUpdateRequest;
 import kr.java.java.domain.space.entity.Space;
 import kr.java.java.domain.space.exception.DuplicateSpaceException;
 import kr.java.java.domain.space.exception.NotFoundSpaceException;
@@ -80,5 +81,18 @@ public class SpaceService {
             log.error("공간 삭제 실패 (참조 데이터 존재) - ID: {}", id);
             throw new RuntimeException("현재 예약 내역이 있어 삭제할 수 없습니다.");
         }
+    }
+
+    @Transactional
+    public SpaceResponse updateSpace(Long id, SpaceUpdateRequest request, Long userId) {
+        Space space = spaceRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("해당 공간이 없습니다. id=" + id));
+
+        if (!space.getUser().getId().equals(userId)) {
+            throw new UnAuthorizedException("수정 권한이 없습니다.");
+        }
+
+        space.update(request);
+        return new SpaceResponse(space);
     }
 }
