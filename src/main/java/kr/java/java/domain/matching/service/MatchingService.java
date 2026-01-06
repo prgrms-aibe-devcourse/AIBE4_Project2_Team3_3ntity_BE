@@ -15,10 +15,8 @@ import kr.java.java.domain.user.entity.User;
 import kr.java.java.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -77,6 +75,23 @@ public class MatchingService {
         matchingRepository.save(matching);
     }
 
+    private void validateMatching(Space space, User targetUser, User sender, User receiver){
+        if(sender.getId().equals(receiver.getId())){
+            log.warn("[매칭 검증 실패] 본인 매칭 시도 - UserId: {}", sender.getId());
+            throw new MatchingException(MatchingErrorCode.SELF_MATCHING_NOT_ALLOWED);
+        }
+
+        List<MatchStatus> activeStatuses = List.of(MatchStatus.WAITING, MatchStatus.ONGOING);
+
+        boolean alreadyActive = matchingRepository.existsBySpaceAndUserAndStatusIn(space, targetUser, activeStatuses);
+
+        if(alreadyActive){
+            log.warn("[매칭 검증 실패] 이미 활성화된 매칭 존재 - SpaceID: {}, TargetUserID: {}",
+                    space.getId(), targetUser.getId());
+            throw new MatchingException(MatchingErrorCode.ALREADY_ACTIVE_MATCHING_EXISTS);
+        }
+    }
+
     @Transactional(readOnly = true)
     public List<MatchingResponse> getMatchings(Long loginUserId) {
         User loginUser = userRepository.findById(loginUserId)
@@ -103,20 +118,67 @@ public class MatchingService {
                 .collect(Collectors.toList());
     }
 
-    private void validateMatching(Space space, User targetUser, User sender, User receiver){
-        if(sender.getId().equals(receiver.getId())){
-            log.warn("[매칭 검증 실패] 본인 매칭 시도 - UserId: {}", sender.getId());
-            throw new MatchingException(MatchingErrorCode.SELF_MATCHING_NOT_ALLOWED);
+    @Transactional
+    public void acceptMatching(Long matchingId, Long loginUserId){
+        Matching matching = findMatchingById(matchingId);
+        validateReceiverAndStatus(matching, loginUserId);
+
+        matching.updateStatus(MatchStatus.ONGOING);
+        log.info("[매칭 수락] MatchingID: {}, 수락자: {}", matchingId, loginUserId);
+
+        Long spaceId = matching.getSpace().getId();
+
+        int rejectedCount = matchingRepository.bulkUpdateStatusForOthers(
+                spaceId,
+                MatchStatus.WAITING,
+                MatchStatus.REJECTED,
+                matchingId
+        );
+        log.info("[매칭 확정] MatchingID: {}, 자동 거절된 건수: {}건", matchingId, rejectedCount);
+    }
+
+    @Transactional
+    public void rejectMatching(Long matchingId, Long loginUserId) {
+        Matching matching = findMatchingById(matchingId);
+        validateReceiverAndStatus(matching, loginUserId);
+
+        matching.updateStatus(MatchStatus.REJECTED);
+        log.info("[매칭 거절] MatchingID: {}, 거절자: {}", matchingId, loginUserId);
+    }
+
+    private Matching findMatchingById(Long matchingId){
+        return matchingRepository.findById(matchingId)
+                .orElseThrow(() -> new MatchingException(MatchingErrorCode.MATCHING_NOT_FOUND));
+    }
+
+    private void validateReceiverAndStatus(Matching matching, Long loginUserId) {
+        log.info("[검증 로그] DB ReceiverID: {}, 요청 LoginUserID: {}",
+                matching.getReceiver().getId(), loginUserId);
+        if (!matching.getReceiver().getId().equals(loginUserId)) {
+            throw new MatchingException(MatchingErrorCode.NOT_AUTHORIZED_RECEIVER);
         }
 
-        List<MatchStatus> activeStatuses = List.of(MatchStatus.WAITING, MatchStatus.ONGOING);
+        if (matching.getStatus() != MatchStatus.WAITING) {
+            throw new MatchingException(MatchingErrorCode.INVALID_MATCH_STATUS);
+        }
+    }
 
-        boolean alreadyActive = matchingRepository.existsBySpaceAndUserAndStatusIn(space, targetUser, activeStatuses);
+    @Transactional
+    public void cancelMatching(Long matchingId, Long loginUserId) {
+        Matching matching = findMatchingById(matchingId);
+        validateSenderAndStatus(matching, loginUserId);
 
-        if(alreadyActive){
-            log.warn("[매칭 검증 실패] 이미 활성화된 매칭 존재 - SpaceID: {}, TargetUserID: {}",
-                    space.getId(), targetUser.getId());
-            throw new MatchingException(MatchingErrorCode.ALREADY_ACTIVE_MATCHING_EXISTS);
+        matching.updateStatus(MatchStatus.CANCELLED);
+        log.info("[매칭 취소] MatchingID: {}, 거절자: {}", matchingId, loginUserId);
+    }
+
+    private void validateSenderAndStatus(Matching matching, Long loginUserId) {
+        if (!matching.getSender().getId().equals(loginUserId)) {
+            throw new MatchingException(MatchingErrorCode.NOT_AUTHORIZED_SENDER);
+        }
+
+        if (matching.getStatus() != MatchStatus.WAITING) {
+            throw new MatchingException(MatchingErrorCode.INVALID_MATCH_STATUS);
         }
     }
 }
