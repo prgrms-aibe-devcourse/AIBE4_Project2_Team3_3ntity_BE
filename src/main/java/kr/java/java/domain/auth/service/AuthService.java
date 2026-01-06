@@ -2,9 +2,7 @@ package kr.java.java.domain.auth.service;
 
 import kr.java.java.domain.auth.dto.OAuth2UserInfo;
 import kr.java.java.domain.auth.dto.TokenResponse;
-import kr.java.java.domain.auth.entity.RefreshToken;
 import kr.java.java.domain.auth.jwt.JwtTokenProvider;
-import kr.java.java.domain.auth.repository.RefreshTokenRepository;
 import kr.java.java.domain.user.entity.Provider;
 import kr.java.java.domain.user.entity.Role;
 import kr.java.java.domain.user.entity.User;
@@ -16,7 +14,6 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
 
@@ -26,10 +23,9 @@ import java.util.UUID;
 public class AuthService extends DefaultOAuth2UserService {
 
     private final UserRepository userRepository;
-    private final RefreshTokenRepository refreshTokenRepository;
+    private final RefreshTokenService refreshTokenService;
     private final JwtTokenProvider jwtTokenProvider;
 
-    // OAuth2 로그인 처리
     @Override
     @Transactional
     public OAuth2User loadUser(OAuth2UserRequest userRequest) {
@@ -76,23 +72,10 @@ public class AuthService extends DefaultOAuth2UserService {
 
     @Transactional
     public TokenResponse issueToken(UUID uuid) {
-
         String accessToken = jwtTokenProvider.createAccessToken(uuid);
-
         String refreshToken = jwtTokenProvider.createRefreshToken(uuid);
 
-        refreshTokenRepository.findByUserUuid(uuid)
-                .ifPresentOrElse(
-                        token -> token.updateToken(refreshToken, LocalDateTime.now().plusDays(7)),
-                        () -> {
-                            RefreshToken newToken = RefreshToken.builder()
-                                    .userUuid(uuid)
-                                    .token(refreshToken)
-                                    .expiresAt(LocalDateTime.now().plusDays(7))
-                                    .build();
-                            refreshTokenRepository.save(newToken);
-                        }
-                );
+        refreshTokenService.saveRefreshToken(uuid, refreshToken);
 
         return TokenResponse.of(
                 accessToken,
@@ -107,14 +90,13 @@ public class AuthService extends DefaultOAuth2UserService {
             throw new IllegalArgumentException("유효하지 않은 Refresh Token입니다.");
         }
 
-        RefreshToken token = refreshTokenRepository.findByToken(refreshToken)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 Refresh Token입니다."));
+        UUID uuid = jwtTokenProvider.getUuidFromToken(refreshToken);
 
-        if (token.isExpired()) {
-            throw new IllegalArgumentException("만료된 Refresh Token입니다.");
+        if (!refreshTokenService.validateRefreshToken(uuid, refreshToken)) {
+            throw new IllegalArgumentException("일치하지 않는 Refresh Token입니다.");
         }
 
-        String newAccessToken = jwtTokenProvider.createAccessToken(token.getUserUuid());
+        String newAccessToken = jwtTokenProvider.createAccessToken(uuid);
 
         return TokenResponse.of(
                 newAccessToken,
@@ -125,6 +107,6 @@ public class AuthService extends DefaultOAuth2UserService {
 
     @Transactional
     public void logout(UUID uuid) {
-        refreshTokenRepository.deleteByUserUuid(uuid);
+        refreshTokenService.deleteRefreshToken(uuid);
     }
 }

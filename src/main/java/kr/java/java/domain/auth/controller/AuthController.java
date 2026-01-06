@@ -1,10 +1,14 @@
 package kr.java.java.domain.auth.controller;
 
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import kr.java.java.domain.auth.dto.TokenResponse;
+import kr.java.java.domain.auth.jwt.JwtTokenProvider;
 import kr.java.java.domain.auth.service.AuthService;
+import kr.java.java.domain.auth.service.RefreshTokenService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,26 +19,87 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final AuthService authService;
+    private final JwtTokenProvider jwtTokenProvider;
+    private final RefreshTokenService refreshTokenService;
 
-    // Refresh Token으로 Access Token 재발급
-    @PostMapping("/refresh")
-    public ResponseEntity<TokenResponse> refresh(@RequestHeader("Authorization") String refreshToken) {
-        String token = refreshToken.replace("Bearer ", "");
-        TokenResponse response = authService.refreshAccessToken(token);
-        return ResponseEntity.ok(response);
+    @PostMapping("/reissue")
+    public ResponseEntity<TokenResponse> reissue(HttpServletRequest request) {
+
+        String refreshToken = getRefreshTokenFromCookie(request);
+
+        if (refreshToken == null) {
+            throw new IllegalArgumentException("Refresh Token이 없습니다.");
+        }
+
+        if (!jwtTokenProvider.validateToken(refreshToken)) {
+            throw new IllegalArgumentException("유효하지 않은 Refresh Token입니다.");
+        }
+
+        UUID uuid = jwtTokenProvider.getUuidFromToken(refreshToken);
+
+        if (!refreshTokenService.validateRefreshToken(uuid, refreshToken)) {
+            throw new IllegalArgumentException("일치하지 않는 Refresh Token입니다.");
+        }
+
+        String newAccessToken = jwtTokenProvider.createAccessToken(uuid);
+        String newRefreshToken = jwtTokenProvider.createRefreshToken(uuid);
+
+        refreshTokenService.saveRefreshToken(uuid, newRefreshToken);
+
+        ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", newRefreshToken)
+                .maxAge(7 * 24 * 60 * 60)
+                .path("/")
+                .httpOnly(true)
+                .secure(false)
+                .sameSite("Lax")
+                .build();
+
+        TokenResponse response = TokenResponse.of(
+                newAccessToken,
+                newRefreshToken,
+                jwtTokenProvider.getAccessTokenExpirationInSeconds()
+        );
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+                .body(response);
     }
 
-    // 소셜 로그인 테스트
     @GetMapping("/login-success")
     public ResponseEntity<String> loginSuccess() {
         return ResponseEntity.ok("소셜 로그인 성공!");
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(@RequestHeader("User-Uuid") UUID uuid) {
-        authService.logout(uuid);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<String> logout(HttpServletRequest request) {
+
+        String refreshToken = getRefreshTokenFromCookie(request);
+
+        if (refreshToken != null && jwtTokenProvider.validateToken(refreshToken)) {
+            UUID uuid = jwtTokenProvider.getUuidFromToken(refreshToken);
+            refreshTokenService.deleteRefreshToken(uuid);
+        }
+
+        ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", "")
+                .path("/")
+                .maxAge(0)
+                .httpOnly(true)
+                .secure(false)
+                .build();
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+                .body("로그아웃 성공");
     }
 
+    private String getRefreshTokenFromCookie(HttpServletRequest request) {
+        if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if ("refreshToken".equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
+        }
+        return null;
+    }
 }
