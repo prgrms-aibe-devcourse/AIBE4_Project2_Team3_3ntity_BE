@@ -103,6 +103,58 @@ public class MatchingService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
+    public void acceptMatching(Long matchingId, Long loginUserId){
+        Matching matching = findMatchingById(matchingId);
+        validateReceiverAndStatus(matching, loginUserId);
+
+        matching.updateStatus(MatchStatus.ONGOING);
+        log.info("[매칭 수락] MatchingID: {}, 수락자: {}", matchingId, loginUserId);
+    }
+
+    @Transactional
+    public void rejectMatching(Long matchingId, Long loginUserId) {
+        Matching matching = findMatchingById(matchingId);
+        validateReceiverAndStatus(matching, loginUserId);
+
+        matching.updateStatus(MatchStatus.REJECTED);
+        log.info("[매칭 거절] MatchingID: {}, 거절자: {}", matchingId, loginUserId);
+    }
+
+    private Matching findMatchingById(Long matchingId){
+        return matchingRepository.findById(matchingId)
+                .orElseThrow(() -> new MatchingException(MatchingErrorCode.MATCHING_NOT_FOUND));
+    }
+
+    private void validateReceiverAndStatus(Matching matching, Long loginUserId) {
+        if (!matching.getReceiver().getId().equals(loginUserId)) {
+            throw new MatchingException(MatchingErrorCode.NOT_AUTHORIZED_RECEIVER);
+        }
+
+        if (matching.getStatus() != MatchStatus.WAITING) {
+            throw new MatchingException(MatchingErrorCode.INVALID_MATCH_STATUS);
+        }
+    }
+
+    @Transactional
+    public void cancelMatching(Long matchingId, Long loginUserId) {
+        Matching matching = findMatchingById(matchingId);
+        validateSenderAndStatus(matching, loginUserId);
+
+        matching.updateStatus(MatchStatus.CANCELLED);
+        log.info("[매칭 취소] MatchingID: {}, 거절자: {}", matchingId, loginUserId);
+    }
+
+    private void validateSenderAndStatus(Matching matching, Long loginUserId) {
+        if (!matching.getSender().getId().equals(loginUserId)) {
+            throw new MatchingException(MatchingErrorCode.NOT_AUTHORIZED_SENDER);
+        }
+
+        if (matching.getStatus() != MatchStatus.WAITING) {
+            throw new MatchingException(MatchingErrorCode.INVALID_MATCH_STATUS);
+        }
+    }
+
     private void validateMatching(Space space, User targetUser, User sender, User receiver){
         if(sender.getId().equals(receiver.getId())){
             log.warn("[매칭 검증 실패] 본인 매칭 시도 - UserId: {}", sender.getId());

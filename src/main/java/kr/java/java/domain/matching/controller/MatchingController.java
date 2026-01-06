@@ -52,10 +52,34 @@ public class MatchingController {
         return ResponseEntity.ok(responses);
     }
 
-    @PatchMapping("/{matchingId}/status")
+    @PatchMapping("/{matchingId}/accept")
     public ResponseEntity<Void> updateMatching(
             @PathVariable(name = "matchingId") Long matchingId,
-            @RequestParam(name = "status") MatchStatus status,
-            @PathVariable(name = "userId") Long loginUserId){
+            @RequestParam(name = "userId") Long loginUserId){
+
+        matchingService.acceptMatching(loginUserId, matchingId);
+
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{matchingId}/reject")
+    public ResponseEntity<Void> rejectMatching(
+            @PathVariable(name = "matchingId") Long matchingId,
+            @RequestParam(name = "userId") Long loginUserId) {
+
+        matchingService.rejectMatching(matchingId, loginUserId);
+
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{matchingId}/cancel")
+    public ResponseEntity<Void> cancelMatching(
+            @PathVariable(name = "matchingId") Long matchingId,
+            @RequestParam(name = "userId") Long loginUserId) {
+
+        log.info("[API 요청] 매칭 취소 - MatchingID: {}, LoginUserID: {}", matchingId, loginUserId);
+        matchingService.cancelMatching(matchingId, loginUserId);
+
+        return ResponseEntity.ok().build();
     }
 }
