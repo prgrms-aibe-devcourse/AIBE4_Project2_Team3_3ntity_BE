@@ -15,8 +15,10 @@ import kr.java.java.domain.user.entity.User;
 import kr.java.java.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -82,6 +84,20 @@ public class MatchingService {
 
         List<Matching> matchings = matchingRepository.findBySenderOrReceiver(loginUser, loginUser);
 
+        return convertToResponse(matchings, loginUserId);
+    }
+
+    public List<MatchingResponse> getMatchingsAsOwner(Long loginUserId) {
+        List<Matching> matchings = matchingRepository.findAllBySpaceOwnerId(loginUserId);
+        return convertToResponse(matchings, loginUserId);
+    }
+
+    public List<MatchingResponse> getMatchingsAsMaker(Long loginUserId) {
+        List<Matching> matchings = matchingRepository.findAllAsMakerId(loginUserId);
+        return convertToResponse(matchings, loginUserId);
+    }
+
+    private List<MatchingResponse> convertToResponse(List<Matching> matchings, Long loginUserId) {
         return matchings.stream()
                 .map(matching -> MatchingResponse.from(matching, loginUserId))
                 .collect(Collectors.toList());
