@@ -1,6 +1,7 @@
 package kr.java.java.domain.review.service;
 
 import kr.java.java.domain.review.dto.ReviewCreateRequest;
+import kr.java.java.domain.review.dto.ReviewResponse;
 import kr.java.java.domain.review.entity.Review;
 import kr.java.java.domain.review.exception.DuplicateReviewException;
 import kr.java.java.domain.review.exception.MatchingNotFoundException;
@@ -9,11 +10,14 @@ import kr.java.java.domain.review.repository.ReviewRepository;
 import kr.java.java.domain.user.entity.User;
 import kr.java.java.domain.user.repository.UserRepository;
 import kr.java.java.domain.matching.repository.MatchingRepository;
+import kr.java.java.domain.matching.entity.Matching;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Slf4j
 @Service
@@ -29,15 +33,15 @@ public class ReviewService {
     public Long createReview(ReviewCreateRequest request) {
         log.info("리뷰 생성 시도 - userId: {}, matchingId: {}", request.userId(), request.matchingId());
 
-        // 1. 유저 검증
+        // 1. 유저 검증 및 조회
         User user = userRepository.findById(request.userId())
                 .orElseThrow(() -> {
                     log.warn("존재하지 않는 유저입니다. userId: {}", request.userId());
                     return new UserNotFoundException("존재하지 않는 사용자입니다.");
                 });
 
-        // 2. 매칭 검증
-        matchingRepository.findById(request.matchingId())
+        // 2. 매칭 검증 및 조회
+        Matching matching = matchingRepository.findById(request.matchingId())
                 .orElseThrow(() -> {
                     log.warn("존재하지 않는 매칭입니다. matchingId: {}", request.matchingId());
                     return new MatchingNotFoundException("존재하지 않는 매칭 정보입니다.");
@@ -51,7 +55,7 @@ public class ReviewService {
 
         // 4. 리뷰 엔티티 생성 및 저장
         Review review = Review.builder()
-                .matchingId(request.matchingId())
+                .matching(matching)
                 .user(user)
                 .rating(request.rating())
                 .content(request.content())
@@ -62,5 +66,31 @@ public class ReviewService {
         log.info("리뷰 저장 성공 - reviewId: {}", savedReview.getId());
 
         return savedReview.getId();
+    }
+
+    // 공간별 리뷰 조회
+    public List<ReviewResponse> getReviewsBySpaceId(Long spaceId) {
+        log.info("공간별 리뷰 조회 요청 - spaceId: {}", spaceId);
+
+        List<Review> reviews = reviewRepository.findAllByMatchingSpaceId(spaceId);
+
+        log.info("공간(ID:{}) 리뷰 조회 성공 - 총 {}건", spaceId, reviews.size());
+
+        return reviews.stream()
+                .map(ReviewResponse::from)
+                .toList();
+    }
+
+    // 사용자별 리뷰 조회
+    public List<ReviewResponse> getMyReviews(Long userId) {
+        log.info("사용자별 리뷰 조회 요청 - userId: {}", userId);
+
+        List<Review> reviews = reviewRepository.findAllByUserId(userId);
+
+        log.info("사용자(ID:{}) 리뷰 조회 성공 - 총 {}건", userId, reviews.size());
+
+        return reviews.stream()
+                .map(ReviewResponse::from)
+                .toList();
     }
 }

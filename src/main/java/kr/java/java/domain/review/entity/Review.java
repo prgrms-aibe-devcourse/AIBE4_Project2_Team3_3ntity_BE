@@ -1,6 +1,7 @@
 package kr.java.java.domain.review.entity;
 
 import jakarta.persistence.*;
+import kr.java.java.domain.matching.entity.Matching;
 import kr.java.java.domain.user.entity.User;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -23,8 +24,9 @@ public class Review {
     @Column(name = "reviews_id")
     private Long id;
 
-    @Column(name = "matching_id", nullable = false)
-    private Long matchingId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "matching_id")
+    private Matching matching;
 
     @Column(name = "rating")
     private Integer rating;
@@ -41,8 +43,8 @@ public class Review {
     private User user;
 
     @Builder
-    public Review(Long matchingId, Integer rating, String content, User user) {
-        this.matchingId = matchingId;
+    public Review(Matching matching, Integer rating, String content, User user) {
+        this.matching = matching;
         this.rating = rating;
         this.content = content;
         this.user = user;
