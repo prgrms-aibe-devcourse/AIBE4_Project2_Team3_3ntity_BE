@@ -4,8 +4,12 @@ import kr.java.java.domain.matching.dto.CreateMatchingRequest;
 import kr.java.java.domain.matching.dto.MatchingResponse;
 import kr.java.java.domain.matching.entity.Matching;
 import kr.java.java.domain.matching.enums.MatchStatus;
+import kr.java.java.domain.matching.exception.MatchingErrorCode;
+import kr.java.java.domain.matching.exception.MatchingException;
 import kr.java.java.domain.matching.repository.MatchingRepository;
 import kr.java.java.domain.space.entity.Space;
+import kr.java.java.domain.space.exception.NotFoundSpaceException;
+import kr.java.java.domain.space.exception.NotFoundUserException;
 import kr.java.java.domain.space.repository.SpaceRepository;
 import kr.java.java.domain.user.entity.User;
 import kr.java.java.domain.user.repository.UserRepository;
@@ -25,22 +29,24 @@ public class MatchingService {
     private final SpaceRepository spaceRepository;
     private final MatchingRepository matchingRepository;
 
+    //TODO 해당 서비스 페이지에 있는 User 에러처리는 추후 User 도메인의 exception에 생기면 변경
+
     @Transactional
     public void createMatching(CreateMatchingRequest request, Long loginUserId){
         Space targetSpace = spaceRepository.findById(request.spaceId())
                 .orElseThrow(() -> {
                     log.error("[매칭 실패] Space 존재하지 않음 - ID: {}", request.spaceId());
-                    return new IllegalArgumentException("Space를 찾을 수 없습니다.");
+                    return new NotFoundSpaceException("해당 공간이 없습니다. id=" + request.spaceId());
                 });
         User targetUser = userRepository.findById(request.userId())
                 .orElseThrow(() -> {
                     log.error("[매칭 실패] 대상 User 존재하지 않음 - ID: {}", request.userId());
-                    return new IllegalArgumentException("User를 찾을 수 없습니다.");
+                    return new NotFoundUserException("존재하지 않는 유저입니다. ID: " + request.userId());
                 });
         User loginUser = userRepository.findById(loginUserId)
                 .orElseThrow(() -> {
                     log.error("[매칭 실패] 로그인 유저 정보 없음 - ID: {}", loginUserId);
-                    return new IllegalArgumentException("User를 찾을 수 없습니다.");
+                    return new NotFoundUserException("존재하지 않는 유저입니다. ID: " + loginUserId);
                 });
 
         User sender = loginUser;
@@ -72,7 +78,7 @@ public class MatchingService {
     @Transactional(readOnly = true)
     public List<MatchingResponse> getMatchings(Long loginUserId) {
         User loginUser = userRepository.findById(loginUserId)
-                .orElseThrow(() -> new IllegalArgumentException("User를 찾을 수 없습니다."));
+                .orElseThrow(() -> new NotFoundUserException("존재하지 않는 유저입니다. ID: " + loginUserId));
 
         List<Matching> matchings = matchingRepository.findBySenderOrReceiver(loginUser, loginUser);
 
@@ -84,7 +90,7 @@ public class MatchingService {
     private void validateMatching(Space space, User targetUser, User sender, User receiver){
         if(sender.getId().equals(receiver.getId())){
             log.warn("[매칭 검증 실패] 본인 매칭 시도 - UserId: {}", sender.getId());
-            throw new IllegalArgumentException("본인과의 매칭은 진행할 수 없습니다.");
+            throw new MatchingException(MatchingErrorCode.SELF_MATCHING_NOT_ALLOWED);
         }
 
         List<MatchStatus> activeStatuses = List.of(MatchStatus.WAITING, MatchStatus.ONGOING);
@@ -94,7 +100,7 @@ public class MatchingService {
         if(alreadyActive){
             log.warn("[매칭 검증 실패] 이미 활성화된 매칭 존재 - SpaceID: {}, TargetUserID: {}",
                     space.getId(), targetUser.getId());
-            throw new IllegalStateException("이미 대기 중이거나 진행 중인 매칭이 존재합니다.");
+            throw new MatchingException(MatchingErrorCode.ALREADY_ACTIVE_MATCHING_EXISTS);
         }
     }
 }
