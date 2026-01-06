@@ -2,6 +2,7 @@ package kr.java.java.domain.space.entity;
 
 import jakarta.persistence.*;
 import kr.java.java.domain.matching.entity.Matching;
+import kr.java.java.domain.space.dto.SpaceUpdateRequest;
 import kr.java.java.domain.space.enums.SpaceStatus;
 import kr.java.java.domain.user.entity.User;
 import lombok.AccessLevel;
@@ -16,7 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "space")
+@Table(name = "spaces")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Space {
@@ -79,4 +80,21 @@ public class Space {
         this.status = SpaceStatus.RECRUITING;
     }
 
+    public void update(SpaceUpdateRequest request) {
+        if (request.title() != null) this.title = request.title();
+        if (request.description() != null) this.description = request.description();
+        if (request.category() != null) this.category = request.category();
+        if (request.address() != null) this.address = request.address();
+        if (request.detailAddress() != null) this.detailAddress = request.detailAddress();
+
+        if (request.latitude() != null) {
+            this.latitude = BigDecimal.valueOf(request.latitude());
+        }
+        if (request.longitude() != null) {
+            this.longitude = BigDecimal.valueOf(request.longitude());
+        }
+        if (request.pricePerMonth() != null) {
+            this.pricePerMonth = request.pricePerMonth();
+        }
+    }
 }

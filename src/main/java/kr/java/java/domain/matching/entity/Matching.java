@@ -3,6 +3,8 @@ package kr.java.java.domain.matching.entity;
 import jakarta.persistence.*;
 import kr.java.java.domain.matching.enums.MatchStatus;
 import kr.java.java.domain.matching.enums.SenderType;
+import kr.java.java.domain.matching.exception.MatchingErrorCode;
+import kr.java.java.domain.matching.exception.MatchingException;
 import kr.java.java.domain.space.entity.Space;
 import kr.java.java.domain.user.entity.User;
 import lombok.AccessLevel;
@@ -75,5 +77,19 @@ public class Matching {
         this.senderType = sender.getId().equals(space.getUser().getId()) ? SenderType.OWNER : SenderType.USER;
         this.startDate = startDate;
         this.endDate = startDate.plusMonths(months).minusDays(1);
+    }
+
+    public void updateStatus(MatchStatus newStatus){
+        if(this.status == newStatus){
+            return;
+        }
+
+        if (this.status == MatchStatus.REJECTED ||
+                this.status == MatchStatus.CANCELLED ||
+                this.status == MatchStatus.COMPLETED) {
+            throw new MatchingException(MatchingErrorCode.ALREADY_FINALIZED_MATCHING);
+        }
+
+        this.status = newStatus;
     }
 }
