@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-import org.springframework.security.core.parameters.P;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -19,10 +18,10 @@ public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name="user_id")
+    @Column(name="id")
     private Long id;
 
-    @Column(name="uuid", unique = true, nullable = false, columnDefinition = "BINARY(16)")
+    @Column(name="user_id", unique = true, nullable = false, columnDefinition = "BINARY(16)")
     private UUID uuid;
 
     @Column(name = "email", length = 100)
