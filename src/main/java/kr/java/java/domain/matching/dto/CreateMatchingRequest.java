@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDate;
 
-public record MatchingRequest(
+public record CreateMatchingRequest(
         Long spaceId,
         Long userId,
         String message,
