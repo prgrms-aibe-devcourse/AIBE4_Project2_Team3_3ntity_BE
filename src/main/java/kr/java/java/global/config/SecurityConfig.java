@@ -34,6 +34,8 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/piece/spaces/**").permitAll()
+                        .requestMatchers("/piece/reviews/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         // OAuth2 로그인 관련 URL 허용
                         .requestMatchers("/api/auth/**", "/login/**", "/oauth2/**", "/login-success", "/piece/spaces/**","/piece/auths/**").permitAll()                        // 나머지는 인증 필요

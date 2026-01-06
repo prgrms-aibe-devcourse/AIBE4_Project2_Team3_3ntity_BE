@@ -2,14 +2,14 @@ package kr.java.java.domain.review.controller;
 
 import jakarta.validation.Valid;
 import kr.java.java.domain.review.dto.ReviewCreateRequest;
+import kr.java.java.domain.review.dto.ReviewResponse;
 import kr.java.java.domain.review.service.ReviewService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -29,5 +29,25 @@ public class ReviewController {
         log.info("리뷰 등록 완료 응답 반환 - 생성된 reviewId: {}", reviewId);
 
         return ResponseEntity.ok(reviewId);
+    }
+
+    // 공간별 리뷰 조회 API
+    @GetMapping("/space/{spaceId}")
+    public ResponseEntity<List<ReviewResponse>> getReviewsBySpace(@PathVariable Long spaceId) {
+        log.info("GET /piece/reviews/space/{} 요청 발생", spaceId);
+
+        List<ReviewResponse> responses = reviewService.getReviewsBySpaceId(spaceId);
+
+        return ResponseEntity.ok(responses);
+    }
+
+    // 사용자별 리뷰 조회 API
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<ReviewResponse>> getMyReviews(@PathVariable Long userId) {
+        log.info("GET /piece/reviews/user/{} 요청 발생", userId);
+
+        List<ReviewResponse> responses = reviewService.getMyReviews(userId);
+
+        return ResponseEntity.ok(responses);
     }
 }
