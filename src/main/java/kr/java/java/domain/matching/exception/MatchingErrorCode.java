@@ -12,7 +12,8 @@ public enum MatchingErrorCode {
     NOT_AUTHORIZED_SENDER(HttpStatus.FORBIDDEN, "매칭 발신자가 아닙니다."),
     INVALID_MATCH_STATUS(HttpStatus.BAD_REQUEST, "유효하지 않은 매칭 상태입니다."),
     ALREADY_FINALIZED_MATCHING(HttpStatus.BAD_REQUEST, "이미 최종 처리된 매칭입니다."),
-    MATCHING_REQUEST_ALREADY_RECEIVED(HttpStatus.CONFLICT, "상대방의 신청을 확인해주세요");
+    MATCHING_REQUEST_ALREADY_RECEIVED(HttpStatus.CONFLICT, "상대방의 신청을 확인해주세요"),
+    HOST_CANNOT_MATCH_OTHER_SPACE(HttpStatus.FORBIDDEN, "해당 공간의 주인이 아닙니다.");
 
     private final HttpStatus httpStatus;
     private final String message;
