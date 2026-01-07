@@ -3,8 +3,8 @@ package kr.java.java.domain.notification.service;
 import kr.java.java.domain.notification.dto.NotificationResponse;
 import kr.java.java.domain.notification.entity.Notification;
 import kr.java.java.domain.notification.enums.NotificationType;
-import kr.java.java.domain.notification.exception.NotificationNotFoundException;
-import kr.java.java.domain.notification.exception.NotificationSendException;
+import kr.java.java.domain.notification.exception.NotificationErrorCode;
+import kr.java.java.domain.notification.exception.NotificationException;
 import kr.java.java.domain.notification.repository.EmitterRepository;
 import kr.java.java.domain.notification.repository.NotificationRepository;
 import kr.java.java.domain.user.entity.User;
@@ -111,7 +111,7 @@ public class NotificationService {
     public void readNotification(Long notificationId) {
         log.info("[알림] 알림 읽음 처리");
         Notification notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new NotificationNotFoundException(notificationId));
+                .orElseThrow(() -> new NotificationException(notificationId, NotificationErrorCode.NOTIFICATION_NOT_FOUND));
         notification.read();
     }
 }
