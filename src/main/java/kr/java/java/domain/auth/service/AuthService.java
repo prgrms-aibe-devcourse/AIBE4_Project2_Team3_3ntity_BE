@@ -9,6 +9,8 @@ import kr.java.java.domain.user.entity.Provider;
 import kr.java.java.domain.user.entity.Role;
 import kr.java.java.domain.user.entity.User;
 import kr.java.java.domain.user.repository.UserRepository;
+import kr.java.java.global.util.ProfileImageUrlGenerator;
+import kr.java.java.global.util.RandomNicknameGenerator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
@@ -63,21 +65,22 @@ public class AuthService extends DefaultOAuth2UserService {
         }
 
         User user = userRepository.findByProviderAndProviderId(provider, userInfo.getProviderId())
-                .map(entity -> {
-                    entity.updateProfile(
-                            userInfo.getName() != null ? userInfo.getName() : entity.getNickname(),
-                            userInfo.getProfileImage() != null ? userInfo.getProfileImage() : entity.getProfileImageUrl()
-                    );
+                .map(entity -> { //
+
                     return entity;
                 })
                 .orElseGet(() -> {
+
+                    UUID uuid = UUID.randomUUID();
+
                     if (userInfo.getName() == null || userInfo.getName().isEmpty()) {
                         throw new AuthException(AuthErrorCode.MISSING_REQUIRED_FIELD);
                     }
                     return User.builder()
+                            .uuid(uuid)
                             .email(userInfo.getEmail())
-                            .nickname(userInfo.getName())
-                            .profileImageUrl(userInfo.getProfileImage())
+                            .nickname(RandomNicknameGenerator.generate())
+                            .profileImageUrl(ProfileImageUrlGenerator.generate(uuid)) // boring avatars
                             .provider(provider)
                             .providerId(userInfo.getProviderId())
                             .role(Role.USER)
