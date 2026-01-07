@@ -15,8 +15,8 @@ public record MatchingResponse(
         String status,
         LocalDateTime createdAt
 ) {
-    public static MatchingResponse from(Matching matching, Long loginUserId) {
-        String opponentNickname = matching.getSender().getId().equals(loginUserId) ? matching.getReceiver().getNickname() : matching.getSender().getNickname();
+    public static MatchingResponse from(Matching matching, Long UserId) {
+        String opponentNickname = matching.getUser().getId().equals(UserId) ? matching.getReceiver().getNickname() : matching.getUser().getNickname();
 
         return new MatchingResponse(
                 matching.getId(),
