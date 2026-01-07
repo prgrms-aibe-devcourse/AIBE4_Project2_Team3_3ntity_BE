@@ -32,14 +32,24 @@ public interface MatchingRepository extends JpaRepository<Matching, Long> {
             "JOIN FETCH m.space s " +
             "JOIN FETCH m.user u " +
             "JOIN FETCH m.receiver r " +
-            "WHERE m.user = :user OR m.receiver = :receiver")
-    List<Matching> findByUserOrReceiver(@Param("user") User user, @Param("receiver") User receiver);
+            "WHERE (u.id = :userId OR r.id = :userId)" +
+            "AND (:status IS NULL OR m.status = :status)")
+    List<Matching> findAllByUserIdAndStatus(
+            @Param("userId") Long userId,
+            @Param("status") MatchStatus status
+    );
 
-    @Query("SELECT m FROM Matching m JOIN FETCH m.space s WHERE s.user.id = :userId")
-    List<Matching> findAllBySpaceHostId(@Param("userId") Long userId);
+    @Query("SELECT m FROM Matching m JOIN FETCH m.space s WHERE (s.user.id = :userId) AND (:status IS NULL OR m.status = :status)")
+    List<Matching> findAllBySpaceHostId(
+            @Param("userId") Long userId,
+            @Param("status") MatchStatus status
+    );
 
-    @Query("SELECT m FROM Matching m JOIN FETCH m.space s WHERE (m.user.id = :userId OR m.receiver.id = :userId) AND s.user.id != :userId")
-    List<Matching> findAllAsMakerId(@Param("userId") Long userId);
+    @Query("SELECT m FROM Matching m JOIN FETCH m.space s WHERE (m.user.id = :userId OR m.receiver.id = :userId) AND s.user.id != :userId AND (:status IS NULL OR m.status = :status)")
+    List<Matching> findAllAsMakerId(
+            @Param("userId") Long userId,
+            @Param("status") MatchStatus status
+    );
 
     @Modifying(clearAutomatically = true)
     @Query("UPDATE Matching m SET m.status = :newStatus " +
@@ -55,5 +65,27 @@ public interface MatchingRepository extends JpaRepository<Matching, Long> {
             @Param("matchingId") Long matchingId,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate
+    );
+
+    // userId와 관계 있는 매칭들의 개수 조회(status 설정 시 해당 status를 가진 데이터만 조회)
+    @Query("SELECT COUNT(m) FROM Matching m WHERE (m.user.id = :userId OR m.receiver.id = :userId) AND (:status IS NULL OR m.status = :status)")
+    long countByUserIdAndStatus(
+            @Param("userId") Long userId,
+            @Param("status") MatchStatus status
+    );
+
+    // userId의 공간에 대한 매칭들의 개수 조회(status 설정 시 해당 status를 가진 데이터만 조회)
+    @Query("SELECT COUNT(m) FROM Matching m JOIN m.space s WHERE s.user.id = :userId AND (:status IS NULL OR m.status = :status)")
+    long countAllBySpaceHostId(
+            @Param("userId") Long userId,
+            @Param("status") MatchStatus status
+    );
+
+    // userId의 공간을 제외한 매칭들의 개수 조회(status 설정 시 해당 status를 가진 데이터만 조회)
+    @Query("SELECT COUNT(m) FROM Matching m JOIN m.space s " +
+            "WHERE (m.user.id = :userId OR m.receiver.id = :userId) AND s.user.id != :userId AND (:status IS NULL OR m.status = :status)")
+    long countAllAsMakerId(
+            @Param("userId") Long userId,
+            @Param("status") MatchStatus status
     );
 }

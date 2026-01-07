@@ -3,6 +3,7 @@ package kr.java.java.domain.portfolio.controller;
 import kr.java.java.domain.portfolio.dto.PortfolioListResponse;
 import kr.java.java.domain.portfolio.dto.PortfolioRequest;
 import kr.java.java.domain.portfolio.dto.PortfolioResponse;
+import kr.java.java.domain.portfolio.dto.PortfolioUpdateRequest;
 import kr.java.java.domain.portfolio.service.PortfolioService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,6 +46,27 @@ public class PortfolioController {
     public ResponseEntity<PortfolioResponse> getPortfolio(@PathVariable Long id) {
         log.info("포트폴리오 단건 조회 id = {}", id);
         PortfolioResponse response = portfolioService.getPortfolio(id);
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/piece/portfolios/{id}")
+    public ResponseEntity<Void> deletePortfolio(@PathVariable Long id, Long userId){
+        log.info("포트폴리오 삭제 시도 - 포트폴리오ID: {}, 작성자: {}", id, userId);
+        portfolioService.deletePortfolio(id, 1L);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/piece/portfolios/{id}")
+    public ResponseEntity<PortfolioResponse> updatePortfolio(@PathVariable Long id, @RequestBody PortfolioUpdateRequest request, Long userId) {
+        log.info("포트폴리오 전체 수정 시도 - ID: {}", id);
+        PortfolioResponse response = portfolioService.updatePortfolio(id, request, 1L);
+        return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/piece/portfolios/{id}")
+    public ResponseEntity<PortfolioResponse> updatePortfolioPartial(@PathVariable Long id, @RequestBody PortfolioUpdateRequest request, Long userId) {
+        log.info("포트폴리오 부분 수정 시도 - ID: {}", id);
+        PortfolioResponse response = portfolioService.updatePortfolio(id, request, 1L);
         return ResponseEntity.ok(response);
     }
 }

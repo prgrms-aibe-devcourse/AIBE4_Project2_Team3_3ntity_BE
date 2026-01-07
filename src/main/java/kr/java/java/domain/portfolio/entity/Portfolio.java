@@ -1,6 +1,7 @@
 package kr.java.java.domain.portfolio.entity;
 
 import jakarta.persistence.*;
+import kr.java.java.domain.portfolio.dto.PortfolioUpdateRequest;
 import kr.java.java.domain.user.entity.User;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -56,5 +57,15 @@ public class Portfolio {
         this.isOpen = isOpen;
         this.createdAt = LocalDateTime.now();
         this.user = user;
+    }
+
+    public void update(PortfolioUpdateRequest request) {
+        if (request.brandName() != null) this.brandName = request.brandName();
+        if (request.title() != null) this.title = request.title();
+        if (request.description() != null) this.description = request.description();
+        if (request.category() != null) this.category = request.category();
+        if (request.externalLink() != null) this.externalLink = request.externalLink();
+        if (request.isOpen() != isOpen) this.isOpen = request.isOpen();
+        if (request.createdAt() != null) this.createdAt = request.createdAt();
     }
 }

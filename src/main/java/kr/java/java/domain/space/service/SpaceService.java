@@ -86,7 +86,7 @@ public class SpaceService {
     @Transactional
     public SpaceResponse updateSpace(Long id, SpaceUpdateRequest request, Long userId) {
         Space space = spaceRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("해당 공간이 없습니다. id=" + id));
+                .orElseThrow(() -> new NotFoundSpaceException("해당 공간이 없습니다. id=" + id));
 
         if (!space.getUser().getId().equals(userId)) {
             throw new UnAuthorizedException("수정 권한이 없습니다.");
