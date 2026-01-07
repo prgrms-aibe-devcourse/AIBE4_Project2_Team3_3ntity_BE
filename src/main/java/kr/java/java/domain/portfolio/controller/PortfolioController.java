@@ -47,4 +47,11 @@ public class PortfolioController {
         PortfolioResponse response = portfolioService.getPortfolio(id);
         return ResponseEntity.ok(response);
     }
+
+    @DeleteMapping("/piece/portfolios/{id}")
+    public ResponseEntity<Void> deletePortfolio(@PathVariable Long id, Long userId){
+        log.info("포트폴리오 삭제 시도 - 포트폴리오ID: {}, 작성자: {}", id, userId);
+        portfolioService.deletePortfolio(id, 1L);
+        return ResponseEntity.noContent().build();
+    }
 }
