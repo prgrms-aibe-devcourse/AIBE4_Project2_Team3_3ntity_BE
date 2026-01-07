@@ -99,7 +99,6 @@ public class MatchingService {
             } else {
                 log.warn("[매칭 검증 실패] 상대방이 보낸 매칭이 이미 존재 - MatchingID: {}", matching.getId());
                 throw new MatchingException(MatchingErrorCode.MATCHING_REQUEST_ALREADY_RECEIVED);
-                // "상대방의 신청을 확인해주세요"라는 별도의 에러코드를 쓰면 더 좋습니다.
             }
         }
     }
