@@ -13,8 +13,13 @@ public class NotificationExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
     }
 
-//    @ExceptionHandler(UserNotFoundException.class)
-//    public ResponseEntity<String> handleUserNotFoundException(UserNotFoundException e) {
-//        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-//    }
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<String> handleUserNotFoundException(UserNotFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+    }
+
+    @ExceptionHandler(NotificationSendException.class)
+    public ResponseEntity<String> handleNotificationSendException(NotificationSendException e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+    }
 }
