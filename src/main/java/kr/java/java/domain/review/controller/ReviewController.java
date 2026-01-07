@@ -73,7 +73,7 @@ public class ReviewController {
     }
 
     // 리뷰 수정 API
-    @PutMapping("/{reviewId}")
+    @PatchMapping("/{reviewId}")
     public ResponseEntity<String> updateReview(
             @PathVariable Long reviewId,
             @RequestBody @Valid ReviewUpdateRequest request
