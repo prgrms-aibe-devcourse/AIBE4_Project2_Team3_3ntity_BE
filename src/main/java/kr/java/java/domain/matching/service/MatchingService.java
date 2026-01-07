@@ -64,7 +64,7 @@ public class MatchingService {
 
         log.info("[매칭 ID 확인] Sender ID: {}, Receiver ID: {}", sender.getId(), receiver.getId());
 
-        validateMatching(targetSpace, targetUser, sender, receiver);
+        validateMatching(targetSpace, sender, receiver);
 
         Matching matching = Matching.builder()
                 .user(sender)
@@ -78,7 +78,7 @@ public class MatchingService {
         matchingRepository.save(matching);
     }
 
-    private void validateMatching(Space space, User targetUser, User sender, User receiver){
+    private void validateMatching(Space space, User sender, User receiver){
         if(sender.getId().equals(receiver.getId())){
             log.warn("[매칭 검증 실패] 본인 매칭 시도 - UserId: {}", sender.getId());
             throw new MatchingException(MatchingErrorCode.SELF_MATCHING_NOT_ALLOWED);
@@ -104,59 +104,68 @@ public class MatchingService {
     }
 
     @Transactional(readOnly = true)
-    public List<MatchingResponse> getMatchings(Long UserId) {
-        User loginUser = userRepository.findById(UserId)
-                .orElseThrow(() -> new NotFoundUserException("존재하지 않는 유저입니다. ID: " + UserId));
+    public List<MatchingResponse> getMatchings(Long userId) {
+        User loginUser = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundUserException("존재하지 않는 유저입니다. ID: " + userId));
 
         List<Matching> matchings = matchingRepository.findByUserOrReceiver(loginUser, loginUser);
 
-        return convertToResponse(matchings, UserId);
+        return convertToResponse(matchings, userId);
     }
 
-    public List<MatchingResponse> getMatchingsAsHost(Long UserId) {
-        List<Matching> matchings = matchingRepository.findAllBySpaceHostId(UserId);
-        return convertToResponse(matchings, UserId);
+    public List<MatchingResponse> getMatchingsAsHost(Long userId) {
+        List<Matching> matchings = matchingRepository.findAllBySpaceHostId(userId);
+        return convertToResponse(matchings, userId);
     }
 
-    public List<MatchingResponse> getMatchingsAsMaker(Long UserId) {
-        List<Matching> matchings = matchingRepository.findAllAsMakerId(UserId);
-        return convertToResponse(matchings, UserId);
+    public List<MatchingResponse> getMatchingsAsMaker(Long userId) {
+        List<Matching> matchings = matchingRepository.findAllAsMakerId(userId);
+        return convertToResponse(matchings, userId);
     }
 
-    private List<MatchingResponse> convertToResponse(List<Matching> matchings, Long UserId) {
+    private List<MatchingResponse> convertToResponse(List<Matching> matchings, Long userId) {
         return matchings.stream()
-                .map(matching -> MatchingResponse.from(matching, UserId))
+                .map(matching -> MatchingResponse.from(matching, userId))
                 .collect(Collectors.toList());
     }
 
     @Transactional
-    public void acceptMatching(Long matchingId, Long UserId){
+    public void acceptMatching(Long matchingId, Long userId){
         Matching matching = findMatchingById(matchingId);
-        validateReceiverAndStatus(matching, UserId);
+        validateReceiverAndStatus(matching, userId);
 
         matching.updateStatus(MatchStatus.ONGOING);
-        log.info("[매칭 수락] MatchingID: {}, 수락자: {}", matchingId, UserId);
 
-        Long spaceId = matching.getSpace().getId();
+        boolean isHost = matching.getReceiver().getId().equals(userId);
 
+        if(isHost){
+            autoRejectOverlappingMatchings(matching);
+            log.info("[매칭 수락 - HOST] MatchingID: {}, 수락자: {}", matchingId, userId);
+        } else{
+            log.info("[매칭 수락 - USER] MatchingID: {}, 수락자: {}", matchingId, userId);
+        }
+    }
+
+    private void autoRejectOverlappingMatchings(Matching confirmedMatching) {
         int rejectedCount = matchingRepository.bulkUpdateStatusForOthers(
-                spaceId,
+                confirmedMatching.getSpace().getId(),
                 MatchStatus.WAITING,
                 MatchStatus.REJECTED,
-                matchingId,
-                matching.getStartDate(),
-                matching.getEndDate()
+                confirmedMatching.getId(),
+                confirmedMatching.getStartDate(),
+                confirmedMatching.getEndDate()
         );
-        log.info("[매칭 확정] MatchingID: {}, 자동 거절된 건수: {}건", matchingId, rejectedCount);
+        log.info("[매칭 확정] SpaceID: {}, 자동 거절된 건수: {}건",
+                confirmedMatching.getSpace().getId(), rejectedCount);
     }
 
     @Transactional
-    public void rejectMatching(Long matchingId, Long UserId) {
+    public void rejectMatching(Long matchingId, Long userId) {
         Matching matching = findMatchingById(matchingId);
-        validateReceiverAndStatus(matching, UserId);
+        validateReceiverAndStatus(matching, userId);
 
         matching.updateStatus(MatchStatus.REJECTED);
-        log.info("[매칭 거절] MatchingID: {}, 거절자: {}", matchingId, UserId);
+        log.info("[매칭 거절] MatchingID: {}, 거절자: {}", matchingId, userId);
     }
 
     private Matching findMatchingById(Long matchingId){
@@ -164,10 +173,10 @@ public class MatchingService {
                 .orElseThrow(() -> new MatchingException(MatchingErrorCode.MATCHING_NOT_FOUND));
     }
 
-    private void validateReceiverAndStatus(Matching matching, Long UserId) {
+    private void validateReceiverAndStatus(Matching matching, Long userId) {
         log.info("[검증 로그] DB ReceiverID: {}, 요청 LoginUserID: {}",
-                matching.getReceiver().getId(), UserId);
-        if (!matching.getReceiver().getId().equals(UserId)) {
+                matching.getReceiver().getId(), userId);
+        if (!matching.getReceiver().getId().equals(userId)) {
             throw new MatchingException(MatchingErrorCode.NOT_AUTHORIZED_RECEIVER);
         }
 
@@ -177,16 +186,16 @@ public class MatchingService {
     }
 
     @Transactional
-    public void cancelMatching(Long matchingId, Long UserId) {
+    public void cancelMatching(Long matchingId, Long userId) {
         Matching matching = findMatchingById(matchingId);
-        validateSenderAndStatus(matching, UserId);
+        validateSenderAndStatus(matching, userId);
 
         matching.updateStatus(MatchStatus.CANCELLED);
-        log.info("[매칭 취소] MatchingID: {}, 거절자: {}", matchingId, UserId);
+        log.info("[매칭 취소] MatchingID: {}, 거절자: {}", matchingId, userId);
     }
 
-    private void validateSenderAndStatus(Matching matching, Long UserId) {
-        if (!matching.getUser().getId().equals(UserId)) {
+    private void validateSenderAndStatus(Matching matching, Long userId) {
+        if (!matching.getUser().getId().equals(userId)) {
             throw new MatchingException(MatchingErrorCode.NOT_AUTHORIZED_SENDER);
         }
 
