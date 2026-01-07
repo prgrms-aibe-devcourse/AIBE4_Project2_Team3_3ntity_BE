@@ -18,7 +18,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "matching")
+@Table(name = "matchings")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
@@ -28,10 +28,6 @@ public class Matching {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "matching_id")
     private Long id;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sender_id", nullable = false)
-    private User sender;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "receiver_id", nullable = false)
@@ -67,14 +63,13 @@ public class Matching {
     private LocalDateTime createdAt;
 
     @Builder
-    public Matching(User sender, User receiver, Space space, User user, String message, LocalDate startDate, int months) {
-        this.sender = sender;
+    public Matching(User receiver, Space space, User user, String message, LocalDate startDate, int months) {
+        this.user = user;
         this.receiver = receiver;
         this.space = space;
-        this.user = user;
         this.message = (message != null) ? message : "메시지가 없습니다.";
         this.status = MatchStatus.WAITING;
-        this.senderType = sender.getId().equals(space.getUser().getId()) ? SenderType.OWNER : SenderType.USER;
+        this.senderType = user.getId().equals(space.getUser().getId()) ? SenderType.HOST : SenderType.USER;
         this.startDate = startDate;
         this.endDate = startDate.plusMonths(months).minusDays(1);
     }

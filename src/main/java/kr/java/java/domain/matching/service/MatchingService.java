@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -32,7 +33,9 @@ public class MatchingService {
     //TODO 해당 서비스 페이지에 있는 User 에러처리는 추후 User 도메인의 exception에 생기면 변경
 
     @Transactional
-    public void createMatching(CreateMatchingRequest request, Long loginUserId){
+    public void createMatching(CreateMatchingRequest request, Long userId){
+        long loginUserId = userId;
+
         Space targetSpace = spaceRepository.findById(request.spaceId())
                 .orElseThrow(() -> {
                     log.error("[매칭 실패] Space 존재하지 않음 - ID: {}", request.spaceId());
@@ -52,6 +55,7 @@ public class MatchingService {
         User sender = loginUser;
         User receiver;
 
+        // 로그인 유저가 공간의 host라면
         if(loginUser.getId().equals(targetSpace.getUser().getId())){
             receiver = targetUser;
         } else{
@@ -63,10 +67,9 @@ public class MatchingService {
         validateMatching(targetSpace, targetUser, sender, receiver);
 
         Matching matching = Matching.builder()
-                .sender(sender)
+                .user(sender)
                 .receiver(receiver)
                 .space(targetSpace)
-                .user(targetUser)
                 .message(request.message())
                 .startDate(request.startDate())
                 .months(request.months())
@@ -83,48 +86,56 @@ public class MatchingService {
 
         List<MatchStatus> activeStatuses = List.of(MatchStatus.WAITING, MatchStatus.ONGOING);
 
-        boolean alreadyActive = matchingRepository.existsBySpaceAndUserAndStatusIn(space, targetUser, activeStatuses);
+        Optional<Matching> existingMatching = matchingRepository.findActiveMatchingBetweenUsers(
+                space, sender, receiver, activeStatuses
+        );
 
-        if(alreadyActive){
-            log.warn("[매칭 검증 실패] 이미 활성화된 매칭 존재 - SpaceID: {}, TargetUserID: {}",
-                    space.getId(), targetUser.getId());
-            throw new MatchingException(MatchingErrorCode.ALREADY_ACTIVE_MATCHING_EXISTS);
+        if (existingMatching.isPresent()) {
+            Matching matching = existingMatching.get();
+
+            if (matching.getUser().getId().equals(sender.getId())) {
+                log.warn("[매칭 검증 실패] 이미 본인이 신청한 매칭 존재 - MatchingID: {}", matching.getId());
+                throw new MatchingException(MatchingErrorCode.ALREADY_ACTIVE_MATCHING_EXISTS);
+            } else {
+                log.warn("[매칭 검증 실패] 상대방이 보낸 매칭이 이미 존재 - MatchingID: {}", matching.getId());
+                throw new MatchingException(MatchingErrorCode.MATCHING_REQUEST_ALREADY_RECEIVED);
+            }
         }
     }
 
     @Transactional(readOnly = true)
-    public List<MatchingResponse> getMatchings(Long loginUserId) {
-        User loginUser = userRepository.findById(loginUserId)
-                .orElseThrow(() -> new NotFoundUserException("존재하지 않는 유저입니다. ID: " + loginUserId));
+    public List<MatchingResponse> getMatchings(Long UserId) {
+        User loginUser = userRepository.findById(UserId)
+                .orElseThrow(() -> new NotFoundUserException("존재하지 않는 유저입니다. ID: " + UserId));
 
-        List<Matching> matchings = matchingRepository.findBySenderOrReceiver(loginUser, loginUser);
+        List<Matching> matchings = matchingRepository.findByUserOrReceiver(loginUser, loginUser);
 
-        return convertToResponse(matchings, loginUserId);
+        return convertToResponse(matchings, UserId);
     }
 
-    public List<MatchingResponse> getMatchingsAsOwner(Long loginUserId) {
-        List<Matching> matchings = matchingRepository.findAllBySpaceOwnerId(loginUserId);
-        return convertToResponse(matchings, loginUserId);
+    public List<MatchingResponse> getMatchingsAsHost(Long UserId) {
+        List<Matching> matchings = matchingRepository.findAllBySpaceHostId(UserId);
+        return convertToResponse(matchings, UserId);
     }
 
-    public List<MatchingResponse> getMatchingsAsMaker(Long loginUserId) {
-        List<Matching> matchings = matchingRepository.findAllAsMakerId(loginUserId);
-        return convertToResponse(matchings, loginUserId);
+    public List<MatchingResponse> getMatchingsAsMaker(Long UserId) {
+        List<Matching> matchings = matchingRepository.findAllAsMakerId(UserId);
+        return convertToResponse(matchings, UserId);
     }
 
-    private List<MatchingResponse> convertToResponse(List<Matching> matchings, Long loginUserId) {
+    private List<MatchingResponse> convertToResponse(List<Matching> matchings, Long UserId) {
         return matchings.stream()
-                .map(matching -> MatchingResponse.from(matching, loginUserId))
+                .map(matching -> MatchingResponse.from(matching, UserId))
                 .collect(Collectors.toList());
     }
 
     @Transactional
-    public void acceptMatching(Long matchingId, Long loginUserId){
+    public void acceptMatching(Long matchingId, Long UserId){
         Matching matching = findMatchingById(matchingId);
-        validateReceiverAndStatus(matching, loginUserId);
+        validateReceiverAndStatus(matching, UserId);
 
         matching.updateStatus(MatchStatus.ONGOING);
-        log.info("[매칭 수락] MatchingID: {}, 수락자: {}", matchingId, loginUserId);
+        log.info("[매칭 수락] MatchingID: {}, 수락자: {}", matchingId, UserId);
 
         Long spaceId = matching.getSpace().getId();
 
@@ -132,18 +143,20 @@ public class MatchingService {
                 spaceId,
                 MatchStatus.WAITING,
                 MatchStatus.REJECTED,
-                matchingId
+                matchingId,
+                matching.getStartDate(),
+                matching.getEndDate()
         );
         log.info("[매칭 확정] MatchingID: {}, 자동 거절된 건수: {}건", matchingId, rejectedCount);
     }
 
     @Transactional
-    public void rejectMatching(Long matchingId, Long loginUserId) {
+    public void rejectMatching(Long matchingId, Long UserId) {
         Matching matching = findMatchingById(matchingId);
-        validateReceiverAndStatus(matching, loginUserId);
+        validateReceiverAndStatus(matching, UserId);
 
         matching.updateStatus(MatchStatus.REJECTED);
-        log.info("[매칭 거절] MatchingID: {}, 거절자: {}", matchingId, loginUserId);
+        log.info("[매칭 거절] MatchingID: {}, 거절자: {}", matchingId, UserId);
     }
 
     private Matching findMatchingById(Long matchingId){
@@ -151,10 +164,10 @@ public class MatchingService {
                 .orElseThrow(() -> new MatchingException(MatchingErrorCode.MATCHING_NOT_FOUND));
     }
 
-    private void validateReceiverAndStatus(Matching matching, Long loginUserId) {
+    private void validateReceiverAndStatus(Matching matching, Long UserId) {
         log.info("[검증 로그] DB ReceiverID: {}, 요청 LoginUserID: {}",
-                matching.getReceiver().getId(), loginUserId);
-        if (!matching.getReceiver().getId().equals(loginUserId)) {
+                matching.getReceiver().getId(), UserId);
+        if (!matching.getReceiver().getId().equals(UserId)) {
             throw new MatchingException(MatchingErrorCode.NOT_AUTHORIZED_RECEIVER);
         }
 
@@ -164,16 +177,16 @@ public class MatchingService {
     }
 
     @Transactional
-    public void cancelMatching(Long matchingId, Long loginUserId) {
+    public void cancelMatching(Long matchingId, Long UserId) {
         Matching matching = findMatchingById(matchingId);
-        validateSenderAndStatus(matching, loginUserId);
+        validateSenderAndStatus(matching, UserId);
 
         matching.updateStatus(MatchStatus.CANCELLED);
-        log.info("[매칭 취소] MatchingID: {}, 거절자: {}", matchingId, loginUserId);
+        log.info("[매칭 취소] MatchingID: {}, 거절자: {}", matchingId, UserId);
     }
 
-    private void validateSenderAndStatus(Matching matching, Long loginUserId) {
-        if (!matching.getSender().getId().equals(loginUserId)) {
+    private void validateSenderAndStatus(Matching matching, Long UserId) {
+        if (!matching.getUser().getId().equals(UserId)) {
             throw new MatchingException(MatchingErrorCode.NOT_AUTHORIZED_SENDER);
         }
 
