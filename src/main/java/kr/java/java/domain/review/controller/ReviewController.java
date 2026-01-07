@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import kr.java.java.domain.review.dto.ReviewCreateRequest;
 import kr.java.java.domain.review.dto.ReviewDeleteRequest;
 import kr.java.java.domain.review.dto.ReviewResponse;
+import kr.java.java.domain.review.dto.ReviewUpdateRequest;
 import kr.java.java.domain.review.service.ReviewService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -60,7 +61,7 @@ public class ReviewController {
     @DeleteMapping("/{reviewId}")
     public ResponseEntity<String> deleteReview(
             @PathVariable Long reviewId,
-            @RequestBody ReviewDeleteRequest request // Record 사용
+            @RequestBody ReviewDeleteRequest request
     ) {
         log.info("DELETE /piece/reviews/{} 요청 발생 - 요청자 ID: {}", reviewId, request.userId());
 
@@ -69,5 +70,20 @@ public class ReviewController {
         log.info("리뷰 삭제 완료 응답 반환 - 삭제된 reviewId: {}", reviewId);
 
         return ResponseEntity.ok("리뷰가 성공적으로 삭제되었습니다.");
+    }
+
+    // 리뷰 수정 API
+    @PatchMapping("/{reviewId}")
+    public ResponseEntity<String> updateReview(
+            @PathVariable Long reviewId,
+            @RequestBody @Valid ReviewUpdateRequest request
+    ) {
+        log.info("PUT /piece/reviews/{} 요청 발생 - 요청자 ID: {}", reviewId, request.userId());
+
+        reviewService.updateReview(reviewId, request);
+
+        log.info("리뷰 수정 완료 응답 반환 - reviewId: {}", reviewId);
+
+        return ResponseEntity.ok("리뷰가 성공적으로 수정되었습니다.");
     }
 }
