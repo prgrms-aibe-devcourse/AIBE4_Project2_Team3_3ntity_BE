@@ -2,7 +2,7 @@ package kr.java.java.global.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import kr.java.java.domain.auth.filter.JwtAuthenticationFilter;
-import kr.java.java.domain.auth.handler.OAuth2AuthenticationFailureHandler;
+//import kr.java.java.domain.auth.handler.OAuth2AuthenticationFailureHandler;
 import kr.java.java.domain.auth.jwt.JwtTokenProvider;
 import kr.java.java.domain.auth.service.AuthService;
 import kr.java.java.domain.auth.service.RefreshTokenService;
@@ -34,7 +34,7 @@ public class SecurityConfig {
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenService refreshTokenService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
+//    private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
     private final ObjectMapper objectMapper;
 
     @org.springframework.beans.factory.annotation.Value("${app.cookie.secure:false}")
@@ -69,7 +69,7 @@ public class SecurityConfig {
                         .userInfoEndpoint(userInfo ->
                                 userInfo.userService(authService)
                         )
-                        .failureHandler(oAuth2AuthenticationFailureHandler)
+//                        .failureHandler(oAuth2AuthenticationFailureHandler)
                         .successHandler((request, response, authentication) -> {
 
                             kr.java.java.domain.auth.security.CustomOAuth2User oauth2User =
