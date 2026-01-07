@@ -2,6 +2,7 @@ package kr.java.java.domain.review.service;
 
 import kr.java.java.domain.review.dto.ReviewCreateRequest;
 import kr.java.java.domain.review.dto.ReviewResponse;
+import kr.java.java.domain.review.dto.ReviewUpdateRequest;
 import kr.java.java.domain.review.entity.Review;
 import kr.java.java.domain.review.exception.*;
 import kr.java.java.domain.review.repository.ReviewRepository;
@@ -112,5 +113,28 @@ public class ReviewService {
         // 3. 리뷰 삭제
         reviewRepository.delete(review);
         log.info("리뷰 삭제 완료 - reviewId: {}", reviewId);
+    }
+
+    @Transactional
+    public void updateReview(Long reviewId, ReviewUpdateRequest request) {
+        log.info("리뷰 수정 시작 - reviewId: {}, userId: {}", reviewId, request.userId());
+
+        // 1. 리뷰 조회
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> {
+                    log.error("리뷰 수정 실패 - 존재하지 않는 리뷰 ID: {}", reviewId);
+                    return new ReviewNotFoundException("해당 리뷰를 찾을 수 없습니다.");
+                });
+
+        // 2. 작성자 권한 검증
+        if (!review.getUser().getId().equals(request.userId())) {
+            log.warn("리뷰 수정 권한 없음 - 작성자: {}, 요청자: {}", review.getUser().getId(), request.userId());
+            throw new ReviewAccessDeniedException("본인이 작성한 리뷰만 수정할 수 있습니다.");
+        }
+
+        // 3. 리뷰 수정
+        review.updateReview(request.rating(), request.content());
+
+        log.info("리뷰 수정 완료 - reviewId: {}", reviewId);
     }
 }

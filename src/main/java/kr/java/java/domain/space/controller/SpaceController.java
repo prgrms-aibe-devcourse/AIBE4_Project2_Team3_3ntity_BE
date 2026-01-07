@@ -65,7 +65,7 @@ public class SpaceController {
     }
 
     @PatchMapping("/piece/spaces/{id}")
-    public ResponseEntity<SpaceResponse> updateSpacePartial(@PathVariable Long id, @RequestBody SpaceUpdateRequest request) {
+    public ResponseEntity<SpaceResponse> updateSpacePartial(@PathVariable Long id, @RequestBody SpaceUpdateRequest request, Long userId) {
         log.info("공간 부분 수정 시도 - ID: {}", id);
         SpaceResponse response = spaceService.updateSpace(id, request, 1L);
         return ResponseEntity.ok(response);

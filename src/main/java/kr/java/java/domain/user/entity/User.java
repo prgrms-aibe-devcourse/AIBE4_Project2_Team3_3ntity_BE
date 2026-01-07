@@ -6,6 +6,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "users")
@@ -17,8 +18,11 @@ public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "user_id")
+    @Column(name="id")
     private Long id;
+
+    @Column(name="user_id", unique = true, nullable = false, columnDefinition = "BINARY(16)")
+    private UUID uuid;
 
     @Column(name = "email", length = 100)
     private String email;
@@ -48,17 +52,23 @@ public class User {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // 비즈니스 메서드
+    @PrePersist
+    public void createUuid() {
+        if (this.uuid == null) {
+            this.uuid = UUID.randomUUID();
+        }
+    }
+
     public void updateProfile(String nickname, String profileImageUrl) {
         this.nickname = nickname;
         this.profileImageUrl = profileImageUrl;
     }
 
-    public boolean isSpaceOwner() {
-        return this.role == Role.SPACE_OWNER;
+    public boolean isHost() {
+        return this.role == Role.HOST;
     }
 
-    public boolean isMaker() {
-        return this.role == Role.MAKER;
+    public boolean isUser() {
+        return this.role == Role.USER;
     }
 }

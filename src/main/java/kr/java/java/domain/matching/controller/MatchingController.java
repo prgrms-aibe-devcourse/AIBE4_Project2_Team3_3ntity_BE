@@ -31,24 +31,29 @@ public class MatchingController {
     }
 
     @GetMapping("get-list")
-    public ResponseEntity<List<MatchingResponse>> getMachingList(@RequestParam(name = "userId") Long loginUserId){
-        List<MatchingResponse> responses = matchingService.getMatchings(loginUserId);
+    public ResponseEntity<List<MatchingResponse>> getMachingList(
+            @RequestParam(name = "userId") Long loginUserId,
+            @RequestParam(name = "status", required = false) MatchStatus status
+    ){
+        List<MatchingResponse> responses = matchingService.getMatchings(loginUserId, status);
         return ResponseEntity.ok(responses);
     }
 
     @GetMapping("get-list/host")
-    public ResponseEntity<List<MatchingResponse>> getMatchingsAsOwner(
-            @RequestParam(name = "userId") Long loginUserId) {
-
-        List<MatchingResponse> responses = matchingService.getMatchingsAsOwner(loginUserId);
+    public ResponseEntity<List<MatchingResponse>> getMatchingsAsHost(
+            @RequestParam(name = "userId") Long loginUserId,
+            @RequestParam(name = "status", required = false) MatchStatus status)
+    {
+        List<MatchingResponse> responses = matchingService.getMatchingsAsHost(loginUserId, status);
         return ResponseEntity.ok(responses);
     }
 
     @GetMapping("get-list/user")
     public ResponseEntity<List<MatchingResponse>> getMatchingsAsMaker(
-            @RequestParam(name = "userId") Long loginUserId) {
-
-        List<MatchingResponse> responses = matchingService.getMatchingsAsMaker(loginUserId);
+            @RequestParam(name = "userId") Long loginUserId,
+            @RequestParam(name = "status", required = false) MatchStatus status)
+    {
+        List<MatchingResponse> responses = matchingService.getMatchingsAsMaker(loginUserId, status);
         return ResponseEntity.ok(responses);
     }
 
