@@ -31,8 +31,11 @@ public class MatchingController {
     }
 
     @GetMapping("get-list")
-    public ResponseEntity<List<MatchingResponse>> getMachingList(@RequestParam(name = "userId") Long loginUserId){
-        List<MatchingResponse> responses = matchingService.getMatchings(loginUserId);
+    public ResponseEntity<List<MatchingResponse>> getMachingList(
+            @RequestParam(name = "userId") Long loginUserId,
+            @RequestParam(name = "status", required = false) MatchStatus status
+    ){
+        List<MatchingResponse> responses = matchingService.getMatchings(loginUserId, status);
         return ResponseEntity.ok(responses);
     }
 

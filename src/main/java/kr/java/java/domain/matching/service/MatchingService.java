@@ -104,11 +104,8 @@ public class MatchingService {
     }
 
     @Transactional(readOnly = true)
-    public List<MatchingResponse> getMatchings(Long userId) {
-        User loginUser = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundUserException("존재하지 않는 유저입니다. ID: " + userId));
-
-        List<Matching> matchings = matchingRepository.findByUserOrReceiver(loginUser, loginUser);
+    public List<MatchingResponse> getMatchings(Long userId, MatchStatus status) {
+        List<Matching> matchings = matchingRepository.findAllByUserIdAndStatus(userId, status);
 
         return convertToResponse(matchings, userId);
     }

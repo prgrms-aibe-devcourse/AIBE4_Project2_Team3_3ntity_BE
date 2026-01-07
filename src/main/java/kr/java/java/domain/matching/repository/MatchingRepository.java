@@ -32,8 +32,12 @@ public interface MatchingRepository extends JpaRepository<Matching, Long> {
             "JOIN FETCH m.space s " +
             "JOIN FETCH m.user u " +
             "JOIN FETCH m.receiver r " +
-            "WHERE m.user = :user OR m.receiver = :receiver")
-    List<Matching> findByUserOrReceiver(@Param("user") User user, @Param("receiver") User receiver);
+            "WHERE (u.id = :userId OR r.id = :userId)" +
+            "AND (:status IS NULL OR m.status = :status)")
+    List<Matching> findAllByUserIdAndStatus(
+            @Param("userId") Long userId,
+            @Param("status") MatchStatus status
+    );
 
     @Query("SELECT m FROM Matching m JOIN FETCH m.space s WHERE s.user.id = :userId")
     List<Matching> findAllBySpaceHostId(@Param("userId") Long userId);
