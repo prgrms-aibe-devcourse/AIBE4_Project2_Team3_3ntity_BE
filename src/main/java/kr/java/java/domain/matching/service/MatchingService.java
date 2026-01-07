@@ -110,13 +110,13 @@ public class MatchingService {
         return convertToResponse(matchings, userId);
     }
 
-    public List<MatchingResponse> getMatchingsAsHost(Long userId) {
-        List<Matching> matchings = matchingRepository.findAllBySpaceHostId(userId);
+    public List<MatchingResponse> getMatchingsAsHost(Long userId, MatchStatus status) {
+        List<Matching> matchings = matchingRepository.findAllBySpaceHostId(userId, status);
         return convertToResponse(matchings, userId);
     }
 
-    public List<MatchingResponse> getMatchingsAsMaker(Long userId) {
-        List<Matching> matchings = matchingRepository.findAllAsMakerId(userId);
+    public List<MatchingResponse> getMatchingsAsMaker(Long userId, MatchStatus status) {
+        List<Matching> matchings = matchingRepository.findAllAsMakerId(userId, status);
         return convertToResponse(matchings, userId);
     }
 

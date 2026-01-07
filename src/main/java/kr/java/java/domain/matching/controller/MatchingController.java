@@ -41,17 +41,19 @@ public class MatchingController {
 
     @GetMapping("get-list/host")
     public ResponseEntity<List<MatchingResponse>> getMatchingsAsHost(
-            @RequestParam(name = "userId") Long loginUserId) {
-
-        List<MatchingResponse> responses = matchingService.getMatchingsAsHost(loginUserId);
+            @RequestParam(name = "userId") Long loginUserId,
+            @RequestParam(name = "status", required = false) MatchStatus status)
+    {
+        List<MatchingResponse> responses = matchingService.getMatchingsAsHost(loginUserId, status);
         return ResponseEntity.ok(responses);
     }
 
     @GetMapping("get-list/user")
     public ResponseEntity<List<MatchingResponse>> getMatchingsAsMaker(
-            @RequestParam(name = "userId") Long loginUserId) {
-
-        List<MatchingResponse> responses = matchingService.getMatchingsAsMaker(loginUserId);
+            @RequestParam(name = "userId") Long loginUserId,
+            @RequestParam(name = "status", required = false) MatchStatus status)
+    {
+        List<MatchingResponse> responses = matchingService.getMatchingsAsMaker(loginUserId, status);
         return ResponseEntity.ok(responses);
     }
 

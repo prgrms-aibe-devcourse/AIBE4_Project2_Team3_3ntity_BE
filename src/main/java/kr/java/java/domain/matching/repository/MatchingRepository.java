@@ -39,11 +39,17 @@ public interface MatchingRepository extends JpaRepository<Matching, Long> {
             @Param("status") MatchStatus status
     );
 
-    @Query("SELECT m FROM Matching m JOIN FETCH m.space s WHERE s.user.id = :userId")
-    List<Matching> findAllBySpaceHostId(@Param("userId") Long userId);
+    @Query("SELECT m FROM Matching m JOIN FETCH m.space s WHERE (s.user.id = :userId) AND (:status IS NULL OR m.status = :status)")
+    List<Matching> findAllBySpaceHostId(
+            @Param("userId") Long userId,
+            @Param("status") MatchStatus status
+    );
 
-    @Query("SELECT m FROM Matching m JOIN FETCH m.space s WHERE (m.user.id = :userId OR m.receiver.id = :userId) AND s.user.id != :userId")
-    List<Matching> findAllAsMakerId(@Param("userId") Long userId);
+    @Query("SELECT m FROM Matching m JOIN FETCH m.space s WHERE (m.user.id = :userId OR m.receiver.id = :userId) AND s.user.id != :userId AND (:status IS NULL OR m.status = :status)")
+    List<Matching> findAllAsMakerId(
+            @Param("userId") Long userId,
+            @Param("status") MatchStatus status
+    );
 
     @Modifying(clearAutomatically = true)
     @Query("UPDATE Matching m SET m.status = :newStatus " +
