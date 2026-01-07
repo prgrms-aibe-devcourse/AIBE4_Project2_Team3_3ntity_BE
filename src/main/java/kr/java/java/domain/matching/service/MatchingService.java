@@ -144,7 +144,9 @@ public class MatchingService {
                 spaceId,
                 MatchStatus.WAITING,
                 MatchStatus.REJECTED,
-                matchingId
+                matchingId,
+                matching.getStartDate(),
+                matching.getEndDate()
         );
         log.info("[매칭 확정] MatchingID: {}, 자동 거절된 건수: {}건", matchingId, rejectedCount);
     }
