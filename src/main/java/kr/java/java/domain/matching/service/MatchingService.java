@@ -104,22 +104,19 @@ public class MatchingService {
     }
 
     @Transactional(readOnly = true)
-    public List<MatchingResponse> getMatchings(Long userId) {
-        User loginUser = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundUserException("존재하지 않는 유저입니다. ID: " + userId));
-
-        List<Matching> matchings = matchingRepository.findByUserOrReceiver(loginUser, loginUser);
+    public List<MatchingResponse> getMatchings(Long userId, MatchStatus status) {
+        List<Matching> matchings = matchingRepository.findAllByUserIdAndStatus(userId, status);
 
         return convertToResponse(matchings, userId);
     }
 
-    public List<MatchingResponse> getMatchingsAsHost(Long userId) {
-        List<Matching> matchings = matchingRepository.findAllBySpaceHostId(userId);
+    public List<MatchingResponse> getMatchingsAsHost(Long userId, MatchStatus status) {
+        List<Matching> matchings = matchingRepository.findAllBySpaceHostId(userId, status);
         return convertToResponse(matchings, userId);
     }
 
-    public List<MatchingResponse> getMatchingsAsMaker(Long userId) {
-        List<Matching> matchings = matchingRepository.findAllAsMakerId(userId);
+    public List<MatchingResponse> getMatchingsAsMaker(Long userId, MatchStatus status) {
+        List<Matching> matchings = matchingRepository.findAllAsMakerId(userId, status);
         return convertToResponse(matchings, userId);
     }
 
