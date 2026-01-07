@@ -52,6 +52,7 @@ public class MatchingService {
         User sender = loginUser;
         User receiver;
 
+        // 로그인 유저가 공간의 host라면
         if(loginUser.getId().equals(targetSpace.getUser().getId())){
             receiver = targetUser;
         } else{
@@ -63,10 +64,9 @@ public class MatchingService {
         validateMatching(targetSpace, targetUser, sender, receiver);
 
         Matching matching = Matching.builder()
-                .sender(sender)
+                .user(sender)
                 .receiver(receiver)
                 .space(targetSpace)
-                .user(targetUser)
                 .message(request.message())
                 .startDate(request.startDate())
                 .months(request.months())
@@ -93,38 +93,38 @@ public class MatchingService {
     }
 
     @Transactional(readOnly = true)
-    public List<MatchingResponse> getMatchings(Long loginUserId) {
-        User loginUser = userRepository.findById(loginUserId)
-                .orElseThrow(() -> new NotFoundUserException("존재하지 않는 유저입니다. ID: " + loginUserId));
+    public List<MatchingResponse> getMatchings(Long UserId) {
+        User loginUser = userRepository.findById(UserId)
+                .orElseThrow(() -> new NotFoundUserException("존재하지 않는 유저입니다. ID: " + UserId));
 
         List<Matching> matchings = matchingRepository.findBySenderOrReceiver(loginUser, loginUser);
 
-        return convertToResponse(matchings, loginUserId);
+        return convertToResponse(matchings, UserId);
     }
 
-    public List<MatchingResponse> getMatchingsAsOwner(Long loginUserId) {
-        List<Matching> matchings = matchingRepository.findAllBySpaceOwnerId(loginUserId);
-        return convertToResponse(matchings, loginUserId);
+    public List<MatchingResponse> getMatchingsAsOwner(Long UserId) {
+        List<Matching> matchings = matchingRepository.findAllBySpaceOwnerId(UserId);
+        return convertToResponse(matchings, UserId);
     }
 
-    public List<MatchingResponse> getMatchingsAsMaker(Long loginUserId) {
-        List<Matching> matchings = matchingRepository.findAllAsMakerId(loginUserId);
-        return convertToResponse(matchings, loginUserId);
+    public List<MatchingResponse> getMatchingsAsMaker(Long UserId) {
+        List<Matching> matchings = matchingRepository.findAllAsMakerId(UserId);
+        return convertToResponse(matchings, UserId);
     }
 
-    private List<MatchingResponse> convertToResponse(List<Matching> matchings, Long loginUserId) {
+    private List<MatchingResponse> convertToResponse(List<Matching> matchings, Long UserId) {
         return matchings.stream()
-                .map(matching -> MatchingResponse.from(matching, loginUserId))
+                .map(matching -> MatchingResponse.from(matching, UserId))
                 .collect(Collectors.toList());
     }
 
     @Transactional
-    public void acceptMatching(Long matchingId, Long loginUserId){
+    public void acceptMatching(Long matchingId, Long UserId){
         Matching matching = findMatchingById(matchingId);
-        validateReceiverAndStatus(matching, loginUserId);
+        validateReceiverAndStatus(matching, UserId);
 
         matching.updateStatus(MatchStatus.ONGOING);
-        log.info("[매칭 수락] MatchingID: {}, 수락자: {}", matchingId, loginUserId);
+        log.info("[매칭 수락] MatchingID: {}, 수락자: {}", matchingId, UserId);
 
         Long spaceId = matching.getSpace().getId();
 
@@ -138,12 +138,12 @@ public class MatchingService {
     }
 
     @Transactional
-    public void rejectMatching(Long matchingId, Long loginUserId) {
+    public void rejectMatching(Long matchingId, Long UserId) {
         Matching matching = findMatchingById(matchingId);
-        validateReceiverAndStatus(matching, loginUserId);
+        validateReceiverAndStatus(matching, UserId);
 
         matching.updateStatus(MatchStatus.REJECTED);
-        log.info("[매칭 거절] MatchingID: {}, 거절자: {}", matchingId, loginUserId);
+        log.info("[매칭 거절] MatchingID: {}, 거절자: {}", matchingId, UserId);
     }
 
     private Matching findMatchingById(Long matchingId){
@@ -151,10 +151,10 @@ public class MatchingService {
                 .orElseThrow(() -> new MatchingException(MatchingErrorCode.MATCHING_NOT_FOUND));
     }
 
-    private void validateReceiverAndStatus(Matching matching, Long loginUserId) {
+    private void validateReceiverAndStatus(Matching matching, Long UserId) {
         log.info("[검증 로그] DB ReceiverID: {}, 요청 LoginUserID: {}",
-                matching.getReceiver().getId(), loginUserId);
-        if (!matching.getReceiver().getId().equals(loginUserId)) {
+                matching.getReceiver().getId(), UserId);
+        if (!matching.getReceiver().getId().equals(UserId)) {
             throw new MatchingException(MatchingErrorCode.NOT_AUTHORIZED_RECEIVER);
         }
 
@@ -164,16 +164,16 @@ public class MatchingService {
     }
 
     @Transactional
-    public void cancelMatching(Long matchingId, Long loginUserId) {
+    public void cancelMatching(Long matchingId, Long UserId) {
         Matching matching = findMatchingById(matchingId);
-        validateSenderAndStatus(matching, loginUserId);
+        validateSenderAndStatus(matching, UserId);
 
         matching.updateStatus(MatchStatus.CANCELLED);
-        log.info("[매칭 취소] MatchingID: {}, 거절자: {}", matchingId, loginUserId);
+        log.info("[매칭 취소] MatchingID: {}, 거절자: {}", matchingId, UserId);
     }
 
-    private void validateSenderAndStatus(Matching matching, Long loginUserId) {
-        if (!matching.getSender().getId().equals(loginUserId)) {
+    private void validateSenderAndStatus(Matching matching, Long UserId) {
+        if (!matching.getUser().getId().equals(UserId)) {
             throw new MatchingException(MatchingErrorCode.NOT_AUTHORIZED_SENDER);
         }
 
