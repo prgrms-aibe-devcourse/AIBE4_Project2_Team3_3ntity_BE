@@ -41,3 +41,7 @@ mysql_data/
 
 # env
 .env
+
+### dev
+# application-dev.yaml
+*-dev.*
