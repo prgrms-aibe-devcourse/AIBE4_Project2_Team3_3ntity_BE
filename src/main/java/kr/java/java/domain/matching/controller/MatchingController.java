@@ -37,10 +37,10 @@ public class MatchingController {
     }
 
     @GetMapping("get-list/host")
-    public ResponseEntity<List<MatchingResponse>> getMatchingsAsOwner(
+    public ResponseEntity<List<MatchingResponse>> getMatchingsAsHost(
             @RequestParam(name = "userId") Long loginUserId) {
 
-        List<MatchingResponse> responses = matchingService.getMatchingsAsOwner(loginUserId);
+        List<MatchingResponse> responses = matchingService.getMatchingsAsHost(loginUserId);
         return ResponseEntity.ok(responses);
     }
 

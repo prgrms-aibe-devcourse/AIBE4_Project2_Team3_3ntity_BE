@@ -1,5 +1,6 @@
 package kr.java.java.domain.matching.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
@@ -11,6 +12,7 @@ public record CreateMatchingRequest(
         String message,
 
         @NotNull(message = "시작 날짜를 선택해주세요.")
+        @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
         LocalDate startDate,
 
         @NotNull(message = "계약 기간을 입력해주세요.")
