@@ -4,8 +4,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 public record CommentCreateRequest(
-        @NotNull(message = "사용자 ID 필수")
-        Long userId,
 
         Long spaceId,
         Long portfolioId,

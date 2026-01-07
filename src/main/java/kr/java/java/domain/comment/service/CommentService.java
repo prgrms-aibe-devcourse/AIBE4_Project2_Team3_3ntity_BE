@@ -27,14 +27,14 @@ public class CommentService {
     private final PortfolioRepository portfolioRepository;
 
     @Transactional
-    public Long createComment(CommentCreateRequest request) {
+    public Long createComment(Long userId, CommentCreateRequest request) {
         log.info("문의 생성 시도 - userId: {}, spaceId: {}, portfolioId: {}",
-                request.userId(), request.spaceId(), request.portfolioId());
+                userId, request.spaceId(), request.portfolioId());
 
         // 1. 유저 검증 및 조회
-        User user = userRepository.findById(request.userId())
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> {
-                    log.warn("존재하지 않는 유저입니다. userId: {}", request.userId());
+                    log.warn("존재하지 않는 유저입니다. userId: {}", userId);
                     return new UserNotFoundException("존재하지 않는 사용자입니다.");
                 });
 
@@ -55,7 +55,7 @@ public class CommentService {
                         return new PortfolioNotFoundException("존재하지 않는 포트폴리오입니다.");
                     });
         } else {
-            log.warn("문의 대상 누락 - userId: {}", request.userId());
+            log.warn("문의 대상 누락 - userId: {}", userId);
             throw new CommentTargetMissingException("문의를 남길 대상(공간 또는 포트폴리오)이 지정되지 않았습니다.");
         }
 
