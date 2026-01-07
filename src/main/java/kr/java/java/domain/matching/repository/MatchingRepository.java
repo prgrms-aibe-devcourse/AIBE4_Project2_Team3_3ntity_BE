@@ -12,16 +12,27 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface MatchingRepository extends JpaRepository<Matching, Long> {
-    boolean existsBySpaceAndUserAndStatusIn(Space space, User user, Collection<MatchStatus> statuses);
-    List<Matching> findBySenderOrReceiver(User sender, User receiver);
+    @Query("SELECT m FROM Matching m " +
+            "WHERE m.space = :space " +
+            "AND ( (m.user = :u1 AND m.receiver = :u2) OR (m.user = :u2 AND m.receiver = :u1) ) " +
+            "AND m.status IN :statuses")
+    Optional<Matching> findActiveMatchingBetweenUsers(
+            @Param("space") Space space,
+            @Param("u1") User u1,
+            @Param("u2") User u2,
+            @Param("statuses") Collection<MatchStatus> statuses
+    );
+
+    List<Matching> findByUserOrReceiver(User user, User receiver);
 
     @Query("SELECT m FROM Matching m JOIN FETCH m.space s WHERE s.user.id = :userId")
-    List<Matching> findAllBySpaceOwnerId(@Param("userId") Long userId);
+    List<Matching> findAllBySpaceHostId(@Param("userId") Long userId);
 
-    @Query("SELECT m FROM Matching m JOIN FETCH m.space s WHERE (m.sender.id = :userId OR m.receiver.id = :userId) AND s.user.id != :userId")
+    @Query("SELECT m FROM Matching m JOIN FETCH m.space s WHERE (m.user.id = :userId OR m.receiver.id = :userId) AND s.user.id != :userId")
     List<Matching> findAllAsMakerId(@Param("userId") Long userId);
 
     @Modifying(clearAutomatically = true)

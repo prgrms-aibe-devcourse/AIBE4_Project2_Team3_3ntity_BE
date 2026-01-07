@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -32,7 +33,9 @@ public class MatchingService {
     //TODO 해당 서비스 페이지에 있는 User 에러처리는 추후 User 도메인의 exception에 생기면 변경
 
     @Transactional
-    public void createMatching(CreateMatchingRequest request, Long loginUserId){
+    public void createMatching(CreateMatchingRequest request, Long userId){
+        long loginUserId = userId;
+
         Space targetSpace = spaceRepository.findById(request.spaceId())
                 .orElseThrow(() -> {
                     log.error("[매칭 실패] Space 존재하지 않음 - ID: {}", request.spaceId());
@@ -83,12 +86,21 @@ public class MatchingService {
 
         List<MatchStatus> activeStatuses = List.of(MatchStatus.WAITING, MatchStatus.ONGOING);
 
-        boolean alreadyActive = matchingRepository.existsBySpaceAndUserAndStatusIn(space, targetUser, activeStatuses);
+        Optional<Matching> existingMatching = matchingRepository.findActiveMatchingBetweenUsers(
+                space, sender, receiver, activeStatuses
+        );
 
-        if(alreadyActive){
-            log.warn("[매칭 검증 실패] 이미 활성화된 매칭 존재 - SpaceID: {}, TargetUserID: {}",
-                    space.getId(), targetUser.getId());
-            throw new MatchingException(MatchingErrorCode.ALREADY_ACTIVE_MATCHING_EXISTS);
+        if (existingMatching.isPresent()) {
+            Matching matching = existingMatching.get();
+
+            if (matching.getUser().getId().equals(sender.getId())) {
+                log.warn("[매칭 검증 실패] 이미 본인이 신청한 매칭 존재 - MatchingID: {}", matching.getId());
+                throw new MatchingException(MatchingErrorCode.ALREADY_ACTIVE_MATCHING_EXISTS);
+            } else {
+                log.warn("[매칭 검증 실패] 상대방이 보낸 매칭이 이미 존재 - MatchingID: {}", matching.getId());
+                throw new MatchingException(MatchingErrorCode.MATCHING_REQUEST_ALREADY_RECEIVED);
+                // "상대방의 신청을 확인해주세요"라는 별도의 에러코드를 쓰면 더 좋습니다.
+            }
         }
     }
 
@@ -97,13 +109,13 @@ public class MatchingService {
         User loginUser = userRepository.findById(UserId)
                 .orElseThrow(() -> new NotFoundUserException("존재하지 않는 유저입니다. ID: " + UserId));
 
-        List<Matching> matchings = matchingRepository.findBySenderOrReceiver(loginUser, loginUser);
+        List<Matching> matchings = matchingRepository.findByUserOrReceiver(loginUser, loginUser);
 
         return convertToResponse(matchings, UserId);
     }
 
-    public List<MatchingResponse> getMatchingsAsOwner(Long UserId) {
-        List<Matching> matchings = matchingRepository.findAllBySpaceOwnerId(UserId);
+    public List<MatchingResponse> getMatchingsAsHost(Long UserId) {
+        List<Matching> matchings = matchingRepository.findAllBySpaceHostId(UserId);
         return convertToResponse(matchings, UserId);
     }
 
