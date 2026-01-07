@@ -1,6 +1,7 @@
 package kr.java.java.domain.comment.service;
 
 import kr.java.java.domain.comment.dto.CommentCreateRequest;
+import kr.java.java.domain.comment.dto.CommentResponse;
 import kr.java.java.domain.comment.entity.Comment;
 import kr.java.java.domain.comment.repository.CommentRepository;
 import kr.java.java.domain.comment.exception.*;
@@ -14,6 +15,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Slf4j
 @Service
@@ -74,4 +77,35 @@ public class CommentService {
 
         return savedComment.getId();
     }
+
+    // 공간별 문의 조회
+    public List<CommentResponse> getCommentsBySpace(Long spaceId, Long viewerId) {
+        log.info("공간별 문의 조회 요청 - spaceId: {}, viewerId: {}", spaceId, viewerId);
+        List<Comment> comments = commentRepository.findAllBySpaceIdOrderByCreatedAtDesc(spaceId);
+        log.info("공간(ID:{}) 문의 조회 성공 - 총 {}건", spaceId, comments.size());
+        return comments.stream()
+                .map(comment -> CommentResponse.of(comment, viewerId))
+                .toList();
+    }
+
+    // 포트폴리오별 문의 조회
+    public List<CommentResponse> getCommentsByPortfolio(Long portfolioId, Long viewerId) {
+        log.info("포트폴리오별 문의 조회 요청 - portfolioId: {}, viewerId: {}", portfolioId, viewerId);
+        List<Comment> comments = commentRepository.findAllByPortfolioIdOrderByCreatedAtDesc(portfolioId);
+        log.info("포트폴리오(ID:{}) 문의 조회 성공 - 총 {}건", portfolioId, comments.size());
+        return comments.stream()
+                .map(comment -> CommentResponse.of(comment, viewerId))
+                .toList();
+    }
+
+    // 사용자별 문의 조회
+    public List<CommentResponse> getMyComments(Long userId) {
+        log.info("사용자별 문의 조회 요청 - userId: {}", userId);
+        List<Comment> comments = commentRepository.findAllByUserIdOrderByCreatedAtDesc(userId);
+        log.info("사용자(ID:{}) 문의 조회 성공 - 총 {}건", userId, comments.size());
+        return comments.stream()
+                .map(comment -> CommentResponse.of(comment, userId))
+                .toList();
+    }
+
 }
