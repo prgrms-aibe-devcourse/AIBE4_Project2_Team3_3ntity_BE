@@ -11,79 +11,89 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
-@RequestMapping("/piece/matchings")
+@RequestMapping("/piece")
 @RequiredArgsConstructor
 public class MatchingController {
     private final MatchingService matchingService;
 
     // TODO: loginUserId: 추후 token에서 추출하도록 변경
-    @PostMapping("/create")
-    public ResponseEntity<Void> createMatching(@RequestBody CreateMatchingRequest request, @RequestParam(name = "userId") Long loginUserId){
-        log.info("[API 요청] 매칭 생성 - SpaceID: {}, TargetUserID: {}, LoginUserID: {}",
-                request.spaceId(), request.userId(), loginUserId);
-        matchingService.createMatching(request, loginUserId);
-
+    @PostMapping("/spaces/{spaceId}/matchings")
+    public ResponseEntity<Void> createMatchingToSpace(
+            @PathVariable Long spaceId,
+            @RequestBody CreateMatchingRequest request,
+            @RequestParam Long userId
+    ) {
+        matchingService.createUserToSpace(spaceId, request, userId);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @GetMapping("get-list")
+    @PostMapping("/users/{targetUserId}/matchings")
+    public ResponseEntity<Void> createMatchingToUser(
+            @PathVariable Long targetUserId,
+            @RequestBody CreateMatchingRequest request,
+            @RequestParam Long userId
+    ) {
+        matchingService.createSpaceToUser(targetUserId, request, userId);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @GetMapping("matchings")
     public ResponseEntity<List<MatchingResponse>> getMachingList(
-            @RequestParam(name = "userId") Long loginUserId,
+            @RequestParam(name = "userId") Long userId,
             @RequestParam(name = "status", required = false) MatchStatus status
     ){
-        List<MatchingResponse> responses = matchingService.getMatchings(loginUserId, status);
+        List<MatchingResponse> responses = matchingService.getMatchings(userId, status);
         return ResponseEntity.ok(responses);
     }
 
-    @GetMapping("get-list/host")
+    @GetMapping("hosts/matchings")
     public ResponseEntity<List<MatchingResponse>> getMatchingsAsHost(
-            @RequestParam(name = "userId") Long loginUserId,
+            @RequestParam(name = "userId") Long userId,
             @RequestParam(name = "status", required = false) MatchStatus status)
     {
-        List<MatchingResponse> responses = matchingService.getMatchingsAsHost(loginUserId, status);
+        List<MatchingResponse> responses = matchingService.getMatchingsAsHost(userId, status);
         return ResponseEntity.ok(responses);
     }
 
-    @GetMapping("get-list/user")
+    @GetMapping("users/matchings")
     public ResponseEntity<List<MatchingResponse>> getMatchingsAsMaker(
-            @RequestParam(name = "userId") Long loginUserId,
+            @RequestParam(name = "userId") Long userId,
             @RequestParam(name = "status", required = false) MatchStatus status)
     {
-        List<MatchingResponse> responses = matchingService.getMatchingsAsMaker(loginUserId, status);
+        List<MatchingResponse> responses = matchingService.getMatchingsAsMaker(userId, status);
         return ResponseEntity.ok(responses);
     }
 
-    @PatchMapping("/{matchingId}/accept")
+    @PatchMapping("/matchings/{matchingId}/accept")
     public ResponseEntity<Void> updateMatching(
             @PathVariable(name = "matchingId") Long matchingId,
-            @RequestParam(name = "userId") Long loginUserId){
+            @RequestParam(name = "userId") Long userId){
 
-        matchingService.acceptMatching(matchingId, loginUserId);
+        matchingService.acceptMatching(matchingId, userId);
 
         return ResponseEntity.ok().build();
     }
 
-    @PatchMapping("/{matchingId}/reject")
+    @PatchMapping("/matchings/{matchingId}/reject")
     public ResponseEntity<Void> rejectMatching(
             @PathVariable(name = "matchingId") Long matchingId,
-            @RequestParam(name = "userId") Long loginUserId) {
+            @RequestParam(name = "userId") Long userId) {
 
-        matchingService.rejectMatching(matchingId, loginUserId);
+        matchingService.rejectMatching(matchingId, userId);
 
         return ResponseEntity.ok().build();
     }
 
-    @PatchMapping("/{matchingId}/cancel")
+    @PatchMapping("/matchings/{matchingId}/cancel")
     public ResponseEntity<Void> cancelMatching(
             @PathVariable(name = "matchingId") Long matchingId,
-            @RequestParam(name = "userId") Long loginUserId) {
+            @RequestParam(name = "userId") Long userId) {
 
-        log.info("[API 요청] 매칭 취소 - MatchingID: {}, LoginUserID: {}", matchingId, loginUserId);
-        matchingService.cancelMatching(matchingId, loginUserId);
+        log.info("[API 요청] 매칭 취소 - MatchingID: {}, LoginUserID: {}", matchingId, userId);
+        matchingService.cancelMatching(matchingId, userId);
 
         return ResponseEntity.ok().build();
     }
