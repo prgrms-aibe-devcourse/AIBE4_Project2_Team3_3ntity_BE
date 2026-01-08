@@ -1,6 +1,8 @@
 package kr.java.java.domain.matching.service;
 
-import kr.java.java.domain.matching.dto.CreateMatchingRequest;
+import kr.java.java.domain.matching.dto.CreateMatchingCommand;
+import kr.java.java.domain.matching.dto.CreateMatchingToSpaceRequest;
+import kr.java.java.domain.matching.dto.CreateMatchingToUserRequest;
 import kr.java.java.domain.matching.dto.MatchingResponse;
 import kr.java.java.domain.matching.entity.Matching;
 import kr.java.java.domain.matching.enums.MatchStatus;
@@ -11,7 +13,6 @@ import kr.java.java.domain.space.entity.Space;
 import kr.java.java.domain.space.exception.NotFoundSpaceException;
 import kr.java.java.domain.space.exception.NotFoundUserException;
 import kr.java.java.domain.space.repository.SpaceRepository;
-import kr.java.java.domain.user.entity.Role;
 import kr.java.java.domain.user.entity.User;
 import kr.java.java.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -34,53 +35,73 @@ public class MatchingService {
     //TODO 해당 서비스 페이지에 있는 User 에러처리는 추후 User 도메인의 exception에 생기면 변경
 
     @Transactional
-    public void createMatching(CreateMatchingRequest request, Long userId){
-        long loginUserId = userId;
+    public void createUserToSpace(
+            Long spaceId,
+            CreateMatchingToSpaceRequest request,
+            Long loginUserId
+    ) {
+        Space space = spaceRepository.findById(spaceId).orElse(null);
 
-        Space targetSpace = spaceRepository.findById(request.spaceId())
-                .orElseThrow(() -> {
-                    log.error("[매칭 실패] Space 존재하지 않음 - ID: {}", request.spaceId());
-                    return new NotFoundSpaceException("해당 공간이 없습니다. id=" + request.spaceId());
-                });
-        User targetUser = userRepository.findById(request.userId())
-                .orElseThrow(() -> {
-                    log.error("[매칭 실패] 대상 User 존재하지 않음 - ID: {}", request.userId());
-                    return new NotFoundUserException("존재하지 않는 유저입니다. ID: " + request.userId());
-                });
-        User loginUser = userRepository.findById(loginUserId)
-                .orElseThrow(() -> {
-                    log.error("[매칭 실패] 로그인 유저 정보 없음 - ID: {}", loginUserId);
-                    return new NotFoundUserException("존재하지 않는 유저입니다. ID: " + loginUserId);
-                });
+        CreateMatchingCommand command = new CreateMatchingCommand(
+                spaceId,
+                loginUserId,
+                space.getUser().getId(),
+                request.message(),
+                request.startDate(),
+                request.months()
+        );
 
-        boolean isLoginUserHostOfSpace = loginUser.getId().equals(targetSpace.getUser().getId());
+        createMatchingInternal(command);
+    }
 
-        if(loginUser.getRole() == Role.HOST && !isLoginUserHostOfSpace){
-            log.warn("[매칭 실패] HOST 유저가 타인의 공간에 매칭 시도 - UserId: {}, SpaceId: {}", userId, targetSpace.getId());
+    @Transactional
+    public void createSpaceToUser(
+            Long targetUserId,
+            CreateMatchingToUserRequest request,
+            Long loginUserId
+    ) {
+        User sender = userRepository.findById(loginUserId)
+                .orElseThrow(() -> new NotFoundUserException("로그인 유저 없음"));
+        Space space = spaceRepository.findById(request.spaceId())
+                .orElseThrow(() -> new NotFoundSpaceException("해당 공간이 없습니다. id=" + request.spaceId()));
+
+        if (!space.getUser().getId().equals(sender.getId())) {
             throw new MatchingException(MatchingErrorCode.HOST_CANNOT_MATCH_OTHER_SPACE);
         }
 
-        User sender = loginUser;
-        User receiver;
+        CreateMatchingCommand command = new CreateMatchingCommand(
+                space.getId(),
+                sender.getId(),
+                targetUserId,
+                request.message(),
+                request.startDate(),
+                request.months()
+        );
 
-        // 로그인 유저가 공간의 host라면
-        if(isLoginUserHostOfSpace){
-            receiver = targetUser;
-        } else{
-            receiver = targetSpace.getUser();
-        }
+        createMatchingInternal(command);
+    }
 
-        log.info("[매칭 ID 확인] Sender ID: {}, Receiver ID: {}", sender.getId(), receiver.getId());
+    private void createMatchingInternal(
+            CreateMatchingCommand command
+    ) {
+        User sender = userRepository.findById(command.senderId())
+                .orElseThrow(() -> new NotFoundUserException("로그인 유저 없음"));
 
-        validateMatching(targetSpace, sender, receiver);
+        User receiver = userRepository.findById(command.receiverId())
+                .orElseThrow(() -> new NotFoundUserException("로그인 유저 없음"));
+
+        Space space = spaceRepository.findById(command.spaceId())
+                .orElseThrow(() -> new NotFoundSpaceException("해당 공간이 없습니다. id=" + command.spaceId()));
+
+        validateMatching(space, sender, receiver);
 
         Matching matching = Matching.builder()
                 .user(sender)
                 .receiver(receiver)
-                .space(targetSpace)
-                .message(request.message())
-                .startDate(request.startDate())
-                .months(request.months())
+                .space(space)
+                .message(command.message())
+                .startDate(command.startDate())
+                .months(command.months())
                 .build();
 
         matchingRepository.save(matching);
