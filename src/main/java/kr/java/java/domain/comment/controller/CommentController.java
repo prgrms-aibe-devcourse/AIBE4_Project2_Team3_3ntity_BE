@@ -3,6 +3,7 @@ package kr.java.java.domain.comment.controller;
 import jakarta.validation.Valid;
 import kr.java.java.domain.comment.dto.CommentCreateRequest;
 import kr.java.java.domain.comment.dto.CommentResponse;
+import kr.java.java.domain.comment.dto.CommentUpdateRequest;
 import kr.java.java.domain.comment.service.CommentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -81,5 +82,41 @@ public class CommentController {
         log.info("사용자별 문의 조회 완료 - 조회된 문의 개수: {}", responses.size());
 
         return ResponseEntity.ok(responses);
+    }
+
+    // 문의 삭제 API
+    @DeleteMapping("/{commentId}")
+    public ResponseEntity<String> deleteComment(@PathVariable Long commentId, Long loginUserId) {
+
+        Long userId = 1L;
+        // Long userId = loginUserId; // TODO: 추후에 loginUserId로 변경
+
+        log.info("DELETE /piece/comments/{} 요청 발생 - 요청자 ID: {}", commentId, userId);
+
+        commentService.deleteComment(commentId, userId);
+
+        log.info("문의 삭제 완료 - 삭제된 commentId: {}", commentId);
+
+        return ResponseEntity.ok("문의가 성공적으로 삭제되었습니다.");
+    }
+
+    // 문의 수정 API
+    @PatchMapping("/{commentId}")
+    public ResponseEntity<String> updateComment(
+            @PathVariable Long commentId,
+            @RequestBody CommentUpdateRequest request,
+            Long loginUserId
+    ) {
+
+        Long userId = 1L;
+        // Long userId = loginUserId; // TODO: 추후에 loginUserId로 변경
+
+        log.info("PATCH /piece/comments/{} 요청 발생 - 요청자 ID: {}", commentId, userId);
+
+        commentService.updateComment(userId, commentId, request);
+
+        log.info("문의 수정 완료 - 수정된 commentId: {}", commentId);
+
+        return ResponseEntity.ok("문의가 성공적으로 수정되었습니다.");
     }
 }
