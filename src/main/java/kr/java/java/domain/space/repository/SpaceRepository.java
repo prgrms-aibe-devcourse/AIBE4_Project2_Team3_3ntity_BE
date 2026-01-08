@@ -11,8 +11,10 @@ import java.util.List;
 @Repository
 public interface SpaceRepository extends JpaRepository<Space, Long> {
     boolean existsByAddressAndDetailAddress(String address, String detailAddress);
+    @Query("SELECT s FROM Space s JOIN FETCH s.user ORDER BY s.id DESC")
     List<Space> findAllByOrderByIdDesc();
-    List<Space> findByUserIdOrderByIdDesc(Long userId);
+    @Query("SELECT s FROM Space s JOIN FETCH s.user WHERE s.user.id = :userId ORDER BY s.id DESC")
+    List<Space> findByUserIdOrderByIdDesc(@Param("userId") Long userId);
     @Query("SELECT COUNT(s) FROM Space s WHERE s.user.id = :userId")
     long countSpacesByUserId(@Param("userId") Long userId);
 }
