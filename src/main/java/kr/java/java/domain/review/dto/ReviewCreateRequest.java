@@ -6,12 +6,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 public record ReviewCreateRequest(
-
         @NotNull(message = "매칭 ID 필수")
         Long matchingId,
-
-        @NotNull(message = "작성자 ID 필수")
-        Long userId,
 
         @NotNull(message = "별점 필수")
         @Min(value = 1, message = "별점은 최소 1점")

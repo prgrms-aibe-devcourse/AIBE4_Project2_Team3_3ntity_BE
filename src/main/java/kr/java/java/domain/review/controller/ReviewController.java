@@ -2,7 +2,6 @@ package kr.java.java.domain.review.controller;
 
 import jakarta.validation.Valid;
 import kr.java.java.domain.review.dto.ReviewCreateRequest;
-import kr.java.java.domain.review.dto.ReviewDeleteRequest;
 import kr.java.java.domain.review.dto.ReviewResponse;
 import kr.java.java.domain.review.dto.ReviewUpdateRequest;
 import kr.java.java.domain.review.service.ReviewService;
@@ -23,10 +22,12 @@ public class ReviewController {
 
     // 리뷰 등록 API
     @PostMapping
-    public ResponseEntity<Long> createReview(@Valid @RequestBody ReviewCreateRequest request) {
-        log.info("POST /piece/reviews 요청 발생 - 작성자 ID: {}", request.userId());
+    public ResponseEntity<Long> createReview(@Valid @RequestBody ReviewCreateRequest request, Long loginUserId) {
+        log.info("POST /piece/reviews 요청 발생 - 작성자 ID: {}", loginUserId);
 
-        Long reviewId = reviewService.createReview(request);
+        // TODO: 추후 loginUserId로 변경
+        Long reviewId = reviewService.createReview(1L, request);
+        // Long reviewId = reviewService.createReview(loginUserId, request);
 
         log.info("리뷰 등록 완료 응답 반환 - 생성된 reviewId: {}", reviewId);
 
@@ -61,11 +62,13 @@ public class ReviewController {
     @DeleteMapping("/{reviewId}")
     public ResponseEntity<String> deleteReview(
             @PathVariable Long reviewId,
-            @RequestBody ReviewDeleteRequest request
+            Long loginUserId
     ) {
-        log.info("DELETE /piece/reviews/{} 요청 발생 - 요청자 ID: {}", reviewId, request.userId());
+        log.info("DELETE /piece/reviews/{} 요청 발생 - 요청자 ID: {}", reviewId, loginUserId);
 
-        reviewService.deleteReview(reviewId, request.userId());
+        // TODO: 추후 loginUserId로 변경
+        reviewService.deleteReview(reviewId, 1L);
+        // reviewService.deleteReview(reviewId, loginUserId);
 
         log.info("리뷰 삭제 완료 응답 반환 - 삭제된 reviewId: {}", reviewId);
 
@@ -76,11 +79,14 @@ public class ReviewController {
     @PatchMapping("/{reviewId}")
     public ResponseEntity<String> updateReview(
             @PathVariable Long reviewId,
-            @RequestBody @Valid ReviewUpdateRequest request
+            @RequestBody @Valid ReviewUpdateRequest request,
+            Long loginUserId
     ) {
-        log.info("PUT /piece/reviews/{} 요청 발생 - 요청자 ID: {}", reviewId, request.userId());
+        log.info("PUT /piece/reviews/{} 요청 발생 - 요청자 ID: {}", reviewId, loginUserId);
 
-        reviewService.updateReview(reviewId, request);
+        // TODO: 추후 loginUserId로 변경
+        reviewService.updateReview(reviewId, 1L, request);
+        // reviewService.updateReview(reviewId, loginUserId, request);
 
         log.info("리뷰 수정 완료 응답 반환 - reviewId: {}", reviewId);
 
