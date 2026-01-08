@@ -80,6 +80,7 @@ public class CommentService {
 
     // 공간별 문의 조회
     public List<CommentResponse> getCommentsBySpace(Long spaceId, Long viewerId) {
+        validateUser(viewerId);
         log.info("공간별 문의 조회 요청 - spaceId: {}, viewerId: {}", spaceId, viewerId);
         List<Comment> comments = commentRepository.findAllBySpaceIdOrderByCreatedAtDesc(spaceId);
         log.info("공간(ID:{}) 문의 조회 성공 - 총 {}건", spaceId, comments.size());
@@ -90,6 +91,7 @@ public class CommentService {
 
     // 포트폴리오별 문의 조회
     public List<CommentResponse> getCommentsByPortfolio(Long portfolioId, Long viewerId) {
+        validateUser(viewerId);
         log.info("포트폴리오별 문의 조회 요청 - portfolioId: {}, viewerId: {}", portfolioId, viewerId);
         List<Comment> comments = commentRepository.findAllByPortfolioIdOrderByCreatedAtDesc(portfolioId);
         log.info("포트폴리오(ID:{}) 문의 조회 성공 - 총 {}건", portfolioId, comments.size());
@@ -100,12 +102,21 @@ public class CommentService {
 
     // 사용자별 문의 조회
     public List<CommentResponse> getMyComments(Long userId) {
+        validateUser(userId);
         log.info("사용자별 문의 조회 요청 - userId: {}", userId);
         List<Comment> comments = commentRepository.findAllByUserIdOrderByCreatedAtDesc(userId);
         log.info("사용자(ID:{}) 문의 조회 성공 - 총 {}건", userId, comments.size());
         return comments.stream()
                 .map(comment -> CommentResponse.of(comment, userId))
                 .toList();
+    }
+
+    private void validateUser(Long userId) {
+        if (userId == null) {
+            return;
+        }
+        userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("존재하지 않는 사용자입니다."));
     }
 
 }
