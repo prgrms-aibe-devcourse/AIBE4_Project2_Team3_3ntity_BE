@@ -2,6 +2,7 @@ package kr.java.java.global.exception;
 
 import kr.java.java.domain.auth.exception.AuthException;
 import kr.java.java.domain.matching.exception.MatchingException;
+import kr.java.java.domain.user.exception.UserException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.AuthenticationException;
@@ -22,6 +23,17 @@ public class GlobalExceptionHandler {
         body.put("code", e.getErrorCode().name());
         body.put("message", e.getErrorCode().getMessage());
 
+        return ResponseEntity
+                .status(e.getErrorCode().getHttpStatus())
+                .body(body);
+    }
+
+    @ExceptionHandler(UserException.class)
+    public ResponseEntity<Map<String, Object>> handleUserException(UserException e) {
+        log.error("[UserException] {} : {}", e.getErrorCode().name(), e.getErrorCode().getMessage());
+        Map<String, Object> body = new HashMap<>();
+        body.put("code", e.getErrorCode().name());
+        body.put("message", e.getErrorCode().getMessage());
         return ResponseEntity
                 .status(e.getErrorCode().getHttpStatus())
                 .body(body);
