@@ -3,6 +3,7 @@ package kr.java.java.domain.space.dto;
 import kr.java.java.domain.space.entity.Space;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 public record SpaceListResponse(
         Long id,
@@ -12,7 +13,8 @@ public record SpaceListResponse(
         BigDecimal latitude,
         BigDecimal longitude,
         Integer pricePerMonth,
-        String status
+        String status,
+        LocalDateTime createdAt
 ) {
     public SpaceListResponse(Space space) {
         this(
@@ -23,7 +25,8 @@ public record SpaceListResponse(
                 space.getLatitude(),
                 space.getLongitude(),
                 space.getPricePerMonth(),
-                space.getStatus().name()
+                space.getStatus().name(),
+                space.getCreatedAt()
         );
     }
 }
