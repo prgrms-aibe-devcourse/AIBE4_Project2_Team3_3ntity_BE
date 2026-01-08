@@ -2,6 +2,7 @@ package kr.java.java.domain.comment.service;
 
 import kr.java.java.domain.comment.dto.CommentCreateRequest;
 import kr.java.java.domain.comment.dto.CommentResponse;
+import kr.java.java.domain.comment.dto.CommentUpdateRequest;
 import kr.java.java.domain.comment.entity.Comment;
 import kr.java.java.domain.comment.repository.CommentRepository;
 import kr.java.java.domain.comment.exception.*;
@@ -129,6 +130,28 @@ public class CommentService {
 
         commentRepository.delete(comment);
         log.info("문의 삭제 성공 - commentId: {}", commentId);
+    }
+
+    @Transactional
+    public void updateComment(Long userId, Long commentId, CommentUpdateRequest request) {
+        log.info("문의 수정 시작 - commentId: {}, userId: {}", commentId, userId);
+        validateUser(userId);
+
+        // 문의 조회
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new CommentNotFoundException("존재하지 않는 문의입니다."));
+
+        // 권한 검증
+        if (!comment.getUser().getId().equals(userId)) {
+            log.warn("문의 수정 실패 - 권한 없음. writerId: {}, requesterId: {}",
+                    comment.getUser().getId(), userId);
+            throw new CommentAccessDeniedException("본인이 작성한 문의만 수정할 수 있습니다.");
+        }
+
+        // 정보 업데이트
+        comment.update(request.content(), request.isSecret());
+
+        log.info("문의 수정 성공 - commentId: {}", commentId);
     }
 
     private void validateUser(Long userId) {
