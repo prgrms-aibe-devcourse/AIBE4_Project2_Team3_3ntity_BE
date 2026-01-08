@@ -25,8 +25,13 @@ public class MypageResponse {
     @AllArgsConstructor
     @Builder
     public static class ProfileInfo {
+
         @JsonProperty("id")
         private UUID uuid;
+
+        @JsonProperty("userId")
+        private Long id;
+
         private String nickname;
         private String email;
         private String profileImageUrl;
@@ -42,13 +47,13 @@ public class MypageResponse {
         private Long spacesCount;
         private Long portfoliosCount;
         private Long reviewsCount;
-        private Long matchingsCount;
         private Long likesCount;
     }
 
     public static MypageResponse of(User user, StatsInfo stats) {
         ProfileInfo profile = ProfileInfo.builder()
                 .uuid(user.getUuid())
+                .id(user.getId())
                 .nickname(user.getNickname())
                 .email(user.getEmail())
                 .profileImageUrl(user.getProfileImageUrl())
