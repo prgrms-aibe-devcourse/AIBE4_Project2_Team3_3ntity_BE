@@ -111,6 +111,26 @@ public class CommentService {
                 .toList();
     }
 
+    @Transactional
+    public void deleteComment(Long commentId, Long userId) {
+        log.info("문의 삭제 시도 - commentId: {}, userId: {}", commentId, userId);
+        validateUser(userId);
+
+        // 삭제할 문의 조회
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new CommentNotFoundException("존재하지 않는 문의입니다."));
+
+        // 권한 검증
+        if (!comment.getUser().getId().equals(userId)) {
+            log.warn("문의 삭제 실패 - 권한 없음. writerId: {}, requesterId: {}",
+                    comment.getUser().getId(), userId);
+            throw new CommentAccessDeniedException("본인이 작성한 문의만 삭제할 수 있습니다.");
+        }
+
+        commentRepository.delete(comment);
+        log.info("문의 삭제 성공 - commentId: {}", commentId);
+    }
+
     private void validateUser(Long userId) {
         if (userId == null) {
             return;

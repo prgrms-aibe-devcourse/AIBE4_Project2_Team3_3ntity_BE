@@ -82,4 +82,20 @@ public class CommentController {
 
         return ResponseEntity.ok(responses);
     }
+
+    // 문의 삭제 API
+    @DeleteMapping("/{commentId}")
+    public ResponseEntity<String> deleteComment(@PathVariable Long commentId, Long loginUserId) {
+
+        Long userId = 1L;
+        // Long userId = loginUserId; // TODO: 추후에 loginUserId로 변경
+
+        log.info("DELETE /piece/comments/{} 요청 발생 - 요청자 ID: {}", commentId, userId);
+
+        commentService.deleteComment(commentId, userId);
+
+        log.info("문의 삭제 완료 - 삭제된 commentId: {}", commentId);
+
+        return ResponseEntity.ok("문의가 성공적으로 삭제되었습니다.");
+    }
 }
