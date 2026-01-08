@@ -1,6 +1,5 @@
 package kr.java.java.domain.matching.controller;
 
-import kr.java.java.domain.matching.dto.CreateMatchingRequest;
 import kr.java.java.domain.matching.dto.CreateMatchingToSpaceRequest;
 import kr.java.java.domain.matching.dto.CreateMatchingToUserRequest;
 import kr.java.java.domain.matching.dto.MatchingResponse;
@@ -16,13 +15,13 @@ import java.util.List;
 
 @Slf4j
 @RestController
-@RequestMapping("/piece")
+@RequestMapping("/piece/matchings")
 @RequiredArgsConstructor
 public class MatchingController {
     private final MatchingService matchingService;
 
     // TODO: loginUserId: 추후 token에서 추출하도록 변경
-    @PostMapping("/spaces/{spaceId}/matchings")
+    @PostMapping("/spaces/{spaceId}")
     public ResponseEntity<Void> createMatchingToSpace(
             @PathVariable Long spaceId,
             @RequestBody CreateMatchingToSpaceRequest request,
@@ -32,7 +31,7 @@ public class MatchingController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @PostMapping("/users/{targetUserId}/matchings")
+    @PostMapping("/users/{targetUserId}")
     public ResponseEntity<Void> createMatchingToUser(
             @PathVariable Long targetUserId,
             @RequestBody CreateMatchingToUserRequest request,
@@ -42,7 +41,7 @@ public class MatchingController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @GetMapping("matchings")
+    @GetMapping
     public ResponseEntity<List<MatchingResponse>> getMachingList(
             @RequestParam(name = "userId") Long userId,
             @RequestParam(name = "status", required = false) MatchStatus status
@@ -51,7 +50,7 @@ public class MatchingController {
         return ResponseEntity.ok(responses);
     }
 
-    @GetMapping("hosts/matchings")
+    @GetMapping("/hosts")
     public ResponseEntity<List<MatchingResponse>> getMatchingsAsHost(
             @RequestParam(name = "userId") Long userId,
             @RequestParam(name = "status", required = false) MatchStatus status)
@@ -60,7 +59,7 @@ public class MatchingController {
         return ResponseEntity.ok(responses);
     }
 
-    @GetMapping("users/matchings")
+    @GetMapping("/users")
     public ResponseEntity<List<MatchingResponse>> getMatchingsAsMaker(
             @RequestParam(name = "userId") Long userId,
             @RequestParam(name = "status", required = false) MatchStatus status)
@@ -69,7 +68,7 @@ public class MatchingController {
         return ResponseEntity.ok(responses);
     }
 
-    @PatchMapping("/matchings/{matchingId}/accept")
+    @PatchMapping("/{matchingId}/accept")
     public ResponseEntity<Void> updateMatching(
             @PathVariable(name = "matchingId") Long matchingId,
             @RequestParam(name = "userId") Long userId){
@@ -79,7 +78,7 @@ public class MatchingController {
         return ResponseEntity.ok().build();
     }
 
-    @PatchMapping("/matchings/{matchingId}/reject")
+    @PatchMapping("/{matchingId}/reject")
     public ResponseEntity<Void> rejectMatching(
             @PathVariable(name = "matchingId") Long matchingId,
             @RequestParam(name = "userId") Long userId) {
@@ -89,7 +88,7 @@ public class MatchingController {
         return ResponseEntity.ok().build();
     }
 
-    @PatchMapping("/matchings/{matchingId}/cancel")
+    @PatchMapping("/{matchingId}/cancel")
     public ResponseEntity<Void> cancelMatching(
             @PathVariable(name = "matchingId") Long matchingId,
             @RequestParam(name = "userId") Long userId) {
