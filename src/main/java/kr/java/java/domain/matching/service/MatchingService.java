@@ -11,6 +11,7 @@ import kr.java.java.domain.space.entity.Space;
 import kr.java.java.domain.space.exception.NotFoundSpaceException;
 import kr.java.java.domain.space.exception.NotFoundUserException;
 import kr.java.java.domain.space.repository.SpaceRepository;
+import kr.java.java.domain.user.entity.Role;
 import kr.java.java.domain.user.entity.User;
 import kr.java.java.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -52,11 +53,18 @@ public class MatchingService {
                     return new NotFoundUserException("존재하지 않는 유저입니다. ID: " + loginUserId);
                 });
 
+        boolean isLoginUserHostOfSpace = loginUser.getId().equals(targetSpace.getUser().getId());
+
+        if(loginUser.getRole() == Role.HOST && !isLoginUserHostOfSpace){
+            log.warn("[매칭 실패] HOST 유저가 타인의 공간에 매칭 시도 - UserId: {}, SpaceId: {}", userId, targetSpace.getId());
+            throw new MatchingException(MatchingErrorCode.HOST_CANNOT_MATCH_OTHER_SPACE);
+        }
+
         User sender = loginUser;
         User receiver;
 
         // 로그인 유저가 공간의 host라면
-        if(loginUser.getId().equals(targetSpace.getUser().getId())){
+        if(isLoginUserHostOfSpace){
             receiver = targetUser;
         } else{
             receiver = targetSpace.getUser();
