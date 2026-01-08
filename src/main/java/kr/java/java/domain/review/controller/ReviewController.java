@@ -2,7 +2,6 @@ package kr.java.java.domain.review.controller;
 
 import jakarta.validation.Valid;
 import kr.java.java.domain.review.dto.ReviewCreateRequest;
-import kr.java.java.domain.review.dto.ReviewDeleteRequest;
 import kr.java.java.domain.review.dto.ReviewResponse;
 import kr.java.java.domain.review.dto.ReviewUpdateRequest;
 import kr.java.java.domain.review.service.ReviewService;
