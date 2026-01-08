@@ -1,6 +1,8 @@
 package kr.java.java.domain.matching.controller;
 
 import kr.java.java.domain.matching.dto.CreateMatchingRequest;
+import kr.java.java.domain.matching.dto.CreateMatchingToSpaceRequest;
+import kr.java.java.domain.matching.dto.CreateMatchingToUserRequest;
 import kr.java.java.domain.matching.dto.MatchingResponse;
 import kr.java.java.domain.matching.enums.MatchStatus;
 import kr.java.java.domain.matching.service.MatchingService;
@@ -23,7 +25,7 @@ public class MatchingController {
     @PostMapping("/spaces/{spaceId}/matchings")
     public ResponseEntity<Void> createMatchingToSpace(
             @PathVariable Long spaceId,
-            @RequestBody CreateMatchingRequest request,
+            @RequestBody CreateMatchingToSpaceRequest request,
             @RequestParam Long userId
     ) {
         matchingService.createUserToSpace(spaceId, request, userId);
@@ -33,7 +35,7 @@ public class MatchingController {
     @PostMapping("/users/{targetUserId}/matchings")
     public ResponseEntity<Void> createMatchingToUser(
             @PathVariable Long targetUserId,
-            @RequestBody CreateMatchingRequest request,
+            @RequestBody CreateMatchingToUserRequest request,
             @RequestParam Long userId
     ) {
         matchingService.createSpaceToUser(targetUserId, request, userId);
