@@ -26,11 +26,13 @@ public class MypageResponse {
     @Builder
     public static class ProfileInfo {
 
+
         @JsonProperty("id")
-        private UUID uuid;
+        private Long id;
 
         @JsonProperty("userId")
-        private Long id;
+        private UUID uuid;
+
 
         private String nickname;
         private String email;
