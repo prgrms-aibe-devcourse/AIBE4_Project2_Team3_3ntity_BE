@@ -256,6 +256,30 @@ public class MatchingService {
                 log.error("[매칭 상태 변경] 실패: ID={}, 사유={}", matching.getId(), e.getMessage());
             }
         }
-        log.info("만료 매칭 처리 완료");
+    }
+
+    @Transactional
+    public void processOverdueWaitingMatchings() {
+        LocalDate today = LocalDate.now();
+
+        List<Matching> overdueMatchings = matchingRepository.findOverdueWaitingMatchings(today, MatchStatus.WAITING);
+
+        log.info("총 {}건의 만료 대상 매칭 발견", overdueMatchings.size());
+
+        for(Matching matching : overdueMatchings){
+            try{
+                matching.rejectMatch();
+
+                log.info("[매칭 거절] ID: {}, 발신자: {}, 수신자: {}",
+                        matching.getId(),
+                        matching.getUser().getNickname(),
+                        matching.getReceiver().getNickname());
+
+                // TODO: 발신자에게 알림 전송
+
+            } catch(Exception e){
+                log.error("[자동 거절 실패] ID: {}, 사유: {}", matching.getId(), e.getMessage());
+            }
+        }
     }
 }
