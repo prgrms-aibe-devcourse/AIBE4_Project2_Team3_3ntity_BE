@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+
 @Entity
 @Table(name = "spaces")
 @Getter
@@ -95,6 +96,11 @@ public class Space {
         }
         if (request.pricePerMonth() != null) {
             this.pricePerMonth = request.pricePerMonth();
+        }
+        if(request.status().equals(SpaceStatus.RECRUITING)){
+            this.status = SpaceStatus.RECRUITING;
+        }else{
+            this.status = SpaceStatus.CLOSED;
         }
     }
 }

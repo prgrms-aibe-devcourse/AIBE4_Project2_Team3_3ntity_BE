@@ -15,6 +15,7 @@ public record SpaceResponse(
         Double longitude,
         Integer pricePerMonth,
         String status,
+        LocalDateTime createdAt,
         String hostName
 ) {
     // Entity를 DTO로 변환하는 생성자 (편의를 위해 추가)
@@ -30,6 +31,7 @@ public record SpaceResponse(
                 space.getLongitude() != null ? space.getLongitude().doubleValue() : null,
                 space.getPricePerMonth(),
                 space.getStatus().name(),
+                space.getCreatedAt(),
                 space.getUser().getNickname()
         );
     }
