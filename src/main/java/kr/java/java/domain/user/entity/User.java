@@ -68,6 +68,12 @@ public class User {
         }
     }
 
+    public void upgradeToHost() {
+        if (this.role == Role.USER) {
+            this.role = Role.HOST;
+        }
+    }
+
     public boolean isHost() {
         return this.role == Role.HOST;
     }
