@@ -1,5 +1,7 @@
 package kr.java.java.domain.space.dto;
 
+import kr.java.java.domain.space.enums.SpaceStatus;
+
 public record SpaceUpdateRequest(
         String title,
         String description,
@@ -8,5 +10,6 @@ public record SpaceUpdateRequest(
         String detailAddress,
         Double latitude,
         Double longitude,
-        Integer pricePerMonth
+        Integer pricePerMonth,
+        SpaceStatus status
 ) {}

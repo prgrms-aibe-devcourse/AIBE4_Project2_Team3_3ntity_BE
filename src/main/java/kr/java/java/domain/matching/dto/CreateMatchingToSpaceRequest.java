@@ -6,9 +6,7 @@ import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDate;
 
-public record CreateMatchingRequest(
-        Long spaceId,
-        Long userId,
+public record CreateMatchingToSpaceRequest(
         String message,
 
         @NotNull(message = "시작 날짜를 선택해주세요.")

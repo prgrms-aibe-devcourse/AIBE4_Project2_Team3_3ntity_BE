@@ -37,6 +37,8 @@ public class SpaceService {
         User user = userRepository.getReferenceById(loginUserId);
         Space space = spaceRequest.toEntity(user);
         spaceRepository.save(space);
+
+        // TODO 권한 업그레이드 하는 부분 추가 예정
     }
 
     @Transactional(readOnly = true)

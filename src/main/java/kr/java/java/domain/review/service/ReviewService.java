@@ -29,13 +29,13 @@ public class ReviewService {
     private final MatchingRepository matchingRepository;
 
     @Transactional
-    public Long createReview(ReviewCreateRequest request) {
-        log.info("리뷰 생성 시도 - userId: {}, matchingId: {}", request.userId(), request.matchingId());
+    public Long createReview(Long userId, ReviewCreateRequest request) {
+        log.info("리뷰 생성 시도 - userId: {}, matchingId: {}", userId, request.matchingId());
 
         // 1. 유저 검증 및 조회
-        User user = userRepository.findById(request.userId())
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> {
-                    log.warn("존재하지 않는 유저입니다. userId: {}", request.userId());
+                    log.warn("존재하지 않는 유저입니다. userId: {}", userId);
                     return new UserNotFoundException("존재하지 않는 사용자입니다.");
                 });
 
@@ -47,8 +47,8 @@ public class ReviewService {
                 });
 
         // 3. 중복 리뷰 검증
-        if (reviewRepository.existsByMatchingIdAndUserId(request.matchingId(), request.userId())) {
-            log.warn("이미 작성된 리뷰가 존재합니다. matchingId: {}, userId: {}", request.matchingId(), request.userId());
+        if (reviewRepository.existsByMatchingIdAndUserId(request.matchingId(), userId)) {
+            log.warn("이미 작성된 리뷰가 존재합니다. matchingId: {}, userId: {}", request.matchingId(), userId);
             throw new DuplicateReviewException("이미 해당 매칭에 대한 리뷰를 작성하셨습니다.");
         }
 
@@ -116,8 +116,8 @@ public class ReviewService {
     }
 
     @Transactional
-    public void updateReview(Long reviewId, ReviewUpdateRequest request) {
-        log.info("리뷰 수정 시작 - reviewId: {}, userId: {}", reviewId, request.userId());
+    public void updateReview(Long reviewId, Long userId, ReviewUpdateRequest request) {
+        log.info("리뷰 수정 시작 - reviewId: {}, userId: {}", reviewId, userId);
 
         // 1. 리뷰 조회
         Review review = reviewRepository.findById(reviewId)
@@ -127,8 +127,8 @@ public class ReviewService {
                 });
 
         // 2. 작성자 권한 검증
-        if (!review.getUser().getId().equals(request.userId())) {
-            log.warn("리뷰 수정 권한 없음 - 작성자: {}, 요청자: {}", review.getUser().getId(), request.userId());
+        if (!review.getUser().getId().equals(userId)) {
+            log.warn("리뷰 수정 권한 없음 - 작성자: {}, 요청자: {}", review.getUser().getId(), userId);
             throw new ReviewAccessDeniedException("본인이 작성한 리뷰만 수정할 수 있습니다.");
         }
 
