@@ -125,6 +125,8 @@ public class ImageService {
         } catch (ImageException e){
             throw new ImageException(ImageErrorCode.S3_IMAGE_NOT_FOUND);
         }
+
+        imageRepository.delete(image);
     }
 
     private String extractFileName(String url) {

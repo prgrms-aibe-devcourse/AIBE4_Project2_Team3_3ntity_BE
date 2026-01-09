@@ -47,4 +47,10 @@ public class ImageController {
     ){
         return ResponseEntity.ok(imageService.getImages(TargetType.PORTFOLIO, portfolioId));
     }
+
+    @DeleteMapping("/{imageId}")
+    public ResponseEntity<Void> deleteImage(@PathVariable Long imageId){
+        imageService.deleteSingleImage(imageId);
+        return ResponseEntity.noContent().build();
+    }
 }
