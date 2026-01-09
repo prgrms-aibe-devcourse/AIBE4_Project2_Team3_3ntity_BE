@@ -1,9 +1,6 @@
 package kr.java.java.domain.space.controller;
 
-import kr.java.java.domain.space.dto.SpaceListResponse;
-import kr.java.java.domain.space.dto.SpaceRequest;
-import kr.java.java.domain.space.dto.SpaceResponse;
-import kr.java.java.domain.space.dto.SpaceUpdateRequest;
+import kr.java.java.domain.space.dto.*;
 import kr.java.java.domain.space.service.SpaceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,11 +13,12 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @Slf4j
+@RequestMapping("/piece/spaces")
 public class SpaceController {
 
     private final SpaceService spaceService;
 
-    @PostMapping("/piece/spaces")
+    @PostMapping
     public ResponseEntity<Void> createSpace(@RequestBody SpaceRequest request, Long loginUserId){
         log.info("공간 등록 시도 - UserId : {}",loginUserId);
         //TODO 인증이 완성되지 않아서 임시 테스트용으로 더미데이터를 직접 삽입
@@ -29,45 +27,54 @@ public class SpaceController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @GetMapping("/piece/spaces")
+    @GetMapping
     public ResponseEntity<List<SpaceListResponse>> getAllSpaces() {
         log.info("공간 전체 조회");
         List<SpaceListResponse> responses = spaceService.getAllSpaces();
         return ResponseEntity.ok(responses);
     }
 
-    @GetMapping("/piece/spaces/{id}")
+    @GetMapping("/{id}")
     public ResponseEntity<SpaceResponse> getSpace(@PathVariable Long id){
         log.info("공간 단건 조회 id = {}", id);
         SpaceResponse response = spaceService.getSpace(id);
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/piece/spaces/users/{userId}")
+    @GetMapping("/users/{userId}")
     public ResponseEntity<List<SpaceListResponse>> getAllSpacesByUserId(@PathVariable Long userId){
         log.info("특정 유저의 공간 전체 조회 userId = {}",userId);
         List<SpaceListResponse> responses = spaceService.getSpacesByUserId(1L);
         return ResponseEntity.ok(responses);
     }
 
-    @DeleteMapping("/piece/spaces/{id}")
+    @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteSpace(@PathVariable Long id, Long userId){
         log.info("공간 삭제 시도 - 공간ID: {}, 작성자: {}", id, userId);
         spaceService.deleteSpace(id, 1L);
         return ResponseEntity.noContent().build();
     }
 
-    @PutMapping("/piece/spaces/{id}")
+    @PutMapping("/{id}")
     public ResponseEntity<SpaceResponse> updateSpace(@PathVariable Long id, @RequestBody SpaceUpdateRequest request, Long userId) {
         log.info("공간 전체 수정 시도 - ID: {}", id);
         SpaceResponse response = spaceService.updateSpace(id, request, 1L);
         return ResponseEntity.ok(response);
     }
 
-    @PatchMapping("/piece/spaces/{id}")
+    @PatchMapping("/{id}")
     public ResponseEntity<SpaceResponse> updateSpacePartial(@PathVariable Long id, @RequestBody SpaceUpdateRequest request, Long userId) {
         log.info("공간 부분 수정 시도 - ID: {}", id);
         SpaceResponse response = spaceService.updateSpace(id, request, 1L);
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<SpaceListResponse>> searchSpaces(
+            @ModelAttribute SpaceSearchCondition condition
+    ) {
+        log.info("공간 검색 요청 - 조건: {}", condition);
+        List<SpaceListResponse> responses = spaceService.searchSpaces(condition);
+        return ResponseEntity.ok(responses);
     }
 }
