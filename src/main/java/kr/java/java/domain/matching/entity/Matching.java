@@ -87,4 +87,8 @@ public class Matching {
 
         this.status = newStatus;
     }
+
+    public void completeMatch(){
+        this.status = MatchStatus.COMPLETED;
+    }
 }

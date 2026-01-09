@@ -3,6 +3,7 @@ package kr.java.java.domain.space.entity;
 import jakarta.persistence.*;
 import kr.java.java.domain.matching.entity.Matching;
 import kr.java.java.domain.space.dto.SpaceUpdateRequest;
+import kr.java.java.domain.space.enums.SpaceCategory;
 import kr.java.java.domain.space.enums.SpaceStatus;
 import kr.java.java.domain.user.entity.User;
 import lombok.AccessLevel;
@@ -34,8 +35,9 @@ public class Space {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "category", length = 50)
-    private String category;
+    private SpaceCategory category;
 
     @Column(name = "address", nullable = false, length = 255)
     private String address;
@@ -68,7 +70,7 @@ public class Space {
     private List<Matching> matchings = new ArrayList<>();
 
     @Builder
-    public Space(String title, String description, String category, String address, String detailAddress, BigDecimal latitude, BigDecimal longitude, Integer pricePerMonth,User user){
+    public Space(String title, String description, SpaceCategory category, String address, String detailAddress, BigDecimal latitude, BigDecimal longitude, Integer pricePerMonth,User user){
         this.title = title;
         this.description = description;
         this.category = category;
