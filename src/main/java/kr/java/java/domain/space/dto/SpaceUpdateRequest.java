@@ -1,11 +1,12 @@
 package kr.java.java.domain.space.dto;
 
+import kr.java.java.domain.space.enums.SpaceCategory;
 import kr.java.java.domain.space.enums.SpaceStatus;
 
 public record SpaceUpdateRequest(
         String title,
         String description,
-        String category,
+        SpaceCategory category,
         String address,
         String detailAddress,
         Double latitude,

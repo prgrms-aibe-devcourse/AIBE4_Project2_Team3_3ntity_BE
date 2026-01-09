@@ -9,7 +9,8 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface SpaceRepository extends JpaRepository<Space, Long> {
+public interface SpaceRepository extends JpaRepository<Space, Long>,
+        SpaceRepositoryCustom {
     boolean existsByAddressAndDetailAddress(String address, String detailAddress);
     @Query("SELECT s FROM Space s JOIN FETCH s.user ORDER BY s.id DESC")
     List<Space> findAllByOrderByIdDesc();
