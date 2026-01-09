@@ -25,8 +25,10 @@ public class MypageResponse {
     @AllArgsConstructor
     @Builder
     public static class ProfileInfo {
-        @JsonProperty("id")
+        @JsonProperty("userId")
         private UUID uuid;
+
+
         private String nickname;
         private String email;
         private String profileImageUrl;
@@ -42,7 +44,6 @@ public class MypageResponse {
         private Long spacesCount;
         private Long portfoliosCount;
         private Long reviewsCount;
-        private Long matchingsCount;
         private Long likesCount;
     }
 
