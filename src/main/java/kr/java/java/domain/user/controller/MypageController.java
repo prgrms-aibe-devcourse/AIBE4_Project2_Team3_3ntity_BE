@@ -33,4 +33,11 @@ public class MypageController {
         return ResponseEntity.ok(response);
     }
 
+    @DeleteMapping
+    public ResponseEntity<Void> deleteUser(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        mypageService.deleteUser(userDetails.getUuid());
+        return ResponseEntity.noContent().build();
+    }
+
 }
