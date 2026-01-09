@@ -2,6 +2,8 @@ package kr.java.java.domain.image.service;
 
 import kr.java.java.domain.image.entity.Image;
 import kr.java.java.domain.image.enums.TargetType;
+import kr.java.java.domain.image.exception.ImageErrorCode;
+import kr.java.java.domain.image.exception.ImageException;
 import kr.java.java.domain.image.repository.ImageRepository;
 import kr.java.java.domain.portfolio.entity.Portfolio;
 import kr.java.java.domain.portfolio.exception.NotFoundPortfolioException;
@@ -19,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
@@ -106,5 +109,24 @@ public class ImageService {
         return images.stream()
                 .map(Image::getFileUrl)
                 .collect(Collectors.toList());
+    }
+
+    public void deleteSingleImage(Long imageId) {
+        Image image = imageRepository.findById(imageId)
+                .orElseThrow(() -> new ImageException(ImageErrorCode.DB_IMAGE_NOT_FOUND));
+
+        String fileName = extractFileName(image.getFileUrl());
+        try {
+            s3Client.deleteObject(DeleteObjectRequest.builder()
+                    .bucket(bucket)
+                    .key(fileName)
+                    .build());
+        } catch (ImageException e){
+            throw new ImageException(ImageErrorCode.S3_IMAGE_NOT_FOUND);
+        }
+    }
+
+    private String extractFileName(String url) {
+        return url.substring(url.lastIndexOf("/") + 1);
     }
 }
