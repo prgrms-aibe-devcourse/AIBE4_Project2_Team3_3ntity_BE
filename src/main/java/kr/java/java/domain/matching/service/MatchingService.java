@@ -234,7 +234,7 @@ public class MatchingService {
     }
 
     @Transactional
-    public void proccessExpiredMatchings() {
+    public void processExpiredMatchings() {
         LocalDate today = LocalDate.now();
 
         List<Matching> expiredMatchings = matchingRepository.findExpiredMatchingsWithUser(today, MatchStatus.ONGOING);
