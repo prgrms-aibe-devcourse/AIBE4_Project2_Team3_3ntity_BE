@@ -11,8 +11,10 @@ import java.util.List;
 @Repository
 public interface PortfolioRepository extends JpaRepository<Portfolio, Long> {
     boolean existsByBrandNameAndTitle(String brandName, String title);
-    List<Portfolio> findAllByOrderByIdDesc();
-    List<Portfolio> findByUserIdOrderByIdDesc(Long userId);
+    @Query("SELECT p FROM Portfolio p JOIN FETCH p.user ORDER BY p.id DESC")
+    List<Portfolio> findAllByIsOpenTrueOrderByIdDesc();
+    @Query("SELECT p FROM Portfolio p JOIN FETCH p.user WHERE p.user.id = :userId ORDER BY p.id DESC")
+    List<Portfolio> findByUserIdOrderByIdDesc(@Param("userId") Long userId);
     @Query("SELECT COUNT(p) FROM Portfolio p WHERE p.user.id = :userId")
     long countPortfoliosByUserId(@Param("userId") Long userId);
 }

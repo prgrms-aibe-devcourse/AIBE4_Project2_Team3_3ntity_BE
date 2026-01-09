@@ -9,8 +9,6 @@ public record PortfolioUpdateRequest(
         String description,
         String category,
         String externalLink,
-        boolean isOpen,
-        LocalDateTime createdAt,
-        String userName
+        boolean isOpen
 ) {
 }

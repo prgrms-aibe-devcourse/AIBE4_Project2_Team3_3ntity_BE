@@ -31,14 +31,14 @@ public class PortfolioController {
     @GetMapping("/piece/portfolios")
     public ResponseEntity<List<PortfolioListResponse>> getAllportfolios() {
         log.info("포트폴리오 전체 조회");
-        List<PortfolioListResponse> responses = portfolioService.getAllportfolios();
+        List<PortfolioListResponse> responses = portfolioService.getPortfolios();
         return ResponseEntity.ok(responses);
     }
 
     @GetMapping("/piece/portfolios/users/{userId}")
     public ResponseEntity<List<PortfolioListResponse>> getAllportfoliosByUserId(@PathVariable Long userId){
         log.info("특정 유저의 포트폴리오 전체 조회 userId = {}",userId);
-        List<PortfolioListResponse> responses = portfolioService.getportfoliosByUserId(1L);
+        List<PortfolioListResponse> responses = portfolioService.portfoliosByUserId(1L);
         return ResponseEntity.ok(responses);
     }
 
