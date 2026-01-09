@@ -58,6 +58,7 @@ public class SecurityConfig {
                         .requestMatchers("/piece/portfolios/**").permitAll()
                         .requestMatchers("/piece/reviews/**").permitAll()
                         .requestMatchers("/piece/comments/**").permitAll()
+                        .requestMatchers("/piece/favorites/**").permitAll()
                         .requestMatchers("/piece/matchings/**").permitAll()
                         .requestMatchers("/piece/images/**").permitAll()
                         .requestMatchers("/piece/notifications/**").permitAll()
