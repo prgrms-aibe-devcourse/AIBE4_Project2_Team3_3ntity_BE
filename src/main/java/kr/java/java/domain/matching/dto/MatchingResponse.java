@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 public record MatchingResponse(
         Long matchingId,
         String spaceTitle,
+        String mainImageUrl,
         String opponentNickname,
         String message,
         LocalDate startDate,
@@ -15,13 +16,14 @@ public record MatchingResponse(
         String status,
         LocalDateTime createdAt
 ) {
-    public static MatchingResponse from(Matching matching, Long UserId) {
+    public static MatchingResponse from(Matching matching, Long UserId, String mainImageUrl) {
         String opponentNickname = matching.getUser().getId().equals(UserId)
                 ? matching.getReceiver().getNickname() : matching.getUser().getNickname();
 
         return new MatchingResponse(
                 matching.getId(),
                 matching.getSpace().getTitle(),
+                mainImageUrl,
                 opponentNickname,
                 matching.getMessage(),
                 matching.getStartDate(),
