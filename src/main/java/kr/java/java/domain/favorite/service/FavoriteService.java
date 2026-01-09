@@ -1,5 +1,6 @@
 package kr.java.java.domain.favorite.service;
 
+import kr.java.java.domain.favorite.dto.FavoriteResponse;
 import kr.java.java.domain.favorite.entity.Favorite;
 import kr.java.java.domain.favorite.repository.FavoriteRepository;
 import kr.java.java.domain.portfolio.entity.Portfolio;
@@ -78,6 +79,36 @@ public class FavoriteService {
             log.info("포트폴리오 찜 저장 성공 - favoriteId: {}", savedFavorite.getId());
             return true;
         }
+    }
+
+    // 내가 찜한 공간 목록 조회
+    public List<FavoriteResponse> getMySpaceFavorites(Long userId) {
+        validateUser(userId);
+        log.info("내가 찜한 공간 목록 조회 요청 - userId: {}", userId);
+        List<Favorite> favorites = favoriteRepository.findAllByUserIdAndSpaceIsNotNull(userId);
+        log.info("사용자(ID:{}) 공간 찜 목록 조회 성공 - 총 {}건", userId, favorites.size());
+        return favorites.stream()
+                .map(FavoriteResponse::from)
+                .toList();
+    }
+
+    // 내가 찜한 포트폴리오 목록 조회
+    public List<FavoriteResponse> getMyPortfolioFavorites(Long userId) {
+        validateUser(userId);
+        log.info("내가 찜한 포트폴리오 목록 조회 요청 - userId: {}", userId);
+        List<Favorite> favorites = favoriteRepository.findAllByUserIdAndPortfolioIsNotNull(userId);
+        log.info("사용자(ID:{}) 포트폴리오 찜 목록 조회 성공 - 총 {}건", userId, favorites.size());
+        return favorites.stream()
+                .map(FavoriteResponse::from)
+                .toList();
+    }
+
+    private void validateUser(Long userId) {
+        if (userId == null) {
+            throw new UserNotFoundException("유저 ID가 없습니다.");
+        }
+        userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("존재하지 않는 사용자입니다."));
     }
 
 }

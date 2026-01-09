@@ -1,10 +1,13 @@
 package kr.java.java.domain.favorite.controller;
 
+import kr.java.java.domain.favorite.dto.FavoriteResponse;
 import kr.java.java.domain.favorite.service.FavoriteService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -56,5 +59,37 @@ public class FavoriteController {
             log.info("포트폴리오 찜 취소 완료 - portfolioId: {}", portfolioId);
             return ResponseEntity.ok("포트폴리오 찜을 취소했습니다.");
         }
+    }
+
+    // 내가 찜한 공간 목록 조회 API
+    @GetMapping("/space/my")
+    public ResponseEntity<List<FavoriteResponse>> getMySpaceFavorites(
+            Long loginUserId
+    ) {
+        Long userId = 1L;
+        // Long userId = loginUserId; // TODO: 추후에 loginUserId로 변경
+
+        log.info("GET /piece/favorites/space/my 요청 발생 - 요청자 ID: {}", userId);
+
+        List<FavoriteResponse> responses = favoriteService.getMySpaceFavorites(userId);
+
+        log.info("공간 찜 목록 조회 완료 - 총 {}건", responses.size());
+        return ResponseEntity.ok(responses);
+    }
+
+    // 내가 찜한 포트폴리오 목록 조회 API
+    @GetMapping("/portfolio/my")
+    public ResponseEntity<List<FavoriteResponse>> getMyPortfolioFavorites(
+            Long loginUserId
+    ) {
+        Long userId = 1L;
+        // Long userId = loginUserId; // TODO: 추후에 loginUserId로 변경
+
+        log.info("GET /piece/favorites/portfolio/my 요청 발생 - 요청자 ID: {}", userId);
+
+        List<FavoriteResponse> responses = favoriteService.getMyPortfolioFavorites(userId);
+
+        log.info("포트폴리오 찜 목록 조회 완료 - 총 {}건", responses.size());
+        return ResponseEntity.ok(responses);
     }
 }
