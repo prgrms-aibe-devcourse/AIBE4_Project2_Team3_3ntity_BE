@@ -34,19 +34,20 @@ public interface MatchingRepository extends JpaRepository<Matching, Long> {
             "JOIN FETCH m.user u " +
             "JOIN FETCH m.receiver r " +
             "WHERE (u.id = :userId OR r.id = :userId)" +
-            "AND (:status IS NULL OR m.status = :status)")
+            "AND (:status IS NULL OR m.status = :status)" +
+            "ORDER BY m.createdAt DESC")
     List<Matching> findAllByUserIdAndStatus(
             @Param("userId") Long userId,
             @Param("status") MatchStatus status
     );
 
-    @Query("SELECT m FROM Matching m JOIN FETCH m.space s WHERE (s.user.id = :userId) AND (:status IS NULL OR m.status = :status)")
+    @Query("SELECT m FROM Matching m JOIN FETCH m.space s WHERE (s.user.id = :userId) AND (:status IS NULL OR m.status = :status) ORDER BY m.createdAt DESC")
     List<Matching> findAllBySpaceHostId(
             @Param("userId") Long userId,
             @Param("status") MatchStatus status
     );
 
-    @Query("SELECT m FROM Matching m JOIN FETCH m.space s WHERE (m.user.id = :userId OR m.receiver.id = :userId) AND s.user.id != :userId AND (:status IS NULL OR m.status = :status)")
+    @Query("SELECT m FROM Matching m JOIN FETCH m.space s WHERE (m.user.id = :userId OR m.receiver.id = :userId) AND s.user.id != :userId AND (:status IS NULL OR m.status = :status) ORDER BY m.createdAt DESC")
     List<Matching> findAllAsMakerId(
             @Param("userId") Long userId,
             @Param("status") MatchStatus status
