@@ -1,9 +1,6 @@
 package kr.java.java.domain.space.service;
 
-import kr.java.java.domain.space.dto.SpaceListResponse;
-import kr.java.java.domain.space.dto.SpaceRequest;
-import kr.java.java.domain.space.dto.SpaceResponse;
-import kr.java.java.domain.space.dto.SpaceUpdateRequest;
+import kr.java.java.domain.space.dto.*;
 import kr.java.java.domain.space.entity.Space;
 import kr.java.java.domain.space.exception.DuplicateSpaceException;
 import kr.java.java.domain.space.exception.NotFoundSpaceException;
@@ -96,5 +93,13 @@ public class SpaceService {
 
         space.update(request);
         return new SpaceResponse(space);
+    }
+
+    // 검색 및 필터링
+    public List<SpaceListResponse> searchSpaces(SpaceSearchCondition condition) {
+        // QueryDSL로 조회된 Space 엔티티 리스트를 DTO 리스트로 변환
+        return spaceRepository.search(condition).stream()
+                .map(SpaceListResponse::new)
+                .toList();
     }
 }
