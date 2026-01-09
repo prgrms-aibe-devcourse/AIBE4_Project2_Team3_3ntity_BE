@@ -1,6 +1,7 @@
 package kr.java.java.domain.user.service;
 
 
+import kr.java.java.domain.auth.service.RefreshTokenService;
 import kr.java.java.domain.comment.repository.CommentRepository;
 import kr.java.java.domain.favorite.entity.Favorite;
 import kr.java.java.domain.favorite.repository.FavoriteRepository;
@@ -36,6 +37,7 @@ public class MypageService {
     private final CommentRepository commentRepository;
     private final MatchingRepository matchingRepository;
     private final FavoriteRepository favoriteRepository;
+    private final RefreshTokenService refreshTokenService;
 
     // 마이페이지 메인
     public MypageResponse getMypage(UUID uuid) {
@@ -81,6 +83,8 @@ public class MypageService {
         Long userId = user.getId();
 
         log.info("회원 탈퇴 - UserId: {}", userId);
+
+        refreshTokenService.deleteRefreshToken(uuid);
 
         List<Favorite> allFavorites = new ArrayList<>();
         allFavorites.addAll(favoriteRepository.findAllByUserIdAndSpaceIsNotNull(userId));
