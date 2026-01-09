@@ -23,6 +23,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -93,5 +94,17 @@ public class ImageService {
                         .build();
             }
         };
+    }
+
+    public List<String> getImages(TargetType targetType, Long targetId) {
+        List<Image> images = switch(targetType) {
+            case REVIEW -> imageRepository.findAllByReviewIdOrderBySortOrderAsc(targetId);
+            case SPACE -> imageRepository.findAllBySpaceIdOrderBySortOrderAsc(targetId);
+            case PORTFOLIO -> imageRepository.findAllByPortfolioIdOrderBySortOrderAsc(targetId);
+        };
+
+        return images.stream()
+                .map(Image::getFileUrl)
+                .collect(Collectors.toList());
     }
 }
