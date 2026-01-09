@@ -1,6 +1,7 @@
 package kr.java.java.domain.image.service;
 
 import kr.java.java.domain.image.entity.Image;
+import kr.java.java.domain.image.enums.ImageDomain;
 import kr.java.java.domain.image.enums.TargetType;
 import kr.java.java.domain.image.repository.ImageRepository;
 import kr.java.java.domain.portfolio.entity.Portfolio;
@@ -12,6 +13,7 @@ import kr.java.java.domain.review.repository.ReviewRepository;
 import kr.java.java.domain.space.entity.Space;
 import kr.java.java.domain.space.exception.NotFoundSpaceException;
 import kr.java.java.domain.space.repository.SpaceRepository;
+import kr.java.java.domain.user.repository.UserRepository;
 import kr.java.java.global.util.FileUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,6 +34,7 @@ public class ImageService {
     private final ReviewRepository reviewRepository;
     private final SpaceRepository spaceRepository;
     private final PortfolioRepository portfolioRepository;
+    private final UserRepository userRepository;
 
     @Value("${supabase.storage.bucket}")
     private String bucket;
@@ -93,5 +96,21 @@ public class ImageService {
                         .build();
             }
         };
+    }
+
+    public String uploadProfileImage(MultipartFile file) throws IOException {
+        if(!file.isEmpty()){
+            return null;
+        }
+
+        String fileName = ImageDomain.USER.getDirName() + "/" + FileUtil.createFileName(file.getOriginalFilename());
+
+        s3Client.putObject(PutObjectRequest.builder()
+                .bucket(bucket)
+                .key(fileName)
+                .contentType(file.getContentType())
+                .build(), RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
+
+        return String.format("%s/storage/v1/object/public/%s/%s", supabaseUrl, bucket, fileName);
     }
 }
