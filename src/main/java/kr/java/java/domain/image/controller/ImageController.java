@@ -1,5 +1,6 @@
 package kr.java.java.domain.image.controller;
 
+import kr.java.java.domain.image.dto.ImageResponse;
 import kr.java.java.domain.image.enums.TargetType;
 import kr.java.java.domain.image.service.ImageService;
 import lombok.RequiredArgsConstructor;
@@ -24,5 +25,26 @@ public class ImageController {
     ) throws IOException {
         imageService.uploadImage(files, targetType, targetId);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/reviews/{reviewId}")
+    public ResponseEntity<List<ImageResponse>> getReviewImages(
+            @PathVariable Long reviewId
+    ){
+        return ResponseEntity.ok(imageService.getImages(TargetType.REVIEW, reviewId));
+    }
+
+    @GetMapping("/spaces/{spaceId}")
+    public ResponseEntity<List<ImageResponse>> getSpaceImages(
+            @PathVariable Long spaceId
+    ){
+        return ResponseEntity.ok(imageService.getImages(TargetType.SPACE, spaceId));
+    }
+
+    @GetMapping("/portfolios/{portfolioId}")
+    public ResponseEntity<List<ImageResponse>> getPortfolioImages(
+            @PathVariable Long portfolioId
+    ){
+        return ResponseEntity.ok(imageService.getImages(TargetType.PORTFOLIO, portfolioId));
     }
 }

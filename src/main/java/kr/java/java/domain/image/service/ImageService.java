@@ -1,5 +1,6 @@
 package kr.java.java.domain.image.service;
 
+import kr.java.java.domain.image.dto.ImageResponse;
 import kr.java.java.domain.image.entity.Image;
 import kr.java.java.domain.image.enums.TargetType;
 import kr.java.java.domain.image.exception.ImageErrorCode;
@@ -99,7 +100,7 @@ public class ImageService {
         };
     }
 
-    public List<String> getImages(TargetType targetType, Long targetId) {
+    public List<ImageResponse> getImages(TargetType targetType, Long targetId) {
         List<Image> images = switch(targetType) {
             case REVIEW -> imageRepository.findAllByReviewIdOrderBySortOrderAsc(targetId);
             case SPACE -> imageRepository.findAllBySpaceIdOrderBySortOrderAsc(targetId);
@@ -107,8 +108,8 @@ public class ImageService {
         };
 
         return images.stream()
-                .map(Image::getFileUrl)
-                .collect(Collectors.toList());
+                .map(ImageResponse::from)
+                .toList();
     }
 
     public void deleteSingleImage(Long imageId) {
