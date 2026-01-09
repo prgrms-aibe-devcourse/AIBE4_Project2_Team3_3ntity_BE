@@ -1,6 +1,7 @@
 package kr.java.java.domain.space.dto;
 
 import kr.java.java.domain.space.entity.Space;
+import kr.java.java.domain.space.enums.SpaceCategory;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -8,7 +9,7 @@ import java.time.LocalDateTime;
 public record SpaceListResponse(
         Long id,
         String title,
-        String category,
+        SpaceCategory category,
         String address,
         BigDecimal latitude,
         BigDecimal longitude,
