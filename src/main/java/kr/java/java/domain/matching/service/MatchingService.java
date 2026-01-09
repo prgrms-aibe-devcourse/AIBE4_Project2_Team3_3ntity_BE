@@ -9,6 +9,7 @@ import kr.java.java.domain.matching.enums.MatchStatus;
 import kr.java.java.domain.matching.exception.MatchingErrorCode;
 import kr.java.java.domain.matching.exception.MatchingException;
 import kr.java.java.domain.matching.repository.MatchingRepository;
+import kr.java.java.domain.notification.service.NotificationService;
 import kr.java.java.domain.space.entity.Space;
 import kr.java.java.domain.space.exception.NotFoundSpaceException;
 import kr.java.java.domain.space.exception.NotFoundUserException;
@@ -20,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -31,6 +33,7 @@ public class MatchingService {
     private final UserRepository userRepository;
     private final SpaceRepository spaceRepository;
     private final MatchingRepository matchingRepository;
+    private final NotificationService  notificationService;
 
     //TODO 해당 서비스 페이지에 있는 User 에러처리는 추후 User 도메인의 exception에 생기면 변경
 
@@ -228,5 +231,31 @@ public class MatchingService {
         if (matching.getStatus() != MatchStatus.WAITING) {
             throw new MatchingException(MatchingErrorCode.INVALID_MATCH_STATUS);
         }
+    }
+
+    @Transactional
+    public void proccessExpiredMatchings() {
+        LocalDate today = LocalDate.now();
+
+        List<Matching> expiredMatchings = matchingRepository.findExpiredMatchingsWithUser(today, MatchStatus.ONGOING);
+
+        log.info("총 {}건의 만료 대상 매칭 발견", expiredMatchings.size());
+
+        for (Matching matching : expiredMatchings) {
+            try{
+                matching.completeMatch();
+                log.info("[매칭 종료] ID: {}, 발신자: {}, 수신자: {}",
+                        matching.getId(),
+                        matching.getUser().getNickname(),
+                        matching.getReceiver().getNickname());
+
+                // TODO: 발신자에게 알림 전송
+
+                // TODO: 수신자에게 알림 전송
+            } catch(Exception e){
+                log.error("[매칭 상태 변경] 실패: ID={}, 사유={}", matching.getId(), e.getMessage());
+            }
+        }
+        log.info("만료 매칭 처리 완료");
     }
 }

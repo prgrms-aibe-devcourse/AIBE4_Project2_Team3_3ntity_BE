@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -88,4 +89,10 @@ public interface MatchingRepository extends JpaRepository<Matching, Long> {
             @Param("userId") Long userId,
             @Param("status") MatchStatus status
     );
+
+    @Query("SELECT m FROM Matching m " +
+            "JOIN FETCH m.user " +
+            "JOIN FETCH m.receiver " +
+            "WHERE m.endDate < :today AND m.status = :status")
+    List<Matching> findExpiredMatchingsWithUser(LocalDate today, MatchStatus status);
 }
