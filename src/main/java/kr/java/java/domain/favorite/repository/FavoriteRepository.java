@@ -12,7 +12,8 @@ public interface FavoriteRepository extends JpaRepository<Favorite, Long> {
 
     void deleteByUserIdAndSpaceId(Long userId, Long spaceId);
 
-    List<Favorite> findAllByUserIdAndSpaceIsNotNull(Long userId);
+    @Query("SELECT f FROM Favorite f JOIN FETCH f.space JOIN FETCH f.user WHERE f.user.id = :userId")
+    List<Favorite> findAllByUserIdAndSpaceIsNotNull(@Param("userId") Long userId);
 
     // 특정 공간의 총 찜 개수
     @Query("SELECT COUNT(f) FROM Favorite f WHERE f.space.id = :spaceId")
@@ -22,7 +23,8 @@ public interface FavoriteRepository extends JpaRepository<Favorite, Long> {
 
     void deleteByUserIdAndPortfolioId(Long userId, Long portfolioId);
 
-    List<Favorite> findAllByUserIdAndPortfolioIsNotNull(Long userId);
+    @Query("SELECT f FROM Favorite f JOIN FETCH f.portfolio JOIN FETCH f.user WHERE f.user.id = :userId")
+    List<Favorite> findAllByUserIdAndPortfolioIsNotNull(@Param("userId") Long userId);
 
     // 특정 포트폴리오의 총 찜 개수
     @Query("SELECT COUNT(f) FROM Favorite f WHERE f.portfolio.id = :portfolioId")
