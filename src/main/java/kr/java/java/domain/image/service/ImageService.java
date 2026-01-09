@@ -2,6 +2,7 @@ package kr.java.java.domain.image.service;
 
 import kr.java.java.domain.image.dto.ImageResponse;
 import kr.java.java.domain.image.entity.Image;
+import kr.java.java.domain.image.enums.ImageDomain;
 import kr.java.java.domain.image.enums.TargetType;
 import kr.java.java.domain.image.exception.ImageErrorCode;
 import kr.java.java.domain.image.exception.ImageException;
@@ -27,7 +28,6 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -127,6 +127,37 @@ public class ImageService {
         }
 
         imageRepository.delete(image);
+    }
+
+    public String uploadProfileImage(MultipartFile file) throws IOException {
+        if(!file.isEmpty()){
+            return null;
+        }
+
+        String fileName = ImageDomain.USER.getDirName() + "/" + FileUtil.createFileName(file.getOriginalFilename());
+
+        s3Client.putObject(PutObjectRequest.builder()
+                .bucket(bucket)
+                .key(fileName)
+                .contentType(file.getContentType())
+                .build(), RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
+
+        return String.format("%s/storage/v1/object/public/%s/%s", supabaseUrl, bucket, fileName);
+    }
+
+    public void deleteProfileImage(String fileUrl){
+        if (fileUrl == null || fileUrl.isEmpty()) return;
+
+        String fileName = extractFileName(fileUrl);
+
+        try{
+            s3Client.deleteObject(DeleteObjectRequest.builder()
+                    .bucket(bucket)
+                    .key(fileName)
+                    .build());
+        } catch (Exception e){
+            throw new ImageException(ImageErrorCode.S3_IMAGE_NOT_FOUND);
+        }
     }
 
     private String extractFileName(String url) {
