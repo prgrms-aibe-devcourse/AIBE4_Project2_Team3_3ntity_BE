@@ -26,4 +26,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // 권한 검증
     boolean existsByIdAndRole(Long id, Role role);
+
+    // 닉네임 중복 체크
+    boolean existsByNickname(String nickname);
 }
