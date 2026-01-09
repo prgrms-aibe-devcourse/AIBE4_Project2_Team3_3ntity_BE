@@ -60,8 +60,18 @@ public class User {
     }
 
     public void updateProfile(String nickname, String profileImageUrl) {
-        this.nickname = nickname;
-        this.profileImageUrl = profileImageUrl;
+        if (nickname != null && !nickname.isBlank()) {
+            this.nickname = nickname;
+        }
+        if (profileImageUrl != null && !profileImageUrl.isBlank()) {
+            this.profileImageUrl = profileImageUrl;
+        }
+    }
+
+    public void upgradeToHost() {
+        if (this.role == Role.USER) {
+            this.role = Role.HOST;
+        }
     }
 
     public boolean isHost() {

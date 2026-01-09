@@ -5,6 +5,7 @@ import kr.java.java.domain.portfolio.repository.PortfolioRepository;
 import kr.java.java.domain.review.repository.ReviewRepository;
 import kr.java.java.domain.space.repository.SpaceRepository;
 import kr.java.java.domain.user.dto.MypageResponse;
+import kr.java.java.domain.user.dto.ProfileUpdateRequest;
 import kr.java.java.domain.user.entity.User;
 import kr.java.java.domain.user.exception.UserErrorCode;
 import kr.java.java.domain.user.exception.UserException;
@@ -40,5 +41,24 @@ public class MypageService {
                 .build();
 
         return MypageResponse.of(user, stats);
+    }
+
+    @Transactional
+    public MypageResponse updateProfile(UUID uuid, ProfileUpdateRequest request) {
+        User user = userRepository.findByUuid(uuid)
+                .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
+
+        // 닉네임 중복 체크 (본인 닉네임 제외)
+        if (!user.getNickname().equals(request.getNickname())) {
+            if (userRepository.existsByNickname(request.getNickname())) {
+                throw new UserException(UserErrorCode.DUPLICATE_NICKNAME);
+            }
+        }
+
+        // 프로필 업데이트
+        user.updateProfile(request.getNickname(), request.getProfileImageUrl());
+
+        // 업데이트된 정보 반환
+        return getMypage(uuid);
     }
 }

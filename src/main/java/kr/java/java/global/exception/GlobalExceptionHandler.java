@@ -8,6 +8,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -27,6 +29,25 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(e.getErrorCode().getHttpStatus())
+                .body(body);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, Object>> handleValidationException(MethodArgumentNotValidException e) {
+        log.error("[ValidationException] {}", e.getMessage());
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("code", "INVALID_INPUT");
+
+        FieldError fieldError = e.getBindingResult().getFieldError();
+        if (fieldError != null) {
+            body.put("message", fieldError.getDefaultMessage());
+        } else {
+            body.put("message", "입력값이 올바르지 않습니다.");
+        }
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
                 .body(body);
     }
 

@@ -22,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -251,4 +252,30 @@ public class MatchingService {
             throw new MatchingException(MatchingErrorCode.INVALID_MATCH_STATUS);
         }
     }
+    @Transactional
+    public void processExpiredMatchings() {
+        LocalDate today = LocalDate.now();
+
+        List<Matching> expiredMatchings = matchingRepository.findExpiredMatchingsWithUser(today, MatchStatus.ONGOING);
+
+        log.info("총 {}건의 만료 대상 매칭 발견", expiredMatchings.size());
+
+        for (Matching matching : expiredMatchings) {
+            try{
+                matching.completeMatch();
+                log.info("[매칭 종료] ID: {}, 발신자: {}, 수신자: {}",
+                        matching.getId(),
+                        matching.getUser().getNickname(),
+                        matching.getReceiver().getNickname());
+
+                // TODO: 발신자에게 알림 전송
+
+                // TODO: 수신자에게 알림 전송
+            } catch(Exception e){
+                log.error("[매칭 상태 변경] 실패: ID={}, 사유={}", matching.getId(), e.getMessage());
+            }
+        }
+        log.info("만료 매칭 처리 완료");
+    }
 }
+

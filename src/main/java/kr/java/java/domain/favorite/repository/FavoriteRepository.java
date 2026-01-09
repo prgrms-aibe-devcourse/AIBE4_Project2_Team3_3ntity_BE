@@ -12,6 +12,9 @@ public interface FavoriteRepository extends JpaRepository<Favorite, Long> {
 
     void deleteByUserIdAndSpaceId(Long userId, Long spaceId);
 
+    @Query("SELECT f FROM Favorite f JOIN FETCH f.space JOIN FETCH f.user WHERE f.user.id = :userId")
+    List<Favorite> findAllByUserIdAndSpaceIsNotNull(@Param("userId") Long userId);
+
     // 특정 공간의 총 찜 개수
     @Query("SELECT COUNT(f) FROM Favorite f WHERE f.space.id = :spaceId")
     long countBySpaceId(@Param("spaceId") Long spaceId);
@@ -19,6 +22,9 @@ public interface FavoriteRepository extends JpaRepository<Favorite, Long> {
     boolean existsByUserIdAndPortfolioId(Long userId, Long portfolioId);
 
     void deleteByUserIdAndPortfolioId(Long userId, Long portfolioId);
+
+    @Query("SELECT f FROM Favorite f JOIN FETCH f.portfolio JOIN FETCH f.user WHERE f.user.id = :userId")
+    List<Favorite> findAllByUserIdAndPortfolioIsNotNull(@Param("userId") Long userId);
 
     // 특정 포트폴리오의 총 찜 개수
     @Query("SELECT COUNT(f) FROM Favorite f WHERE f.portfolio.id = :portfolioId")
