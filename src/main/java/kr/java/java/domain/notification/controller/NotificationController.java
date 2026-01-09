@@ -3,9 +3,11 @@ package kr.java.java.domain.notification.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import kr.java.java.domain.notification.dto.NotificationResponse;
+import kr.java.java.domain.notification.enums.NotificationType;
 import kr.java.java.domain.notification.exception.NotificationException;
 import kr.java.java.domain.notification.exception.UserNotFoundException;
 import kr.java.java.domain.notification.service.NotificationService;
+import kr.java.java.domain.user.entity.User;
 import kr.java.java.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -77,11 +79,11 @@ public class NotificationController {
 //        return ResponseEntity.ok("Notification created");
 //    }
 
-//@PostMapping("/test-send/{userId}")
-//    public String testSend(@PathVariable Long userId) {
-//        User user = userRepository.findById(userId)
-//                .orElseThrow(() -> new UserNotFoundException(userId));
-//        notificationService.sendNotification(user,NotificationType.MATCHING,"테스트 : 매칭 신청이 왔습니다.","/matchings/1");
-//    return "알림 발송 성공 (User ID: " + userId + ")";
-//}
+@PostMapping("/test-send/{userId}")
+    public String testSend(@PathVariable Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
+        notificationService.sendNotification(user, NotificationType.MATCHING_COMPLETE,"테스트 : 매칭이 완료되었습니다.","piece/matchings/1");
+    return "알림 발송 성공 (User ID: " + userId + ")";
+}
 }
