@@ -46,7 +46,7 @@ public class NotificationController {
         if (!userRepository.existsById(userId)) {
             throw new UserNotFoundException(userId);
         }
-        List<NotificationResponse> notifications = notificationService.getNotifications(userId);
+        List<NotificationResponse> notifications = notificationService.getNotifications(userId, 25);
         log.info("[알림 api] {} 조회 성공, 유저 ID: {}", notifications.size(), userId);
         return ResponseEntity.ok(notifications);
     }
@@ -64,20 +64,6 @@ public class NotificationController {
             throw e;
         }
     }
-
-//    //테스트용
-//    @PostMapping("/test/{userId}")
-//    public ResponseEntity<String> createTestNotification(@PathVariable Long userId,
-//                                                         @RequestParam String content,
-//                                                         @RequestParam String relatedUrl,
-//                                                         @RequestParam NotificationType type) {
-//        log.info("[알림 api] 테스트 알림 생성 요청, 유저 ID: {}", userId);
-//        User user = userRepository.findById(userId)
-//                .orElseThrow(() -> new UserNotFoundException(userId));
-//
-//        notificationService.createNotification(user, content, relatedUrl, type);
-//        return ResponseEntity.ok("Notification created");
-//    }
 
 @PostMapping("/test-send/{userId}")
     public String testSend(@PathVariable Long userId) {

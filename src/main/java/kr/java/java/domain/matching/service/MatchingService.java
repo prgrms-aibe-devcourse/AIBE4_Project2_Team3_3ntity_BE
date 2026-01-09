@@ -9,6 +9,8 @@ import kr.java.java.domain.matching.enums.MatchStatus;
 import kr.java.java.domain.matching.exception.MatchingErrorCode;
 import kr.java.java.domain.matching.exception.MatchingException;
 import kr.java.java.domain.matching.repository.MatchingRepository;
+import kr.java.java.domain.notification.enums.NotificationType;
+import kr.java.java.domain.notification.service.NotificationService;
 import kr.java.java.domain.space.entity.Space;
 import kr.java.java.domain.space.exception.NotFoundSpaceException;
 import kr.java.java.domain.space.exception.NotFoundUserException;
@@ -31,6 +33,7 @@ public class MatchingService {
     private final UserRepository userRepository;
     private final SpaceRepository spaceRepository;
     private final MatchingRepository matchingRepository;
+    private final NotificationService notificationService;
 
     //TODO 해당 서비스 페이지에 있는 User 에러처리는 추후 User 도메인의 exception에 생기면 변경
 
@@ -105,6 +108,12 @@ public class MatchingService {
                 .build();
 
         matchingRepository.save(matching);
+        notificationService.sendNotification(
+                matching.getReceiver(),
+                NotificationType.MATCHING,
+                matching.getUser().getNickname()+"님이 매칭을 신청했습니다.",
+                "/piece/matchings/" + matching.getReceiver().getId()+"/"+matching.getId()
+        );
     }
 
     private void validateMatching(Space space, User sender, User receiver){
@@ -162,6 +171,13 @@ public class MatchingService {
 
         matching.updateStatus(MatchStatus.ONGOING);
 
+        notificationService.sendNotification(
+                matching.getUser(),
+                NotificationType.MATCHING_COMPLETE,
+                matching.getReceiver().getNickname() + "님이 매칭을 수락하셨습니다. ",
+                "piece/matchings/" + matching.getUser().getId() + "/" + matching.getId()
+        );
+
         boolean isHost = matching.getReceiver().getId().equals(userId);
 
         if(isHost){
@@ -191,6 +207,12 @@ public class MatchingService {
         validateReceiverAndStatus(matching, userId);
 
         matching.updateStatus(MatchStatus.REJECTED);
+        notificationService.sendNotification(
+                matching.getUser(),
+                NotificationType.MATCHING_REJECT,
+                matching.getReceiver().getNickname() + "님이 매칭을 거절하셨습니다. ",
+                "piece/matchings/" + matching.getUser().getId() + "/" + matching.getId()
+        );
         log.info("[매칭 거절] MatchingID: {}, 거절자: {}", matchingId, userId);
     }
 

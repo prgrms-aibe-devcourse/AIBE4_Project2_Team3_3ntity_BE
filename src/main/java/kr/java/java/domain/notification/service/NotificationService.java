@@ -10,6 +10,7 @@ import kr.java.java.domain.notification.repository.NotificationRepository;
 import kr.java.java.domain.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -96,15 +97,19 @@ public class NotificationService {
         } catch (IOException exception) {
             emitterRepository.deleteEmitterById(emitterId);
             log.error("[알림] SSE 연결 오류", exception);
-            // throw new NotificationSendException("알림 전송 실패", exception);
         }
     }
 
-    public List<NotificationResponse> getNotifications(Long userId) {
-        log.info("[알림] 알림 조회");
-        return notificationRepository.findAllByUserId_IdOrderByCreatedAtDesc(userId).stream()
+    public List<NotificationResponse> getNotifications(Long userId, int limit) {
+        log.info("[알림] 알림 조회 - userId:" + userId);
+        return notificationRepository.findTop25ByUserId(userId, PageRequest.of(0, limit)).stream()
                 .map(NotificationResponse::from)
                 .collect(Collectors.toList());
+    }
+
+    public long getUnreadNotificationCount(Long userId) {
+        log.info("[알림] 미확인 알림 개수 조회 - userId:" + userId);
+        return notificationRepository.countUnreadNotificationsByUserId(userId);
     }
 
     @Transactional
