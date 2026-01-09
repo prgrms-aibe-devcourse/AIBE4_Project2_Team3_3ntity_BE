@@ -1,10 +1,7 @@
 package kr.java.java.domain.portfolio.service;
 
 
-import kr.java.java.domain.portfolio.dto.PortfolioListResponse;
-import kr.java.java.domain.portfolio.dto.PortfolioRequest;
-import kr.java.java.domain.portfolio.dto.PortfolioResponse;
-import kr.java.java.domain.portfolio.dto.PortfolioUpdateRequest;
+import kr.java.java.domain.portfolio.dto.*;
 import kr.java.java.domain.portfolio.entity.Portfolio;
 import kr.java.java.domain.portfolio.exception.DuplicatePortfolioException;
 import kr.java.java.domain.portfolio.exception.NotFoundPortfolioException;
@@ -92,5 +89,12 @@ public class PortfolioService {
 
         portfolio.update(request);
         return new PortfolioResponse(portfolio);
+    }
+
+    @Transactional(readOnly = true)
+    public List<PortfolioListResponse> searchPortfolios(PortfolioSearchCondition condition) {
+        return portfolioRepository.search(condition).stream()
+                .map(PortfolioListResponse::new)
+                .toList();
     }
 }

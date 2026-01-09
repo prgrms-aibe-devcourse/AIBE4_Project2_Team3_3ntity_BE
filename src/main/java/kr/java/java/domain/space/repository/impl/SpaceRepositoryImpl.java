@@ -1,4 +1,4 @@
-package kr.java.java.domain.space.repository.Impl;
+package kr.java.java.domain.space.repository.impl;
 
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;

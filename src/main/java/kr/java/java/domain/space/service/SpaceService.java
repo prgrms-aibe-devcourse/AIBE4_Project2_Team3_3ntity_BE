@@ -96,6 +96,7 @@ public class SpaceService {
     }
 
     // 검색 및 필터링
+    @Transactional(readOnly = true)
     public List<SpaceListResponse> searchSpaces(SpaceSearchCondition condition) {
         // QueryDSL로 조회된 Space 엔티티 리스트를 DTO 리스트로 변환
         return spaceRepository.search(condition).stream()

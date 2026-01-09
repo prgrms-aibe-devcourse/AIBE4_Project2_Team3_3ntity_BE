@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface PortfolioRepository extends JpaRepository<Portfolio, Long> {
+public interface PortfolioRepository extends JpaRepository<Portfolio, Long>, PortfolioRepositoryCustom {
     boolean existsByBrandNameAndTitle(String brandName, String title);
     @Query("SELECT p FROM Portfolio p JOIN FETCH p.user ORDER BY p.id DESC")
     List<Portfolio> findAllByIsOpenTrueOrderByIdDesc();

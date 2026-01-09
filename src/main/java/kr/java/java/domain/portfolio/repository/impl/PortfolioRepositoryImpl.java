@@ -1,5 +1,7 @@
 package kr.java.java.domain.portfolio.repository.impl;
 
+import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.jpa.impl.JPAQueryFactory;
 import kr.java.java.domain.portfolio.dto.PortfolioSearchCondition;
 import kr.java.java.domain.portfolio.entity.Portfolio;
 import kr.java.java.domain.portfolio.repository.PortfolioRepositoryCustom;
@@ -7,6 +9,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
+
+import static kr.java.java.domain.portfolio.entity.QPortfolio.portfolio;
+import static kr.java.java.domain.user.entity.QUser.user;
 
 @RequiredArgsConstructor
 public class PortfolioRepositoryImpl implements PortfolioRepositoryCustom {
