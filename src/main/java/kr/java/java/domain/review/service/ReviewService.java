@@ -1,5 +1,7 @@
 package kr.java.java.domain.review.service;
 
+import kr.java.java.domain.image.enums.TargetType;
+import kr.java.java.domain.image.service.ImageService;
 import kr.java.java.domain.review.dto.ReviewCreateRequest;
 import kr.java.java.domain.review.dto.ReviewResponse;
 import kr.java.java.domain.review.dto.ReviewUpdateRequest;
@@ -15,7 +17,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 @Slf4j
@@ -27,10 +31,15 @@ public class ReviewService {
     private final ReviewRepository reviewRepository;
     private final UserRepository userRepository;
     private final MatchingRepository matchingRepository;
+    private final ImageService imageService;
 
     @Transactional
-    public Long createReview(Long userId, ReviewCreateRequest request) {
+    public Long createReview(Long userId, ReviewCreateRequest request, List<MultipartFile> files) throws IOException {
         log.info("리뷰 생성 시도 - userId: {}, matchingId: {}", userId, request.matchingId());
+
+        if (files != null && files.size() > 3) {
+            throw new MaxImageLimitException("이미지는 최대 3장까지만 첨부할 수 있습니다.");
+        }
 
         // 1. 유저 검증 및 조회
         User user = userRepository.findById(userId)
@@ -61,6 +70,13 @@ public class ReviewService {
                 .build();
 
         Review savedReview = reviewRepository.save(review);
+
+        // 5. 이미지 업로드
+        if (files != null && !files.isEmpty()) {
+            log.info("리뷰 이미지 업로드 시작 - 파일 개수: {}", files.size());
+
+            imageService.uploadImage(files, TargetType.REVIEW, savedReview.getId());
+        }
 
         log.info("리뷰 저장 성공 - reviewId: {}", savedReview.getId());
 
