@@ -19,7 +19,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         if (username == null || username.isEmpty()) {
-            throw new UsernameNotFoundException("Username cannot be null or empty");
+            throw new UsernameNotFoundException("사용자 이름은 비어있을 수 없습니다.");
         }
 
         UUID uuid;
@@ -30,7 +30,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         }
 
         User user = userRepository.findByUuid(uuid)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with UUID: " + uuid));
+                .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다. UUID: " + uuid));
 
         return new CustomUserDetails(
                 user.getUuid(),
@@ -45,12 +45,16 @@ public class CustomUserDetailsService implements UserDetailsService {
         }
 
         User user = userRepository.findByUuid(uuid)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with UUID: " + uuid));
+                .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다. UUID: " + uuid));
 
         return new CustomUserDetails(
                 user.getUuid(),
                 user.getEmail(),
                 user.getRole()
         );
+    }
+    public User findUserByUuid(UUID uuid) {
+        return userRepository.findByUuid(uuid)
+                .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다. UUID: " + uuid));
     }
 }
