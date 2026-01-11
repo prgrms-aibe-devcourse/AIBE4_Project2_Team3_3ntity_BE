@@ -1,5 +1,6 @@
 package kr.java.java.domain.review.service;
 
+import kr.java.java.domain.image.dto.ImageResponse;
 import kr.java.java.domain.image.enums.TargetType;
 import kr.java.java.domain.image.service.ImageService;
 import kr.java.java.domain.review.dto.ReviewCreateRequest;
@@ -92,26 +93,34 @@ public class ReviewService {
         log.info("공간(ID:{}) 리뷰 조회 성공 - 총 {}건", spaceId, reviews.size());
 
         return reviews.stream()
-                .map(ReviewResponse::from)
+                .map(review -> {
+                    List<ImageResponse> images = imageService.getImages(TargetType.REVIEW, review.getId());
+                    return ReviewResponse.of(review, images);
+                })
                 .toList();
     }
 
     // 사용자별 리뷰 조회
     public List<ReviewResponse> getMyReviews(Long userId) {
         log.info("사용자별 리뷰 조회 요청 - userId: {}", userId);
+        validateUser(userId);
 
         List<Review> reviews = reviewRepository.findAllByUserId(userId);
 
         log.info("사용자(ID:{}) 리뷰 조회 성공 - 총 {}건", userId, reviews.size());
 
         return reviews.stream()
-                .map(ReviewResponse::from)
+                .map(review -> {
+                    List<ImageResponse> images = imageService.getImages(TargetType.REVIEW, review.getId());
+                    return ReviewResponse.of(review, images);
+                })
                 .toList();
     }
 
     @Transactional
     public void deleteReview(Long reviewId, Long userId) {
         log.info("리뷰 삭제 시작 - reviewId: {}, userId: {}", reviewId, userId);
+        validateUser(userId);
 
         // 1. 리뷰 조회
         Review review = reviewRepository.findById(reviewId)
@@ -126,14 +135,25 @@ public class ReviewService {
             throw new ReviewAccessDeniedException("본인이 작성한 리뷰만 삭제할 수 있습니다.");
         }
 
-        // 3. 리뷰 삭제
+        // 3. 연관된 이미지 삭제
+        List<ImageResponse> images = imageService.getImages(TargetType.REVIEW, reviewId);
+
+        if (!images.isEmpty()) {
+            log.info("리뷰 삭제 전 이미지 삭제 - 이미지 개수: {}", images.size());
+            for (ImageResponse image : images) {
+                imageService.deleteSingleImage(image.id());
+            }
+        }
+
+        // 4. 리뷰 삭제
         reviewRepository.delete(review);
         log.info("리뷰 삭제 완료 - reviewId: {}", reviewId);
     }
 
     @Transactional
-    public void updateReview(Long reviewId, Long userId, ReviewUpdateRequest request) {
+    public void updateReview(Long reviewId, Long userId, ReviewUpdateRequest request, List<MultipartFile> newFiles) throws IOException {
         log.info("리뷰 수정 시작 - reviewId: {}, userId: {}", reviewId, userId);
+        validateUser(userId);
 
         // 1. 리뷰 조회
         Review review = reviewRepository.findById(reviewId)
@@ -151,6 +171,54 @@ public class ReviewService {
         // 3. 리뷰 수정
         review.updateReview(request.rating(), request.content());
 
+        // 3-1. 현재 저장된 이미지 목록 조회
+        List<ImageResponse> currentImages = imageService.getImages(TargetType.REVIEW, reviewId);
+        int currentSize = currentImages.size();
+
+        // 3-2. 삭제 요청된 이미지 개수 계산
+        List<Long> deleteIds = request.deleteImageIds();
+        int deleteSize = (deleteIds == null) ? 0 : deleteIds.size();
+
+        // 3-3. 새로 추가할 이미지 개수 계산
+        int newSize = 0;
+        if (newFiles != null) {
+            for (MultipartFile file : newFiles) {
+                if (!file.isEmpty()) newSize++;
+            }
+        }
+
+        // 3-4. 최종 이미지 개수 검증
+        int finalSize = currentSize - deleteSize + newSize;
+        if (finalSize > 3) {
+            log.warn("이미지 개수 초과 - 현재: {}, 삭제: {}, 추가: {}, 최종: {}", currentSize, deleteSize, newSize, finalSize);
+            throw new MaxImageLimitException("이미지는 최대 3장까지만 등록 가능합니다.");
+        }
+
+        // 3-5. 삭제 로직 수행
+        if (deleteIds != null && !deleteIds.isEmpty()) {
+            List<Long> validDeleteIds = currentImages.stream()
+                    .map(image -> image.id())
+                    .filter(deleteIds::contains)
+                    .toList();
+
+            for (Long imageId : validDeleteIds) {
+                imageService.deleteSingleImage(imageId);
+            }
+        }
+
+        // 3-6. 추가 로직 수행 (추가 이미지 업로드)
+        if (newFiles != null && !newFiles.isEmpty()) {
+            imageService.uploadImage(newFiles, TargetType.REVIEW, reviewId);
+        }
+
         log.info("리뷰 수정 완료 - reviewId: {}", reviewId);
+    }
+
+    private void validateUser(Long userId) {
+        if (userId == null) {
+            return;
+        }
+        userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("존재하지 않는 사용자입니다."));
     }
 }

@@ -82,17 +82,17 @@ public class ReviewController {
     }
 
     // 리뷰 수정 API
-    @PatchMapping("/{reviewId}")
+    @PatchMapping(value = "/{reviewId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<String> updateReview(
             @PathVariable Long reviewId,
-            @RequestBody @Valid ReviewUpdateRequest request,
+            @Valid @RequestPart("request") ReviewUpdateRequest request,
+            @RequestPart(value = "files", required = false) List<MultipartFile> files,
             Long loginUserId
-    ) {
-        log.info("PUT /piece/reviews/{} 요청 발생 - 요청자 ID: {}", reviewId, loginUserId);
+    ) throws IOException {
+        log.info("PATCH /piece/reviews/{} 요청 발생 - 요청자 ID: {}", reviewId, loginUserId);
 
         // TODO: 추후 loginUserId로 변경
-        reviewService.updateReview(reviewId, 1L, request);
-        // reviewService.updateReview(reviewId, loginUserId, request);
+        reviewService.updateReview(reviewId, 1L, request, files);
 
         log.info("리뷰 수정 완료 응답 반환 - reviewId: {}", reviewId);
 
