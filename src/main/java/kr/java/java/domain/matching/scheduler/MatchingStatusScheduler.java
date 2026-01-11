@@ -13,5 +13,6 @@ public class MatchingStatusScheduler {
     @Scheduled(cron = "0 0 0 * * *")
     public void updateMatchingStatus(){
         matchingService.processExpiredMatchings();
+        matchingService.processOverdueWaitingMatchings();
     }
 }
