@@ -20,5 +20,7 @@ public class MatchingStatusScheduler {
         List<MatchingExpiredEvent> expiredMatchingEvents = matchingService.processExpiredMatchings();
 
         expiredMatchingEvents.forEach(applicationEventPublisher::publishEvent);
+        matchingService.processExpiredMatchings();
+        matchingService.processOverdueWaitingMatchings();
     }
 }

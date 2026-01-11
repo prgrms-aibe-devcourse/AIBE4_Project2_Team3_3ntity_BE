@@ -1,7 +1,11 @@
 package kr.java.java.domain.image.service;
 
+import kr.java.java.domain.image.dto.ImageResponse;
 import kr.java.java.domain.image.entity.Image;
+import kr.java.java.domain.image.enums.ImageDomain;
 import kr.java.java.domain.image.enums.TargetType;
+import kr.java.java.domain.image.exception.ImageErrorCode;
+import kr.java.java.domain.image.exception.ImageException;
 import kr.java.java.domain.image.repository.ImageRepository;
 import kr.java.java.domain.portfolio.entity.Portfolio;
 import kr.java.java.domain.portfolio.exception.NotFoundPortfolioException;
@@ -19,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
@@ -93,5 +98,69 @@ public class ImageService {
                         .build();
             }
         };
+    }
+
+    public List<ImageResponse> getImages(TargetType targetType, Long targetId) {
+        List<Image> images = switch(targetType) {
+            case REVIEW -> imageRepository.findAllByReviewIdOrderBySortOrderAsc(targetId);
+            case SPACE -> imageRepository.findAllBySpaceIdOrderBySortOrderAsc(targetId);
+            case PORTFOLIO -> imageRepository.findAllByPortfolioIdOrderBySortOrderAsc(targetId);
+        };
+
+        return images.stream()
+                .map(ImageResponse::from)
+                .toList();
+    }
+
+    public void deleteSingleImage(Long imageId) {
+        Image image = imageRepository.findById(imageId)
+                .orElseThrow(() -> new ImageException(ImageErrorCode.DB_IMAGE_NOT_FOUND));
+
+        String fileName = extractFileName(image.getFileUrl());
+        try {
+            s3Client.deleteObject(DeleteObjectRequest.builder()
+                    .bucket(bucket)
+                    .key(fileName)
+                    .build());
+        } catch (ImageException e){
+            throw new ImageException(ImageErrorCode.S3_IMAGE_NOT_FOUND);
+        }
+
+        imageRepository.delete(image);
+    }
+
+    public String uploadProfileImage(MultipartFile file) throws IOException {
+        if(!file.isEmpty()){
+            return null;
+        }
+
+        String fileName = ImageDomain.USER.getDirName() + "/" + FileUtil.createFileName(file.getOriginalFilename());
+
+        s3Client.putObject(PutObjectRequest.builder()
+                .bucket(bucket)
+                .key(fileName)
+                .contentType(file.getContentType())
+                .build(), RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
+
+        return String.format("%s/storage/v1/object/public/%s/%s", supabaseUrl, bucket, fileName);
+    }
+
+    public void deleteProfileImage(String fileUrl){
+        if (fileUrl == null || fileUrl.isEmpty()) return;
+
+        String fileName = extractFileName(fileUrl);
+
+        try{
+            s3Client.deleteObject(DeleteObjectRequest.builder()
+                    .bucket(bucket)
+                    .key(fileName)
+                    .build());
+        } catch (Exception e){
+            throw new ImageException(ImageErrorCode.S3_IMAGE_NOT_FOUND);
+        }
+    }
+
+    private String extractFileName(String url) {
+        return url.substring(url.lastIndexOf("/") + 1);
     }
 }

@@ -91,4 +91,8 @@ public class Matching {
     public void completeMatch(){
         this.status = MatchStatus.COMPLETED;
     }
+
+    public void rejectMatch(){
+        this.status = MatchStatus.REJECTED;
+    }
 }
