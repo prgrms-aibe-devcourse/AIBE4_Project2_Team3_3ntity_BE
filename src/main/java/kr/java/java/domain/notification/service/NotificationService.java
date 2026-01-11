@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -63,11 +64,19 @@ public class NotificationService {
     }
 
     @Transactional
-    public void sendNotification(User receiver, NotificationType notificationType, String content, String relatedUrl) {
+    public void sendNotification(Long receiverId, NotificationType notificationType, String content, String relatedUrl) {
 
-        Notification notification = notificationRepository.save(createNotificationEntity(receiver, content, relatedUrl, notificationType));
-        String receiverId = String.valueOf(receiver.getId());
-        Map<String, SseEmitter> emitters = emitterRepository.findAllEmitterStartWithUserId(receiverId);
+        log.info("[알림] 알림 전송 - receiverId: {}, NotificationType: {}, content: {}, relatedUrl: {}", receiverId, notificationType, content, relatedUrl);
+
+        Notification notification = notificationRepository.save(Notification.builder()
+                .receiverId(receiverId)
+                .content(content)
+                .relatedUrl(relatedUrl)
+                .notificationType(notificationType)
+                .build());
+
+        String receiverIdString = String.valueOf(receiverId);
+        Map<String, SseEmitter> emitters = emitterRepository.findAllEmitterStartWithUserId(receiverIdString);
 
         emitters.forEach(
                 (key, emitter) -> {
@@ -76,15 +85,6 @@ public class NotificationService {
                     sendEventToClient(emitter,key,"notification",NotificationResponse.from(notification));
                 }
         );
-    }
-
-    private Notification createNotificationEntity(User receiver, String content, String relatedUrl, NotificationType notificationType) {
-        return Notification.builder()
-                .userId(receiver)
-                .content(content)
-                .relatedUrl(relatedUrl)
-                .notificationType(notificationType)
-                .build();
     }
 
     private void sendEventToClient(SseEmitter emitter, String emitterId, String eventName, Object sendData) {
@@ -100,15 +100,39 @@ public class NotificationService {
         }
     }
 
-    public List<NotificationResponse> getNotifications(Long userId, int limit) {
-        log.info("[알림] 알림 조회 - userId:" + userId);
-        return notificationRepository.findTop25ByUserId(userId, PageRequest.of(0, limit)).stream()
-                .map(NotificationResponse::from)
-                .collect(Collectors.toList());
+    public List<NotificationResponse> getNotifications(Long userId, Long lastId, Boolean lastIsRead, int limit) {
+        boolean isRead = (lastIsRead != null) ? lastIsRead : false;
+
+        // 지난 알림(읽은 알림) 조회 중일 때
+        if (isRead) {
+            log.info("[알림] 지난 알림 추가 조회 - userId:{}, lastId: {}", userId, lastId);
+            return notificationRepository.findReadNotifications(userId, lastId, PageRequest.of(0, limit))
+                    .stream().map(NotificationResponse::from).collect(Collectors.toList());
+        }
+
+        // 미확인 알림 조회 중일 때
+        List<Notification> unreadNotificationList = notificationRepository.findUnreadNotifications(
+                userId, lastId, PageRequest.of(0, limit)
+        );
+        List<Notification> result = new ArrayList<>(unreadNotificationList);
+
+        if (result.size() >= limit) {
+            log.info("[알림] 미확인 알림 조회 - userId:{}, lastId: {}", userId, lastId);
+            return result.stream().map(NotificationResponse::from).collect(Collectors.toList());
+        }
+
+        // 25개 미만일 시 지난 알림 추가 조회
+        int remainingLimit = limit - result.size();
+        List<Notification> readNotificationList = notificationRepository.findReadNotifications(userId, null, PageRequest.of(0, remainingLimit));
+
+        result.addAll(readNotificationList);
+
+        log.info("[알림] 미확인+확인 알림 조회 - userId:{}, lastId: {}", userId, lastId);
+        return result.stream().map(NotificationResponse::from).collect(Collectors.toList());
     }
 
     public long getUnreadNotificationCount(Long userId) {
-        log.info("[알림] 미확인 알림 개수 조회 - userId:" + userId);
+        log.info("[알림] 미확인 알림 개수 조회 - userId:{}", userId);
         return notificationRepository.countUnreadNotificationsByUserId(userId);
     }
 

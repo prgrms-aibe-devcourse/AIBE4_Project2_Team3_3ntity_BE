@@ -26,7 +26,7 @@ public class CommentController {
         log.info("POST /piece/comments 요청 발생 - (테스트용) 작성자 ID: {}", loginUserId);
 
         // TODO: 인증 기능 완성 후에 다시 loginUserId로 변경
-        Long commentId = commentService.createComment(1L, request);
+        Long commentId = commentService.createComment(2L, request);
         //Long commentId = commentService.createComment(loginUserId, request);
 
         log.info("문의 등록 완료 응답 반환 - 생성된 commentId: {}", commentId);

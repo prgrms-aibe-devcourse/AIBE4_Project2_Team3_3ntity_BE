@@ -6,6 +6,7 @@ import kr.java.java.domain.matching.dto.CreateMatchingToUserRequest;
 import kr.java.java.domain.matching.dto.MatchingResponse;
 import kr.java.java.domain.matching.entity.Matching;
 import kr.java.java.domain.matching.enums.MatchStatus;
+import kr.java.java.domain.matching.event.*;
 import kr.java.java.domain.matching.exception.MatchingErrorCode;
 import kr.java.java.domain.matching.exception.MatchingException;
 import kr.java.java.domain.matching.repository.MatchingRepository;
@@ -19,10 +20,12 @@ import kr.java.java.domain.user.entity.User;
 import kr.java.java.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -35,6 +38,7 @@ public class MatchingService {
     private final SpaceRepository spaceRepository;
     private final MatchingRepository matchingRepository;
     private final NotificationService notificationService;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     //TODO 해당 서비스 페이지에 있는 User 에러처리는 추후 User 도메인의 exception에 생기면 변경
 
@@ -109,12 +113,26 @@ public class MatchingService {
                 .build();
 
         matchingRepository.save(matching);
-        notificationService.sendNotification(
-                matching.getReceiver(),
-                NotificationType.MATCHING,
-                matching.getUser().getNickname()+"님이 매칭을 신청했습니다.",
-                "/piece/matchings/" + matching.getReceiver().getId()+"/"+matching.getId()
-        );
+
+        String relatedUrl = createMatchingRelatedUrl(matching, MatchStatus.WAITING);
+        applicationEventPublisher.publishEvent(new MatchingCreatedEvent(
+                matching.getReceiver().getId(),
+                matching.getUser().getNickname(),
+                relatedUrl
+        ));
+    }
+
+    private String createMatchingRelatedUrl(Matching matching, MatchStatus status)
+    {
+        Long notificationReceiverId = switch (status) {
+            case WAITING, CANCELLED -> matching.getReceiver().getId();
+            case ONGOING, REJECTED -> matching.getUser().getId();
+            default -> throw new MatchingException(MatchingErrorCode.MATCHING_NOT_FOUND);
+        };
+
+        String targetPath = notificationReceiverId.equals(matching.getSpace().getUser().getId()) ? "hosts" : "users";
+
+        return "/piece/matchings/" + targetPath + "?userId=" + notificationReceiverId + "&status=" + status;
     }
 
     private void validateMatching(Space space, User sender, User receiver){
@@ -172,13 +190,7 @@ public class MatchingService {
 
         matching.updateStatus(MatchStatus.ONGOING);
 
-        notificationService.sendNotification(
-                matching.getUser(),
-                NotificationType.MATCHING_COMPLETE,
-                matching.getReceiver().getNickname() + "님이 매칭을 수락하셨습니다. ",
-                "piece/matchings/" + matching.getUser().getId() + "/" + matching.getId()
-        );
-
+        // 왜 리시버와 신청자가 같으면 호스트(공간주)인지?
         boolean isHost = matching.getReceiver().getId().equals(userId);
 
         if(isHost){
@@ -187,6 +199,13 @@ public class MatchingService {
         } else{
             log.info("[매칭 수락 - USER] MatchingID: {}, 수락자: {}", matchingId, userId);
         }
+
+        String relatedUrl = createMatchingRelatedUrl(matching, MatchStatus.ONGOING);
+        applicationEventPublisher.publishEvent(new MatchingAcceptedEvent(
+                matching.getUser().getId(),
+                matching.getReceiver().getNickname(),
+                relatedUrl
+        ));
     }
 
     private void autoRejectOverlappingMatchings(Matching confirmedMatching) {
@@ -208,12 +227,14 @@ public class MatchingService {
         validateReceiverAndStatus(matching, userId);
 
         matching.updateStatus(MatchStatus.REJECTED);
-        notificationService.sendNotification(
-                matching.getUser(),
-                NotificationType.MATCHING_REJECT,
-                matching.getReceiver().getNickname() + "님이 매칭을 거절하셨습니다. ",
-                "piece/matchings/" + matching.getUser().getId() + "/" + matching.getId()
-        );
+
+
+        String relatedUrl = createMatchingRelatedUrl(matching, MatchStatus.REJECTED);
+        applicationEventPublisher.publishEvent(new MatchingRejectedEvent(
+                matching.getUser().getId(),
+                matching.getReceiver().getNickname(),
+                relatedUrl
+        ));
         log.info("[매칭 거절] MatchingID: {}, 거절자: {}", matchingId, userId);
     }
 
@@ -240,6 +261,14 @@ public class MatchingService {
         validateSenderAndStatus(matching, userId);
 
         matching.updateStatus(MatchStatus.CANCELLED);
+
+        String relatedUrl = createMatchingRelatedUrl(matching, MatchStatus.CANCELLED);
+        applicationEventPublisher.publishEvent(new MatchingCanceledEvent(
+                matching.getReceiver().getId(),
+                matching.getUser().getNickname(),
+                relatedUrl
+        ));
+
         log.info("[매칭 취소] MatchingID: {}, 거절자: {}", matchingId, userId);
     }
 
@@ -253,29 +282,38 @@ public class MatchingService {
         }
     }
     @Transactional
-    public void processExpiredMatchings() {
+    public List<MatchingExpiredEvent> processExpiredMatchings() {
         LocalDate today = LocalDate.now();
 
         List<Matching> expiredMatchings = matchingRepository.findExpiredMatchingsWithUser(today, MatchStatus.ONGOING);
+
+        List<MatchingExpiredEvent> expiredMatchingEvents = new ArrayList<>();
 
         log.info("총 {}건의 만료 대상 매칭 발견", expiredMatchings.size());
 
         for (Matching matching : expiredMatchings) {
             try{
                 matching.completeMatch();
+
+                MatchingExpiredEvent event = new MatchingExpiredEvent(
+                        matching.getId(),
+                        matching.getUser().getId(),
+                        matching.getUser().getNickname(),
+                        matching.getReceiver().getId(),
+                        matching.getReceiver().getNickname()
+                );
+                expiredMatchingEvents.add(event);
                 log.info("[매칭 종료] ID: {}, 발신자: {}, 수신자: {}",
                         matching.getId(),
                         matching.getUser().getNickname(),
                         matching.getReceiver().getNickname());
 
-                // TODO: 발신자에게 알림 전송
-
-                // TODO: 수신자에게 알림 전송
             } catch(Exception e){
                 log.error("[매칭 상태 변경] 실패: ID={}, 사유={}", matching.getId(), e.getMessage());
             }
         }
+
         log.info("만료 매칭 처리 완료");
+        return expiredMatchingEvents;
     }
 }
-

@@ -41,13 +41,17 @@ public class NotificationController {
 
     @Operation(summary = "알림 내역 조회", description = "특정 사용자의 모든 알림 내역을 조회합니다.")
     @GetMapping("/{userId}")
-    public ResponseEntity<List<NotificationResponse>> getNotifications(@PathVariable Long userId) {
-        log.info("[알림 api] 알림 내역 조회, 유저 ID: {}", userId);
+    public ResponseEntity<List<NotificationResponse>> getNotifications(
+            @PathVariable Long userId,
+            @RequestParam(required = false) Long lastId,
+            @RequestParam(required = false) Boolean lastIsRead
+    ) {
+        log.info("[알림 api] 알림 내역 조회 요청 - userId: {}, lastId: {}, lastIsRead: {}", userId, lastId, lastIsRead);
         if (!userRepository.existsById(userId)) {
             throw new UserNotFoundException(userId);
         }
-        List<NotificationResponse> notifications = notificationService.getNotifications(userId, 25);
-        log.info("[알림 api] {} 조회 성공, 유저 ID: {}", notifications.size(), userId);
+        List<NotificationResponse> notifications = notificationService.getNotifications(userId, lastId, lastIsRead, 25);
+        log.info("[알림 api] 조회 성공 - userId: {}, 조회된 개수: {}", userId, notifications.size());
         return ResponseEntity.ok(notifications);
     }
 
@@ -65,11 +69,23 @@ public class NotificationController {
         }
     }
 
-@PostMapping("/test-send/{userId}")
-    public String testSend(@PathVariable Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
-        notificationService.sendNotification(user, NotificationType.MATCHING_COMPLETE,"테스트 : 매칭이 완료되었습니다.","piece/matchings/1");
-    return "알림 발송 성공 (User ID: " + userId + ")";
-}
+    @Operation(summary = "미확인 알림 개수 확인", description = "특정 사용자의 미확인 알림 개수를 조회합니다.")
+    @GetMapping("/{userId}/unread-count")
+    public ResponseEntity<Long> getUnreadNotificationCount(@PathVariable Long userId) {
+        log.info("[알림 api] 미확인 알림 개수 조회, 유저 ID: {} ", userId);
+        if (!userRepository.existsById(userId)) {
+            throw new UserNotFoundException(userId);
+        }
+        Long notificationCount = notificationService.getUnreadNotificationCount(userId);
+        log.info("[알림 api] 조회 성공 : 총 {}개 ", notificationCount);
+        return ResponseEntity.ok(notificationCount);
+    }
+
+//    @PostMapping("/test-send/{userId}")
+//        public String testSend(@PathVariable Long userId) {
+//            User user = userRepository.findById(userId)
+//                    .orElseThrow(() -> new UserNotFoundException(userId));
+//            notificationService.sendNotification(user, NotificationType.MATCHING_COMPLETE,"테스트 : 매칭이 완료되었습니다.","piece/matchings/1");
+//        return "알림 발송 성공 (User ID: " + userId + ")";
+//    }
 }

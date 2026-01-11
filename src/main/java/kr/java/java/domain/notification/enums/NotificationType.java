@@ -5,6 +5,7 @@ public enum NotificationType {
     COMMENT("문의"),
     CONTRACT_END("계약종료"),
     MATCHING_COMPLETE("매칭완료"),
+    MATCHING_CANCELED("매칭취소"),
     MATCHING_REJECT("매칭거절"),
     ETC("기타");
 

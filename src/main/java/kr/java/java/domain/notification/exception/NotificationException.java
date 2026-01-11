@@ -5,9 +5,17 @@ import lombok.Getter;
 @Getter
 public class NotificationException extends RuntimeException {
     private final NotificationErrorCode errorCode;
+    private final Long id;
 
-    public NotificationException(Long errorInfo, NotificationErrorCode notificationErrorCode) {
-        super(notificationErrorCode.getMessage()+errorInfo);
-        this.errorCode = notificationErrorCode;
+    public NotificationException(Long id, NotificationErrorCode errorCode) {
+        super(errorCode.getMessage());
+        this.id = id;
+        this.errorCode = errorCode;
+    }
+
+    public NotificationException(NotificationErrorCode errorCode) {
+        super(errorCode.getMessage());
+        this.id = null;
+        this.errorCode = errorCode;
     }
 }
