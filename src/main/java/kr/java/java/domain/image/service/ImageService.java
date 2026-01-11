@@ -1,5 +1,6 @@
 package kr.java.java.domain.image.service;
 
+import kr.java.java.domain.image.dto.ImageResponse;
 import kr.java.java.domain.image.entity.Image;
 import kr.java.java.domain.image.enums.ImageDomain;
 import kr.java.java.domain.image.enums.TargetType;
@@ -15,7 +16,6 @@ import kr.java.java.domain.review.repository.ReviewRepository;
 import kr.java.java.domain.space.entity.Space;
 import kr.java.java.domain.space.exception.NotFoundSpaceException;
 import kr.java.java.domain.space.repository.SpaceRepository;
-import kr.java.java.domain.user.repository.UserRepository;
 import kr.java.java.global.util.FileUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -40,7 +40,6 @@ public class ImageService {
     private final ReviewRepository reviewRepository;
     private final SpaceRepository spaceRepository;
     private final PortfolioRepository portfolioRepository;
-    private final UserRepository userRepository;
 
     @Value("${supabase.storage.bucket}")
     private String bucket;
@@ -102,6 +101,35 @@ public class ImageService {
                         .build();
             }
         };
+    }
+
+    public List<ImageResponse> getImages(TargetType targetType, Long targetId) {
+        List<Image> images = switch(targetType) {
+            case REVIEW -> imageRepository.findAllByReviewIdOrderBySortOrderAsc(targetId);
+            case SPACE -> imageRepository.findAllBySpaceIdOrderBySortOrderAsc(targetId);
+            case PORTFOLIO -> imageRepository.findAllByPortfolioIdOrderBySortOrderAsc(targetId);
+        };
+
+        return images.stream()
+                .map(ImageResponse::from)
+                .toList();
+    }
+
+    public void deleteSingleImage(Long imageId) {
+        Image image = imageRepository.findById(imageId)
+                .orElseThrow(() -> new ImageException(ImageErrorCode.DB_IMAGE_NOT_FOUND));
+
+        String fileName = extractFileName(image.getFileUrl());
+        try {
+            s3Client.deleteObject(DeleteObjectRequest.builder()
+                    .bucket(bucket)
+                    .key(fileName)
+                    .build());
+        } catch (ImageException e){
+            throw new ImageException(ImageErrorCode.S3_IMAGE_NOT_FOUND);
+        }
+
+        imageRepository.delete(image);
     }
 
     public String uploadProfileImage(MultipartFile file) throws IOException {
