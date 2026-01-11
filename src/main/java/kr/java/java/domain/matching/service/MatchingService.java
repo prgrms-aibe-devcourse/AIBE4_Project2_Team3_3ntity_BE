@@ -321,10 +321,12 @@ public class MatchingService {
     }
 
     @Transactional
-    public void processOverdueWaitingMatchings() {
+    public List<MatchingRejectedEvent> processOverdueWaitingMatchings() {
         LocalDate today = LocalDate.now();
 
         List<Matching> overdueMatchings = matchingRepository.findOverdueWaitingMatchings(today, MatchStatus.WAITING);
+
+        List<MatchingRejectedEvent> rejectedMatchingEvents = new ArrayList<>();
 
         log.info("총 {}건의 만료 대상 매칭 발견", overdueMatchings.size());
 
@@ -332,16 +334,22 @@ public class MatchingService {
             try{
                 matching.rejectMatch();
 
+                MatchingRejectedEvent event = new MatchingRejectedEvent(
+                        matching.getUser().getId(),
+                        matching.getReceiver().getNickname(),
+                        createMatchingRelatedUrl(matching, MatchStatus.REJECTED));
+                rejectedMatchingEvents.add(event);
+
                 log.info("[매칭 거절] ID: {}, 발신자: {}, 수신자: {}",
                         matching.getId(),
                         matching.getUser().getNickname(),
                         matching.getReceiver().getNickname());
 
-                // TODO: 발신자에게 알림 전송
-
             } catch(Exception e){
                 log.error("[자동 거절 실패] ID: {}, 사유: {}", matching.getId(), e.getMessage());
             }
         }
+
+        return rejectedMatchingEvents;
     }
 }

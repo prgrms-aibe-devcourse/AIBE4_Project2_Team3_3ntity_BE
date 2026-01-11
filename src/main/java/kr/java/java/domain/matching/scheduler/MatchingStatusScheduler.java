@@ -1,6 +1,7 @@
 package kr.java.java.domain.matching.scheduler;
 
 import kr.java.java.domain.matching.event.MatchingExpiredEvent;
+import kr.java.java.domain.matching.event.MatchingRejectedEvent;
 import kr.java.java.domain.matching.service.MatchingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
@@ -18,9 +19,9 @@ public class MatchingStatusScheduler {
     @Scheduled(cron = "0 0 0 * * *")
     public void updateMatchingStatus(){
         List<MatchingExpiredEvent> expiredMatchingEvents = matchingService.processExpiredMatchings();
-
         expiredMatchingEvents.forEach(applicationEventPublisher::publishEvent);
-        matchingService.processExpiredMatchings();
-        matchingService.processOverdueWaitingMatchings();
+
+        List<MatchingRejectedEvent> rejectedMatchingEvents = matchingService.processOverdueWaitingMatchings();
+        rejectedMatchingEvents.forEach(applicationEventPublisher::publishEvent);
     }
 }
