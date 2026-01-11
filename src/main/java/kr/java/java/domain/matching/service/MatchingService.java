@@ -142,11 +142,13 @@ public class MatchingService {
         return convertToResponse(matchings, userId);
     }
 
+    @Transactional(readOnly = true)
     public List<MatchingResponse> getMatchingsAsHost(Long userId, MatchStatus status) {
         List<Matching> matchings = matchingRepository.findAllBySpaceHostId(userId, status);
         return convertToResponse(matchings, userId);
     }
 
+    @Transactional(readOnly = true)
     public List<MatchingResponse> getMatchingsAsMaker(Long userId, MatchStatus status) {
         List<Matching> matchings = matchingRepository.findAllAsMakerId(userId, status);
         return convertToResponse(matchings, userId);
