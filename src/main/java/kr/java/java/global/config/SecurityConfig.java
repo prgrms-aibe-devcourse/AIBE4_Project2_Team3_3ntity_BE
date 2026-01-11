@@ -81,7 +81,13 @@ public class SecurityConfig {
                 .headers(headers -> headers
                         .frameOptions(frameOptions -> frameOptions.deny())
                         .xssProtection(xss -> xss.headerValue(XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
-                        .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'; img-src 'self' data: https://api.dicebear.com;"))
+                        .contentSecurityPolicy(csp -> csp
+                                .policyDirectives("default-src 'self'; " +
+                                        "script-src 'self' 'unsafe-inline'; " +
+                                        "img-src 'self' data: https://api.dicebear.com https://*.supabase.co; " +
+                                        "connect-src 'self' https://*.supabase.co; " + // Supabase API 호출 허용
+                                        "style-src 'self' 'unsafe-inline';")
+                        )
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(request -> "OPTIONS".equals(request.getMethod())).permitAll()
