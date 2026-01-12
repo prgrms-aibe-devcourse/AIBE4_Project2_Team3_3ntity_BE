@@ -38,11 +38,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
 
         try {
-            // Access Token은 Header에서만 추출 (프론트엔드 메모리 저장 방식)
             String token = getJwtFromRequest(request);
 
             if (StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)) {
-                // 블랙리스트 확인 (로그아웃한 토큰 차단)
                 if (refreshTokenService.isAccessTokenBlacklisted(token)) {
                     SecurityContextHolder.clearContext();
                     filterChain.doFilter(request, response);
@@ -67,9 +65,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         } catch (Exception e) {
-            // 보안: 인증 실패 시 SecurityContext 명시적으로 정리
             SecurityContextHolder.clearContext();
-            log.error("Could not set user authentication in security context", e);
+            log.error("Security Context에 유저 인증 정보를 설정할 수 없습니다.", e);
         }
 
         filterChain.doFilter(request, response);

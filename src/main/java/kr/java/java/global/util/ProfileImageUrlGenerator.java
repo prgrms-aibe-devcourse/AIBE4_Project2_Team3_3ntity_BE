@@ -18,4 +18,10 @@ public class ProfileImageUrlGenerator {
         String seed = uuid.toString().replace("-", "");
         return BASE_URL + "?seed=" + seed;
     }
+
+    // 탈퇴한 회원용 회색 바탕 이미지 (Data URI로 회색 SVG 생성)
+    public static String getDeletedUserImage() {
+        // 회색 사각형 SVG를 base64 인코딩한 Data URI
+        return "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIj48cmVjdCBmaWxsPSIjQ0NDQ0NDIiB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIvPjwvc3ZnPg==";
+    }
 }

@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -19,10 +20,11 @@ public class SpaceController {
     private final SpaceService spaceService;
 
     @PostMapping
-    public ResponseEntity<Void> createSpace(@RequestBody SpaceRequest request, Long loginUserId){
+    public ResponseEntity<Void> createSpace(@RequestPart(value = "request") SpaceRequest request, Long loginUserId,
+                                            @RequestPart(value = "images", required = false) List<MultipartFile> images){
         log.info("공간 등록 시도 - UserId : {}",loginUserId);
         //TODO 인증이 완성되지 않아서 임시 테스트용으로 더미데이터를 직접 삽입
-        spaceService.createSpace(request,1L);
+        spaceService.createSpace(request,images,1L);
         // TODO 응답바디에 DTO를 넣어서 어떤 데이터를 저장했는지 확인하도록 수정예정
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }

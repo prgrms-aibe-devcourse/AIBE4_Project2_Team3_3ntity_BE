@@ -5,8 +5,12 @@ import kr.java.java.domain.auth.service.RefreshTokenService;
 import kr.java.java.domain.comment.repository.CommentRepository;
 import kr.java.java.domain.favorite.entity.Favorite;
 import kr.java.java.domain.favorite.repository.FavoriteRepository;
+import kr.java.java.domain.image.enums.TargetType;
 import kr.java.java.domain.image.service.ImageService;
+import kr.java.java.domain.matching.entity.Matching;
+import kr.java.java.domain.matching.enums.MatchStatus;
 import kr.java.java.domain.matching.repository.MatchingRepository;
+import kr.java.java.domain.notification.service.NotificationService;
 import kr.java.java.domain.portfolio.repository.PortfolioRepository;
 import kr.java.java.domain.review.repository.ReviewRepository;
 import kr.java.java.domain.space.repository.SpaceRepository;
@@ -24,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -55,7 +60,7 @@ public class MypageService {
                 .spacesCount(spaceRepository.countSpacesByUserId(userId))
                 .portfoliosCount(portfolioRepository.countPortfoliosByUserId(userId))
                 .reviewsCount(reviewRepository.countReviewsByUserId(userId))
-                .likesCount(0L)
+                .likesCount(0L) //TODO
                 .build();
 
         return MypageResponse.of(user, stats);
@@ -103,5 +108,34 @@ public class MypageService {
         user.updateProfile(user.getNickname(), defaultImageUrl);
 
         return getMypage(uuid);
+    }
+
+    @Transactional
+    public void deleteUser(UUID uuid) {
+        User user = userRepository.findByUuid(uuid)
+                .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
+
+        Long userId = user.getId();
+
+        // 진행 중인 매칭이 있는지 확인
+        List<Matching> ongoingMatchings = matchingRepository.findAllByUserIdAndStatus(userId, MatchStatus.ONGOING);
+        if (!ongoingMatchings.isEmpty()) {
+            throw new UserException(UserErrorCode.CANNOT_DELETE_USER_WITH_ACTIVE_MATCHING);
+        }
+
+        if (user.isCustomImage(user.getProfileImageUrl())) {
+            imageService.deleteProfileImage(user.getProfileImageUrl());
+        }
+
+        // TODO: Review, Portfolio, Space soft delete (벌크 업데이트)
+        // TODO: 알림 수동 삭제
+
+        refreshTokenService.deleteRefreshToken(uuid);
+
+        // User soft delete
+        user.delete();
+        userRepository.save(user);
+
+        log.info("회원 탈퇴 완료: {}", uuid);
     }
 }
