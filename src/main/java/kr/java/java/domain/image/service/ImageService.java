@@ -134,7 +134,7 @@ public class ImageService {
             return null;
         }
 
-        String fileName = ImageDomain.USER.getDirName() + "/" + FileUtil.createFileName(file.getOriginalFilename());
+        String fileName = FileUtil.createFileName(file.getOriginalFilename());
 
         s3Client.putObject(PutObjectRequest.builder()
                 .bucket(bucket)
