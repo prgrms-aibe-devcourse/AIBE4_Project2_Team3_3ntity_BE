@@ -1,15 +1,20 @@
 package kr.java.java.domain.review.controller;
 
 import jakarta.validation.Valid;
+import kr.java.java.domain.matching.service.MatchingService;
 import kr.java.java.domain.review.dto.ReviewCreateRequest;
 import kr.java.java.domain.review.dto.ReviewResponse;
+import kr.java.java.domain.review.dto.ReviewTargetResponse;
 import kr.java.java.domain.review.dto.ReviewUpdateRequest;
 import kr.java.java.domain.review.service.ReviewService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 @Slf4j
@@ -21,13 +26,16 @@ public class ReviewController {
     private final ReviewService reviewService;
 
     // 리뷰 등록 API
-    @PostMapping
-    public ResponseEntity<Long> createReview(@Valid @RequestBody ReviewCreateRequest request, Long loginUserId) {
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Long> createReview(
+            @Valid @RequestPart("request") ReviewCreateRequest request,
+            @RequestPart(value = "files", required = false) List<MultipartFile> files,
+            Long loginUserId
+    ) throws IOException {
         log.info("POST /piece/reviews 요청 발생 - 작성자 ID: {}", loginUserId);
 
         // TODO: 추후 loginUserId로 변경
-        Long reviewId = reviewService.createReview(1L, request);
-        // Long reviewId = reviewService.createReview(loginUserId, request);
+        Long reviewId = reviewService.createReview(1L, request, files);
 
         log.info("리뷰 등록 완료 응답 반환 - 생성된 reviewId: {}", reviewId);
 
@@ -76,20 +84,26 @@ public class ReviewController {
     }
 
     // 리뷰 수정 API
-    @PatchMapping("/{reviewId}")
+    @PatchMapping(value = "/{reviewId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<String> updateReview(
             @PathVariable Long reviewId,
-            @RequestBody @Valid ReviewUpdateRequest request,
+            @Valid @RequestPart("request") ReviewUpdateRequest request,
+            @RequestPart(value = "files", required = false) List<MultipartFile> files,
             Long loginUserId
-    ) {
-        log.info("PUT /piece/reviews/{} 요청 발생 - 요청자 ID: {}", reviewId, loginUserId);
+    ) throws IOException {
+        log.info("PATCH /piece/reviews/{} 요청 발생 - 요청자 ID: {}", reviewId, loginUserId);
 
         // TODO: 추후 loginUserId로 변경
-        reviewService.updateReview(reviewId, 1L, request);
-        // reviewService.updateReview(reviewId, loginUserId, request);
+        reviewService.updateReview(reviewId, 1L, request, files);
 
         log.info("리뷰 수정 완료 응답 반환 - reviewId: {}", reviewId);
 
         return ResponseEntity.ok("리뷰가 성공적으로 수정되었습니다.");
+    }
+
+    @GetMapping("/target/{matchingId}")
+    public ResponseEntity<ReviewTargetResponse> getTargetInfo(@PathVariable Long matchingId) {
+        ReviewTargetResponse response = reviewService.getReviewTargetInfo(matchingId);
+        return ResponseEntity.ok(response);
     }
 }
