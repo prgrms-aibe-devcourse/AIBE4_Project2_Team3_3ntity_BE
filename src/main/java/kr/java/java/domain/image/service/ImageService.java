@@ -133,7 +133,7 @@ public class ImageService {
     }
 
     public String uploadProfileImage(MultipartFile file) throws IOException {
-        if(!file.isEmpty()){
+        if(file.isEmpty()){
             return null;
         }
 
