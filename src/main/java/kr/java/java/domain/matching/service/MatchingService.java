@@ -188,7 +188,7 @@ public class MatchingService {
 
         matching.updateStatus(MatchStatus.ONGOING);
 
-        boolean isHost = matching.getReceiver().getId().equals(userId);
+        boolean isHost = matching.getSpace().getUser().getId().equals(userId);
 
         if(isHost){
             autoRejectOverlappingMatchings(matching);
@@ -306,3 +306,4 @@ public class MatchingService {
         }
     }
 }
+
