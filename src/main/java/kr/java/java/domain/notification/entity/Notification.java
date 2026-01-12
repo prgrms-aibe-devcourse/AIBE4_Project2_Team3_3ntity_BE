@@ -35,7 +35,7 @@ public class Notification {
     private boolean isRead;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, length = 50)
     private NotificationType notificationType;
 
     @CreationTimestamp

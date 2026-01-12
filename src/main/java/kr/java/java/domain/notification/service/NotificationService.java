@@ -3,15 +3,17 @@ package kr.java.java.domain.notification.service;
 import kr.java.java.domain.notification.dto.NotificationResponse;
 import kr.java.java.domain.notification.entity.Notification;
 import kr.java.java.domain.notification.enums.NotificationType;
+import kr.java.java.domain.notification.event.NotificationSavedEvent;
 import kr.java.java.domain.notification.exception.NotificationErrorCode;
 import kr.java.java.domain.notification.exception.NotificationException;
 import kr.java.java.domain.notification.repository.EmitterRepository;
 import kr.java.java.domain.notification.repository.NotificationRepository;
-import kr.java.java.domain.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -31,6 +33,7 @@ public class NotificationService {
     private final EmitterRepository emitterRepository;
 
     private static final Long DEFAULT_TIMEOUT = 60L * 1000 * 60; // 60분
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     public SseEmitter subscribe(Long userId, String lastEventId) {
         String emitterId = userId + "_" + System.currentTimeMillis();
@@ -63,31 +66,28 @@ public class NotificationService {
         return emitter;
     }
 
-    @Transactional
-    public void sendNotification(Long receiverId, NotificationType notificationType, String content, String relatedUrl) {
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void createNotification(Long receiverId, NotificationType notificationType, String content, String relatedUrl) {
 
-        log.info("[알림 service] 알림 전송 - receiverId: {}, NotificationType: {}, content: {}, relatedUrl: {}", receiverId, notificationType, content, relatedUrl);
+        log.info("[알림 service] 알림 생성 - receiverId: {}, NotificationType: {}, content: {}, relatedUrl: {}", receiverId, notificationType, content, relatedUrl);
 
-        Notification notification = notificationRepository.save(Notification.builder()
+        Notification notification = notificationRepository.save(
+                Notification.builder()
                 .receiverId(receiverId)
                 .content(content)
                 .relatedUrl(relatedUrl)
                 .notificationType(notificationType)
-                .build());
+                .build()
+        );
 
         String receiverIdString = String.valueOf(receiverId);
-        Map<String, SseEmitter> emitters = emitterRepository.findAllEmitterStartWithUserId(receiverIdString);
 
-        emitters.forEach(
-                (key, emitter) -> {
-                    emitterRepository.saveEventCache(key, notification);
-
-                    sendEventToClient(emitter,key,"notification",NotificationResponse.from(notification));
-                }
+        applicationEventPublisher.publishEvent(
+                new NotificationSavedEvent(receiverIdString,notification.getId())
         );
     }
 
-    private void sendEventToClient(SseEmitter emitter, String emitterId, String eventName, Object sendData) {
+    public void sendEventToClient(SseEmitter emitter, String emitterId, String eventName, Object sendData) {
         try {
             emitter.send(SseEmitter.event()
                     .id(emitterId)
@@ -139,7 +139,8 @@ public class NotificationService {
     @Transactional
     public void readNotification(Long notificationId) {
         log.info("[알림 service] 알림 읽음 처리");
-        Notification notification = notificationRepository.findById(notificationId)
+        Notification notification = notificationRepository
+                .findById(notificationId)
                 .orElseThrow(() -> new NotificationException(notificationId, NotificationErrorCode.NOTIFICATION_NOT_FOUND));
         notification.read();
     }

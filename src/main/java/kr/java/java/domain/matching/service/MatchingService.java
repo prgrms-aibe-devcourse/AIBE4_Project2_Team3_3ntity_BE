@@ -263,7 +263,7 @@ public class MatchingService {
     }
 
     private Matching findMatchingById(Long matchingId){
-        return matchingRepository.findById(matchingId)
+        return matchingRepository.findByIdWithFetchJoin(matchingId)
                 .orElseThrow(() -> new MatchingException(MatchingErrorCode.MATCHING_NOT_FOUND));
     }
 
@@ -305,7 +305,6 @@ public class MatchingService {
             throw new MatchingException(MatchingErrorCode.INVALID_MATCH_STATUS);
         }
     }
-
     @Transactional
     public List<MatchingExpiredEvent> processExpiredMatchings() {
         LocalDate today = LocalDate.now();
@@ -375,4 +374,3 @@ public class MatchingService {
         return rejectedMatchingEvents;
     }
 }
-
