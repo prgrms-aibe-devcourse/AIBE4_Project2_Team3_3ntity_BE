@@ -44,7 +44,7 @@ public class SpaceService {
                 imageService.uploadImage(images, TargetType.SPACE, space.getId());
             } catch (IOException e) {
                 log.error("이미지 업로드 실패", e);
-                throw new ImageUploadException("이미지 업로드 중 오류가 발생했습니다.");
+                throw new ImageNotUploadException("이미지 업로드 중 오류가 발생했습니다.");
             }
         }
 
