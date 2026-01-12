@@ -80,7 +80,7 @@ public class AuthService extends DefaultOAuth2UserService {
                             .uuid(uuid)
                             .email(userInfo.getEmail())
                             .nickname(RandomNicknameGenerator.generate())
-                            .profileImageUrl(ProfileImageUrlGenerator.generate(uuid)) // boring avatars
+                            .profileImageUrl(ProfileImageUrlGenerator.generate(uuid))
                             .provider(provider)
                             .providerId(userInfo.getProviderId())
                             .role(Role.USER)

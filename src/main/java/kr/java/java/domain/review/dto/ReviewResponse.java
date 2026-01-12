@@ -1,7 +1,9 @@
 package kr.java.java.domain.review.dto;
 
+import kr.java.java.domain.image.dto.ImageResponse;
 import kr.java.java.domain.review.entity.Review;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record ReviewResponse(
         Long reviewId,
@@ -10,10 +12,11 @@ public record ReviewResponse(
         String writerNickname,
         Integer rating,
         String content,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        List<ImageResponse> images
 ) {
     // Entity -> DTO 변환 메서드
-    public static ReviewResponse from(Review review) {
+    public static ReviewResponse of(Review review, List<ImageResponse> images) {
         return new ReviewResponse(
                 review.getId(),
                 review.getMatching().getId(),
@@ -21,7 +24,8 @@ public record ReviewResponse(
                 review.getUser().getNickname(),
                 review.getRating(),
                 review.getContent(),
-                review.getCreatedAt()
+                review.getCreatedAt(),
+                images
         );
     }
 }
