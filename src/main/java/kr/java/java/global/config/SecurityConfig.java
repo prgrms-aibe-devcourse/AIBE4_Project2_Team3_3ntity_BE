@@ -8,6 +8,7 @@ import kr.java.java.domain.auth.jwt.JwtTokenProvider;
 import kr.java.java.domain.auth.service.AuthService;
 import kr.java.java.domain.auth.service.RefreshTokenService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.web.header.writers.XXssProtectionHeaderWriter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -90,7 +91,8 @@ public class SecurityConfig {
                         )
                 )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(request -> "OPTIONS".equals(request.getMethod())).permitAll()
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
                         .requestMatchers("/").permitAll() // 루트 경로 허용
                         .requestMatchers("/api/auth/**", "/login/**", "/oauth2/**", "/piece/auths/**", "/error").permitAll()
                         .requestMatchers("/piece/spaces/**").permitAll()
@@ -112,10 +114,6 @@ public class SecurityConfig {
                                                  HttpServletResponse response,
                                                  AuthenticationException authException) throws IOException, ServletException {
 
-                                if ("OPTIONS".equals(request.getMethod())) {
-                                    response.setStatus(HttpServletResponse.SC_OK);
-                                    return;
-                                }
 
                                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                                 response.setContentType(MediaType.APPLICATION_JSON_VALUE);
