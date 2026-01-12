@@ -7,7 +7,10 @@ import kr.java.java.domain.favorite.entity.Favorite;
 import kr.java.java.domain.favorite.repository.FavoriteRepository;
 import kr.java.java.domain.image.enums.TargetType;
 import kr.java.java.domain.image.service.ImageService;
+import kr.java.java.domain.matching.entity.Matching;
+import kr.java.java.domain.matching.enums.MatchStatus;
 import kr.java.java.domain.matching.repository.MatchingRepository;
+import kr.java.java.domain.notification.service.NotificationService;
 import kr.java.java.domain.portfolio.repository.PortfolioRepository;
 import kr.java.java.domain.review.repository.ReviewRepository;
 import kr.java.java.domain.space.repository.SpaceRepository;
@@ -25,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -113,27 +117,25 @@ public class MypageService {
 
         Long userId = user.getId();
 
-        log.info("회원 탈퇴 - UserId: {}", userId);
+        // 진행 중인 매칭이 있는지 확인
+        List<Matching> ongoingMatchings = matchingRepository.findAllByUserIdAndStatus(userId, MatchStatus.ONGOING);
+        if (!ongoingMatchings.isEmpty()) {
+            throw new UserException(UserErrorCode.CANNOT_DELETE_USER_WITH_ACTIVE_MATCHING);
+        }
+
+        if (user.isCustomImage(user.getProfileImageUrl())) {
+            imageService.deleteProfileImage(user.getProfileImageUrl());
+        }
+
+        // TODO: Review, Portfolio, Space soft delete (벌크 업데이트)
+        // TODO: 알림 수동 삭제
 
         refreshTokenService.deleteRefreshToken(uuid);
 
-        List<Favorite> allFavorites = new ArrayList<>();
-        allFavorites.addAll(favoriteRepository.findAllByUserIdAndSpaceIsNotNull(userId));
-        allFavorites.addAll(favoriteRepository.findAllByUserIdAndPortfolioIsNotNull(userId));
-        favoriteRepository.deleteAll(allFavorites);
+        // User soft delete
+        user.delete();
+        userRepository.save(user);
 
-        commentRepository.deleteAll(commentRepository.findAllByUserIdOrderByCreatedAtDesc(userId));
-
-        reviewRepository.deleteAll(reviewRepository.findAllByUserId(userId));
-
-        matchingRepository.deleteAll(matchingRepository.findAllByUserIdAndStatus(userId, null));
-
-        portfolioRepository.deleteAll(portfolioRepository.findByUserIdOrderByIdDesc(userId));
-
-        spaceRepository.deleteAll(spaceRepository.findByUserIdOrderByIdDesc(userId));
-
-        userRepository.delete(user);
-
-        log.info("회원 탈퇴 완료 - UserId: {}", userId);
+        log.info("회원 탈퇴 완료: {}", uuid);
     }
 }
