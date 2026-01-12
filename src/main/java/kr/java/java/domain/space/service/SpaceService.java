@@ -1,11 +1,10 @@
 package kr.java.java.domain.space.service;
 
+import kr.java.java.domain.image.enums.TargetType;
+import kr.java.java.domain.image.service.ImageService;
 import kr.java.java.domain.space.dto.*;
 import kr.java.java.domain.space.entity.Space;
-import kr.java.java.domain.space.exception.DuplicateSpaceException;
-import kr.java.java.domain.space.exception.NotFoundSpaceException;
-import kr.java.java.domain.space.exception.NotFoundUserException;
-import kr.java.java.domain.space.exception.UnAuthorizedException;
+import kr.java.java.domain.space.exception.*;
 import kr.java.java.domain.space.repository.SpaceRepository;
 import kr.java.java.domain.user.entity.User;
 import kr.java.java.domain.user.repository.UserRepository;
@@ -14,7 +13,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 @Service
@@ -23,19 +24,34 @@ import java.util.List;
 public class SpaceService {
     private final SpaceRepository spaceRepository;
     private final UserRepository userRepository;
+    private final ImageService imageService;
 
     @Transactional
-    public void createSpace(SpaceRequest spaceRequest, Long loginUserId) {
+    public void createSpace(SpaceRequest spaceRequest, List<MultipartFile> images, Long loginUserId) {
         //TODO 로그인 유저 권한 체크하는 부분 추가 예정
         if (spaceRepository.existsByAddressAndDetailAddress(spaceRequest.address(), spaceRequest.detailAddress())) {
             log.error("동일한 공간이 존재합니다");
             throw new DuplicateSpaceException("동일한 공간이 존해합니다.");
         }
+
         User user = userRepository.getReferenceById(loginUserId);
+
         Space space = spaceRequest.toEntity(user);
         spaceRepository.save(space);
 
-        // TODO 권한 업그레이드 하는 부분 추가 예정
+        if (images != null && !images.isEmpty()) {
+            try {
+                imageService.uploadImage(images, TargetType.SPACE, space.getId());
+            } catch (IOException e) {
+                log.error("이미지 업로드 실패", e);
+                throw new ImageUploadException("이미지 업로드 중 오류가 발생했습니다.");
+            }
+        }
+
+        // 유저 권한 업그레이드
+        if(user.isUser()){
+            user.upgradeToHost();
+        }
     }
 
     @Transactional(readOnly = true)
