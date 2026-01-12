@@ -1,10 +1,11 @@
 package kr.java.java.domain.review.repository;
 
 import kr.java.java.domain.review.entity.Review;
-import kr.java.java.domain.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.data.jpa.repository.Modifying;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface ReviewRepository extends JpaRepository<Review, Long> {
@@ -21,4 +22,8 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
 
     @Query("SELECT COUNT(r) FROM Review r WHERE r.user.id = :userId")
     long countReviewsByUserId(@Param("userId") Long userId);
+
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Review r SET r.deletedAt = :deletedAt WHERE r.user.id = :userId AND r.deletedAt IS NULL")
+    int softDeleteAllByUserId(@Param("userId") Long userId, @Param("deletedAt") LocalDateTime deletedAt);
 }
