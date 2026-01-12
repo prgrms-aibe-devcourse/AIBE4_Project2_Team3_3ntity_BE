@@ -167,6 +167,12 @@ public class ImageService {
         return url.substring(url.lastIndexOf("/") + 1);
     }
 
+    public String getSpaceThumnail(Long spaceId) {
+        return imageRepository.findFirstBySpaceIdOrderBySortOrderAsc(spaceId)
+                .map(Image::getFileUrl)
+                .orElseThrow(() -> new ImageException(ImageErrorCode.SPACE_IMAGE_NOT_FOUND));
+    }
+
     public Map<Long, String> getThumnailsBySpaceIds(List<Long> spaceIds) {
         if (spaceIds.isEmpty()) return Collections.emptyMap();
 
