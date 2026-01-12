@@ -30,6 +30,35 @@ public class AuthController {
     @Value("${app.cookie.secure:false}")
     private boolean cookieSecure;
 
+    @GetMapping("/oauth2-token")
+    public ResponseEntity<TokenResponse> getOAuth2Token(HttpServletRequest request) {
+        String refreshToken = getRefreshTokenFromCookie(request);
+
+        if (refreshToken == null) {
+            throw new AuthException(AuthErrorCode.TOKEN_NOT_FOUND);
+        }
+
+        if (!jwtTokenProvider.validateToken(refreshToken)) {
+            throw new AuthException(AuthErrorCode.INVALID_TOKEN);
+        }
+
+        UUID uuid = jwtTokenProvider.getUuidFromToken(refreshToken);
+
+        if (!refreshTokenService.validateRefreshToken(uuid, refreshToken)) {
+            throw new AuthException(AuthErrorCode.INVALID_TOKEN);
+        }
+
+        String accessToken = jwtTokenProvider.createAccessToken(uuid);
+
+        TokenResponse response = TokenResponse.of(
+                accessToken,
+                refreshToken,
+                jwtTokenProvider.getAccessTokenExpirationInSeconds()
+        );
+
+        return ResponseEntity.ok().body(response);
+    }
+
     @PostMapping("/reissue")
     public ResponseEntity<TokenResponse> reissue(HttpServletRequest request) {
 
@@ -58,8 +87,7 @@ public class AuthController {
         refreshTokenService.saveRefreshToken(uuid, newRefreshToken);
 
         ResponseCookie refreshCookie = createRefreshTokenCookie(newRefreshToken);
-
-        // Access Token은 JSON 응답 본문에 포함 (프론트엔드 메모리 저장용)
+        
         TokenResponse response = TokenResponse.of(
                 newAccessToken,
                 newRefreshToken,
@@ -88,10 +116,12 @@ public class AuthController {
             refreshTokenService.deleteRefreshToken(uuid);
         }
 
-        // Access Token 블랙리스트에 추가
+
         if (accessToken != null && jwtTokenProvider.validateToken(accessToken)) {
-            long expirationTime = jwtTokenProvider.getAccessTokenExpirationInSeconds();
-            refreshTokenService.addAccessTokenToBlacklist(accessToken, expirationTime);
+            long remainingTime = jwtTokenProvider.getRemainingExpirationTime(accessToken);
+            if (remainingTime > 0) {
+                refreshTokenService.addAccessTokenToBlacklist(accessToken, remainingTime);
+            }
         }
 
         ResponseCookie refreshCookie = deleteRefreshTokenCookie();

@@ -59,11 +59,6 @@ public class RefreshTokenService {
         return true;
     }
 
-    /**
-     * Access Token을 블랙리스트에 추가 (로그아웃 시 사용)
-     * @param accessToken 블랙리스트에 추가할 Access Token
-     * @param expirationTime 만료 시간 (초 단위)
-     */
     public void addAccessTokenToBlacklist(String accessToken, long expirationTime) {
         if (accessToken == null || accessToken.isEmpty()) {
             throw new AuthException(AuthErrorCode.INVALID_INPUT);
@@ -72,11 +67,6 @@ public class RefreshTokenService {
         redisTemplate.opsForValue().set(key, "blacklisted", expirationTime, TimeUnit.SECONDS);
     }
 
-    /**
-     * Access Token이 블랙리스트에 있는지 확인
-     * @param accessToken 확인할 Access Token
-     * @return 블랙리스트에 있으면 true
-     */
     public boolean isAccessTokenBlacklisted(String accessToken) {
         if (accessToken == null || accessToken.isEmpty()) {
             return false;

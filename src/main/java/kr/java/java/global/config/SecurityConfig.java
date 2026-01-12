@@ -3,10 +3,12 @@ package kr.java.java.global.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import kr.java.java.domain.auth.filter.JwtAuthenticationFilter;
 import kr.java.java.domain.auth.handler.OAuth2AuthenticationFailureHandler;
+import kr.java.java.domain.auth.handler.OAuth2AuthenticationSuccessHandler;
 import kr.java.java.domain.auth.jwt.JwtTokenProvider;
 import kr.java.java.domain.auth.service.AuthService;
 import kr.java.java.domain.auth.service.RefreshTokenService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.web.header.writers.XXssProtectionHeaderWriter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,9 +18,19 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -35,25 +47,54 @@ public class SecurityConfig {
     private final RefreshTokenService refreshTokenService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
+    private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
     private final ObjectMapper objectMapper;
+    private final CorsProperties corsProperties;
 
     @org.springframework.beans.factory.annotation.Value("${app.cookie.secure:false}")
     private boolean cookieSecure;
+
+    @org.springframework.beans.factory.annotation.Value("${app.frontend.url:http://localhost:8081}")
+    private String frontendUrl;
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(corsProperties.getAllowedOrigins());
+        configuration.setAllowedMethods(corsProperties.getAllowedMethods());
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowCredentials(true);
+        configuration.setMaxAge(corsProperties.getMaxAge());
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
-                // 보안 헤더 추가
                 .headers(headers -> headers
                         .frameOptions(frameOptions -> frameOptions.deny())
                         .xssProtection(xss -> xss.headerValue(XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
-                        .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'"))
+                        .contentSecurityPolicy(csp -> csp
+                                .policyDirectives("default-src 'self'; " +
+                                        "script-src 'self' 'unsafe-inline'; " +
+                                        "img-src 'self' data: https://api.dicebear.com https://*.supabase.co; " +
+                                        "connect-src 'self' https://*.supabase.co; " + // Supabase API 호출 허용
+                                        "style-src 'self' 'unsafe-inline';")
+                        )
                 )
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
+                        .requestMatchers("/").permitAll() // 루트 경로 허용
+                        .requestMatchers("/api/auth/**", "/login/**", "/oauth2/**", "/piece/auths/**", "/error").permitAll()
                         .requestMatchers("/piece/spaces/**").permitAll()
                         .requestMatchers("/piece/portfolios/**").permitAll()
                         .requestMatchers("/piece/reviews/**").permitAll()
@@ -63,11 +104,29 @@ public class SecurityConfig {
                         .requestMatchers("/piece/images/**").permitAll()
                         .requestMatchers("/piece/notifications/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        .requestMatchers("/api/auth/**", "/login/**", "/oauth2/**", "/piece/auths/**", "/error").permitAll()
-                        .requestMatchers("/piece/mypages").authenticated()
-                        .anyRequest().authenticated()
+                        .requestMatchers("/piece/auths/logout").authenticated()
+                        .requestMatchers("/piece/mypages/**").authenticated().anyRequest().authenticated()
                 )
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(new AuthenticationEntryPoint() {
+                            @Override
+                            public void commence(HttpServletRequest request,
+                                                 HttpServletResponse response,
+                                                 AuthenticationException authException) throws IOException, ServletException {
 
+
+                                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                                response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                                response.setCharacterEncoding("UTF-8");
+
+                                Map<String, Object> result = new HashMap<>();
+                                result.put("code", "UNAUTHORIZED");
+                                result.put("message", "인증이 필요합니다.");
+
+                                response.getWriter().write(objectMapper.writeValueAsString(result));
+                            }
+                        })
+                )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
 
                 .oauth2Login(oauth2 -> oauth2
@@ -75,40 +134,7 @@ public class SecurityConfig {
                                 userInfo.userService(authService)
                         )
                         .failureHandler(oAuth2AuthenticationFailureHandler)
-                        .successHandler((request, response, authentication) -> {
-
-                            kr.java.java.domain.auth.security.CustomOAuth2User oauth2User =
-                                    (kr.java.java.domain.auth.security.CustomOAuth2User) authentication.getPrincipal();
-
-                            UUID uuid = oauth2User.getUuid();
-
-                            String accessToken = jwtTokenProvider.createAccessToken(uuid);
-                            String refreshToken = jwtTokenProvider.createRefreshToken(uuid);
-
-                            refreshTokenService.saveRefreshToken(uuid, refreshToken);
-
-                            // Refresh Token을 Cookie에 저장 (HttpOnly로 XSS 방지)
-                            ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", refreshToken)
-                                    .maxAge(REFRESH_TOKEN_MAX_AGE)
-                                    .path("/")
-                                    .httpOnly(true)
-                                    .secure(cookieSecure)
-                                    .sameSite("Lax")
-                                    .build();
-
-                            response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
-
-                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-                            response.setCharacterEncoding("UTF-8");
-
-                            // Access Token을 JSON 응답 본문에 포함 (프론트엔드 메모리 저장용)
-                            Map<String, Object> result = new HashMap<>();
-                            result.put("accessToken", accessToken);
-                            result.put("uuid", uuid.toString());
-                            result.put("message", "로그인 성공");
-
-                            response.getWriter().write(objectMapper.writeValueAsString(result));
-                        })
+                        .successHandler(oAuth2AuthenticationSuccessHandler)
                 );
 
         return http.build();
