@@ -81,4 +81,11 @@ public class User {
     public boolean isUser() {
         return this.role == Role.USER;
     }
+
+    public boolean isCustomImage(String imageUrl) {
+        if (imageUrl == null || imageUrl.isEmpty()) {
+            return false;
+        }
+        return !imageUrl.startsWith("https://api.dicebear.com/");
+    }
 }
