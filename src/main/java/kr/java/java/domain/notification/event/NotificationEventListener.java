@@ -85,7 +85,6 @@ public class NotificationEventListener {
         String spaceIdString = String.valueOf(event.spaceId());
         log.info("[알림] 매칭 만료 이벤트 수신: Space ID = {}", spaceIdString);
 
-
         //TODO: 만료 시 리뷰 작성 url로 이동
         notificationService.sendNotification(
                 event.senderId(),

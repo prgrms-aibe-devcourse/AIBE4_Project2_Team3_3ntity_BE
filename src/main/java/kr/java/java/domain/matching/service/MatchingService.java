@@ -92,6 +92,7 @@ public class MatchingService {
     private void createMatchingInternal(
             CreateMatchingCommand command
     ) {
+        log.info("[매칭 service] 매칭 생성 시작");
         User sender = userRepository.findById(command.senderId())
                 .orElseThrow(() -> new NotFoundUserException("로그인 유저 없음"));
 
@@ -102,7 +103,7 @@ public class MatchingService {
                 .orElseThrow(() -> new NotFoundSpaceException("해당 공간이 없습니다. id=" + command.spaceId()));
 
         validateMatching(space, sender, receiver);
-
+        log.info("[매칭 service] validateMatching 통과");
         Matching matching = Matching.builder()
                 .user(sender)
                 .receiver(receiver)
@@ -113,6 +114,7 @@ public class MatchingService {
                 .build();
 
         matchingRepository.save(matching);
+        log.info("[매칭 service] 매칭 생성 완료 - MatchingID: {}", matching.getId());
 
         String relatedUrl = createMatchingRelatedUrl(matching, MatchStatus.WAITING);
         applicationEventPublisher.publishEvent(new MatchingCreatedEvent(
@@ -192,7 +194,6 @@ public class MatchingService {
 
         matching.updateStatus(MatchStatus.ONGOING);
 
-        // 왜 리시버와 신청자가 같으면 호스트(공간주)인지?
         boolean isHost = matching.getReceiver().getId().equals(userId);
 
         if(isHost){
@@ -229,7 +230,6 @@ public class MatchingService {
         validateReceiverAndStatus(matching, userId);
 
         matching.updateStatus(MatchStatus.REJECTED);
-
 
         String relatedUrl = createMatchingRelatedUrl(matching, MatchStatus.REJECTED);
         applicationEventPublisher.publishEvent(new MatchingRejectedEvent(

@@ -37,15 +37,15 @@ public class NotificationService {
         SseEmitter emitter = emitterRepository.saveEmitter(emitterId, new SseEmitter(DEFAULT_TIMEOUT));
 
         emitter.onCompletion(() -> {
-            log.info("[알림] SSE onCompletion callback");
+            log.info("[알림 service] SSE onCompletion callback");
             emitterRepository.deleteEmitterById(emitterId);
         });
         emitter.onTimeout(() -> {
-            log.info("[알림] SSE onTimeout callback");
+            log.info("[알림 service] SSE onTimeout callback");
             emitterRepository.deleteEmitterById(emitterId);
         });
         emitter.onError((e) -> {
-            log.info("[알림] SSE onError callback");
+            log.info("[알림 service] SSE onError callback");
             emitterRepository.deleteEmitterById(emitterId);
         });
 
@@ -59,14 +59,14 @@ public class NotificationService {
                     .forEach(entry -> sendEventToClient(emitter, entry.getKey(), "notification", entry.getValue()));
         }
 
-        log.info("[알림] SSE 연결 완료, userId:" + userId);
+        log.info("[알림 service] SSE 연결 완료, userId:" + userId);
         return emitter;
     }
 
     @Transactional
     public void sendNotification(Long receiverId, NotificationType notificationType, String content, String relatedUrl) {
 
-        log.info("[알림] 알림 전송 - receiverId: {}, NotificationType: {}, content: {}, relatedUrl: {}", receiverId, notificationType, content, relatedUrl);
+        log.info("[알림 service] 알림 전송 - receiverId: {}, NotificationType: {}, content: {}, relatedUrl: {}", receiverId, notificationType, content, relatedUrl);
 
         Notification notification = notificationRepository.save(Notification.builder()
                 .receiverId(receiverId)
@@ -93,10 +93,10 @@ public class NotificationService {
                     .id(emitterId)
                     .name(eventName)
                     .data(sendData));
-            log.info("[알림] 이벤트 전송, eventName:" + eventName);
+            log.info("[알림 service] sendToClient - 이벤트 전송, eventName:" + eventName);
         } catch (IOException exception) {
             emitterRepository.deleteEmitterById(emitterId);
-            log.error("[알림] SSE 연결 오류", exception);
+            log.error("[알림 service] sendToClient - SSE 연결 오류", exception);
         }
     }
 
@@ -105,7 +105,7 @@ public class NotificationService {
 
         // 지난 알림(읽은 알림) 조회 중일 때
         if (isRead) {
-            log.info("[알림] 지난 알림 추가 조회 - userId:{}, lastId: {}", userId, lastId);
+            log.info("[알림 service] 지난 알림 추가 조회 - userId:{}, lastId: {}", userId, lastId);
             return notificationRepository.findReadNotifications(userId, lastId, PageRequest.of(0, limit))
                     .stream().map(NotificationResponse::from).collect(Collectors.toList());
         }
@@ -117,7 +117,7 @@ public class NotificationService {
         List<Notification> result = new ArrayList<>(unreadNotificationList);
 
         if (result.size() >= limit) {
-            log.info("[알림] 미확인 알림 조회 - userId:{}, lastId: {}", userId, lastId);
+            log.info("[알림 service] 미확인 알림 조회 - userId:{}, lastId: {}", userId, lastId);
             return result.stream().map(NotificationResponse::from).collect(Collectors.toList());
         }
 
@@ -127,18 +127,18 @@ public class NotificationService {
 
         result.addAll(readNotificationList);
 
-        log.info("[알림] 미확인+확인 알림 조회 - userId:{}, lastId: {}", userId, lastId);
+        log.info("[알림 service] 미확인+확인 알림 조회 - userId:{}, lastId: {}", userId, lastId);
         return result.stream().map(NotificationResponse::from).collect(Collectors.toList());
     }
 
     public long getUnreadNotificationCount(Long userId) {
-        log.info("[알림] 미확인 알림 개수 조회 - userId:{}", userId);
+        log.info("[알림 service] 미확인 알림 개수 조회 - userId:{}", userId);
         return notificationRepository.countUnreadNotificationsByUserId(userId);
     }
 
     @Transactional
     public void readNotification(Long notificationId) {
-        log.info("[알림] 알림 읽음 처리");
+        log.info("[알림 service] 알림 읽음 처리");
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new NotificationException(notificationId, NotificationErrorCode.NOTIFICATION_NOT_FOUND));
         notification.read();
