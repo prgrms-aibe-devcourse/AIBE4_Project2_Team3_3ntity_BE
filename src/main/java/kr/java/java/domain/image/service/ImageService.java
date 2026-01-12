@@ -193,7 +193,7 @@ public class ImageService {
             return null;
         }
 
-        String fileName = ImageDomain.USER.getDirName() + "/" + FileUtil.createFileName(file.getOriginalFilename());
+        String fileName = FileUtil.createFileName(file.getOriginalFilename());
 
         s3Client.putObject(PutObjectRequest.builder()
                 .bucket(bucket)
@@ -221,6 +221,12 @@ public class ImageService {
 
     private String extractFileName(String url) {
         return url.substring(url.lastIndexOf("/") + 1);
+    }
+
+    public String getSpaceThumnail(Long spaceId) {
+        return imageRepository.findFirstBySpaceIdOrderBySortOrderAsc(spaceId)
+                .map(Image::getFileUrl)
+                .orElseThrow(() -> new ImageException(ImageErrorCode.SPACE_IMAGE_NOT_FOUND));
     }
 
     public Map<Long, String> getThumnailsBySpaceIds(List<Long> spaceIds) {

@@ -11,8 +11,7 @@ import java.util.Optional;
 import java.util.List;
 
 public interface ImageRepository extends JpaRepository<Image, Long> {
-    @Query("SELECT i.fileUrl FROM Image i WHERE i.space.id = :spaceId AND i.sortOrder = 1")
-    Optional<String> findThumnailBySpaceId(@Param("spaceId") Long spaceId);
+    Optional<Image> findFirstBySpaceIdOrderBySortOrderAsc(Long spaceId);
 
     @Query("SELECT i FROM Image i WHERE i.space.id IN :spaceIds AND i.sortOrder = 1")
     List<Image> findThumbnailsBySpaceIds(@Param("spaceIds") List<Long> spaceIds);
