@@ -3,8 +3,11 @@ package kr.java.java.domain.review.service;
 import kr.java.java.domain.image.dto.ImageResponse;
 import kr.java.java.domain.image.enums.TargetType;
 import kr.java.java.domain.image.service.ImageService;
+import kr.java.java.domain.matching.exception.MatchingErrorCode;
+import kr.java.java.domain.matching.exception.MatchingException;
 import kr.java.java.domain.review.dto.ReviewCreateRequest;
 import kr.java.java.domain.review.dto.ReviewResponse;
+import kr.java.java.domain.review.dto.ReviewTargetResponse;
 import kr.java.java.domain.review.dto.ReviewUpdateRequest;
 import kr.java.java.domain.review.entity.Review;
 import kr.java.java.domain.review.exception.*;
@@ -21,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Slf4j
@@ -220,5 +224,19 @@ public class ReviewService {
         }
         userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("존재하지 않는 사용자입니다."));
+    }
+
+    @Transactional(readOnly = true)
+    public ReviewTargetResponse getReviewTargetInfo(Long matchingId) {
+        Matching matching = matchingRepository.findById(matchingId)
+                .orElseThrow(() -> new MatchingNotFoundException("존재하지 않는 매칭 정보입니다."));
+
+        String spaceTitle = matching.getSpace().getTitle();
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd");
+        String period = matching.getStartDate().format(formatter) + " ~ " +
+                matching.getEndDate().format(formatter);
+
+        return new ReviewTargetResponse(spaceTitle, period);
     }
 }

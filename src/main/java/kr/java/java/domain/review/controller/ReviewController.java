@@ -1,8 +1,10 @@
 package kr.java.java.domain.review.controller;
 
 import jakarta.validation.Valid;
+import kr.java.java.domain.matching.service.MatchingService;
 import kr.java.java.domain.review.dto.ReviewCreateRequest;
 import kr.java.java.domain.review.dto.ReviewResponse;
+import kr.java.java.domain.review.dto.ReviewTargetResponse;
 import kr.java.java.domain.review.dto.ReviewUpdateRequest;
 import kr.java.java.domain.review.service.ReviewService;
 import lombok.RequiredArgsConstructor;
@@ -97,5 +99,11 @@ public class ReviewController {
         log.info("리뷰 수정 완료 응답 반환 - reviewId: {}", reviewId);
 
         return ResponseEntity.ok("리뷰가 성공적으로 수정되었습니다.");
+    }
+
+    @GetMapping("/target/{matchingId}")
+    public ResponseEntity<ReviewTargetResponse> getTargetInfo(@PathVariable Long matchingId) {
+        ReviewTargetResponse response = reviewService.getReviewTargetInfo(matchingId);
+        return ResponseEntity.ok(response);
     }
 }
