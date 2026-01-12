@@ -1,10 +1,7 @@
 package kr.java.java.domain.portfolio.service;
 
 
-import kr.java.java.domain.portfolio.dto.PortfolioListResponse;
-import kr.java.java.domain.portfolio.dto.PortfolioRequest;
-import kr.java.java.domain.portfolio.dto.PortfolioResponse;
-import kr.java.java.domain.portfolio.dto.PortfolioUpdateRequest;
+import kr.java.java.domain.portfolio.dto.*;
 import kr.java.java.domain.portfolio.entity.Portfolio;
 import kr.java.java.domain.portfolio.exception.DuplicatePortfolioException;
 import kr.java.java.domain.portfolio.exception.NotFoundPortfolioException;
@@ -41,14 +38,14 @@ public class PortfolioService {
     }
 
     @Transactional(readOnly = true)
-    public List<PortfolioListResponse> getAllportfolios(){
-        return portfolioRepository.findAllByOrderByIdDesc().stream()
+    public List<PortfolioListResponse> getPortfolios(){
+        return portfolioRepository.findAllByIsOpenTrueOrderByIdDesc().stream()
                 .map(PortfolioListResponse::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<PortfolioListResponse> getportfoliosByUserId(Long userId) {
+    public List<PortfolioListResponse> portfoliosByUserId(Long userId) {
         if (!userRepository.existsById(userId)) {
             //TODO 나중에 유저에서 커스텀예외가 생기면 예외를 변경할 예정
             throw new NotFoundUserException("존재하지 않는 유저입니다. ID: " + userId);
@@ -92,5 +89,12 @@ public class PortfolioService {
 
         portfolio.update(request);
         return new PortfolioResponse(portfolio);
+    }
+
+    @Transactional(readOnly = true)
+    public List<PortfolioListResponse> searchPortfolios(PortfolioSearchCondition condition) {
+        return portfolioRepository.search(condition).stream()
+                .map(PortfolioListResponse::new)
+                .toList();
     }
 }

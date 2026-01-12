@@ -48,7 +48,7 @@ public class Portfolio {
 
 
     @Builder
-    public Portfolio(String brandName, String title, String description, String category, String externalLink, boolean isOpen, LocalDateTime createdAt,User user) {
+    public Portfolio(String brandName, String title, String description, String category, String externalLink, boolean isOpen, User user) {
         this.brandName = brandName;
         this.title = title;
         this.description = description;
@@ -66,6 +66,5 @@ public class Portfolio {
         if (request.category() != null) this.category = request.category();
         if (request.externalLink() != null) this.externalLink = request.externalLink();
         if (request.isOpen() != isOpen) this.isOpen = request.isOpen();
-        if (request.createdAt() != null) this.createdAt = request.createdAt();
     }
 }

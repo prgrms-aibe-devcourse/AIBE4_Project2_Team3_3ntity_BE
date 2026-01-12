@@ -12,8 +12,7 @@ public record PortfolioRequest(
         String description,
         String category,
         String externalLink,
-        boolean isOpen,
-        LocalDateTime createdAt
+        boolean isOpen
 ) {
     public Portfolio toEntity(User user) {
         return Portfolio.builder()
@@ -23,7 +22,6 @@ public record PortfolioRequest(
                 .category(this.category())
                 .externalLink(this.externalLink())
                 .isOpen(this.isOpen())
-                .createdAt(this.createdAt())
                 .user(user)
                 .build();
     }

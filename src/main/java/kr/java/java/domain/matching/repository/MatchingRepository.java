@@ -94,5 +94,17 @@ public interface MatchingRepository extends JpaRepository<Matching, Long> {
             "JOIN FETCH m.user " +
             "JOIN FETCH m.receiver " +
             "WHERE m.endDate < :today AND m.status = :status")
-    List<Matching> findExpiredMatchingsWithUser(LocalDate today, MatchStatus status);
+    List<Matching> findExpiredMatchingsWithUser(
+            @Param("today") LocalDate today,
+            @Param("status") MatchStatus status
+    );
+
+    @Query("SELECT m FROM Matching m " +
+            "JOIN FETCH m.user " +
+            "JOIN FETCH m.receiver " +
+            "WHERE m.startDate < :today AND m.status = :status")
+    List<Matching> findOverdueWaitingMatchings(
+            @Param("today") LocalDate today,
+            @Param("status") MatchStatus status
+    );
 }
