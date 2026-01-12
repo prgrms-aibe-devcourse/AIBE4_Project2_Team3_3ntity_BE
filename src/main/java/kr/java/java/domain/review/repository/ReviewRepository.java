@@ -9,15 +9,15 @@ import java.util.List;
 
 public interface ReviewRepository extends JpaRepository<Review, Long> {
 
-    List<Review> findAllByMatchingId(Long matchingId);
-
-    List<Review> findAllByUser(User user);
-
     boolean existsByMatchingIdAndUserId(Long matchingId, Long userId);
 
-    List<Review> findAllByMatchingSpaceId(Long spaceId);
+    // 특정 공간의 리뷰 조회
+    @Query("SELECT r FROM Review r JOIN FETCH r.user JOIN FETCH r.matching WHERE r.matching.space.id = :spaceId")
+    List<Review> findAllByMatchingSpaceId(@Param("spaceId") Long spaceId);
 
-    List<Review> findAllByUserId(Long userId);
+    // 내가 쓴 리뷰 조회
+    @Query("SELECT r FROM Review r JOIN FETCH r.user JOIN FETCH r.matching WHERE r.user.id = :userId")
+    List<Review> findAllByUserId(@Param("userId") Long userId);
 
     @Query("SELECT COUNT(r) FROM Review r WHERE r.user.id = :userId")
     long countReviewsByUserId(@Param("userId") Long userId);
