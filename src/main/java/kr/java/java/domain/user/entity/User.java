@@ -1,11 +1,19 @@
 package kr.java.java.domain.user.entity;
 
 import jakarta.persistence.*;
+import kr.java.java.domain.comment.entity.Comment;
+import kr.java.java.domain.favorite.entity.Favorite;
+import kr.java.java.domain.portfolio.entity.Portfolio;
+import kr.java.java.domain.review.entity.Review;
+import kr.java.java.domain.space.entity.Space;
+import kr.java.java.global.util.ProfileImageUrlGenerator;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -52,6 +60,24 @@ public class User {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<Favorite> favorites = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<Comment> comments = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user")
+    private List<Review> reviews = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user")
+    private List<Portfolio> portfolios = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user")
+    private List<Space> spaces = new ArrayList<>();
+
     @PrePersist
     public void createUuid() {
         if (this.uuid == null) {
@@ -83,9 +109,16 @@ public class User {
     }
 
     public boolean isCustomImage(String imageUrl) {
-        if (imageUrl == null || imageUrl.isEmpty()) {
-            return false;
-        }
-        return !imageUrl.startsWith("https://api.dicebear.com/");
+        return this.profileImageUrl != null && !this.profileImageUrl.contains("api.dicebear.com");
+    }
+
+    public boolean isDeleted() {
+        return this.deletedAt != null;
+    }
+
+    public void delete() {
+        this.deletedAt = LocalDateTime.now();
+        this.nickname = "탈퇴한 회원"; // 닉네임을 덮어씌움
+        this.profileImageUrl = ProfileImageUrlGenerator.getDeletedUserImage(); // 회색 바탕 이미지로 변경
     }
 }
