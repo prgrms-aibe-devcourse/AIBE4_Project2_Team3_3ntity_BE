@@ -27,7 +27,10 @@ import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -130,7 +133,7 @@ public class ImageService {
     }
 
     public String uploadProfileImage(MultipartFile file) throws IOException {
-        if(!file.isEmpty()){
+        if(file.isEmpty()){
             return null;
         }
 
@@ -163,4 +166,18 @@ public class ImageService {
     private String extractFileName(String url) {
         return url.substring(url.lastIndexOf("/") + 1);
     }
+
+    public Map<Long, String> getThumnailsBySpaceIds(List<Long> spaceIds) {
+        if (spaceIds.isEmpty()) return Collections.emptyMap();
+
+        List<Image> thumbnails = imageRepository.findThumbnailsBySpaceIds(spaceIds);
+
+        return thumbnails.stream()
+                .collect(Collectors.toMap(
+                        img -> img.getSpace().getId(),
+                        Image::getFileUrl,
+                        (existing, replacement) -> existing
+                ));
+    }
 }
+

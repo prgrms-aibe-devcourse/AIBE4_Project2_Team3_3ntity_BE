@@ -1,5 +1,6 @@
 package kr.java.java.domain.matching.service;
 
+import kr.java.java.domain.image.service.ImageService;
 import kr.java.java.domain.matching.dto.CreateMatchingCommand;
 import kr.java.java.domain.matching.dto.CreateMatchingToSpaceRequest;
 import kr.java.java.domain.matching.dto.CreateMatchingToUserRequest;
@@ -22,7 +23,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -33,7 +36,7 @@ public class MatchingService {
     private final UserRepository userRepository;
     private final SpaceRepository spaceRepository;
     private final MatchingRepository matchingRepository;
-    private final NotificationService  notificationService;
+    private final ImageService imageService;
 
     //TODO 해당 서비스 페이지에 있는 User 에러처리는 추후 User 도메인의 exception에 생기면 변경
 
@@ -154,9 +157,27 @@ public class MatchingService {
         return convertToResponse(matchings, userId);
     }
 
+    // TODO space entity에 썸네일 url을 추가할지 의논 후 로직 최종 결정
     private List<MatchingResponse> convertToResponse(List<Matching> matchings, Long userId) {
+        if (matchings.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<Long> spaceIds = matchings.stream()
+                .map(m -> m.getSpace().getId())
+                .distinct()
+                .toList();
+
+        Map<Long, String> thumbnailMap = imageService.getThumnailsBySpaceIds(spaceIds);
+
         return matchings.stream()
-                .map(matching -> MatchingResponse.from(matching, userId))
+                .map(matching -> {
+                    String mainImageUrl = thumbnailMap.getOrDefault(
+                            matching.getSpace().getId(),
+                            "default-image-url"
+                    );
+                    return MatchingResponse.from(matching, userId, mainImageUrl);
+                })
                 .collect(Collectors.toList());
     }
 
