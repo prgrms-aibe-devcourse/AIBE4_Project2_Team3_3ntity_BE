@@ -1,7 +1,9 @@
 package kr.java.java.domain.comment.event;
 
+import java.util.UUID;
+
 public record CommentCreatedEvent(
-        Long receiverId,
+        UUID receiverId,
         String senderNickname,
         String relatedUrl
 ){}

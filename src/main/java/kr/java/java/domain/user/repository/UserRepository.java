@@ -8,13 +8,13 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
 
-    // UUID 기반 사용자 조회
     @Query("SELECT u FROM User u WHERE u.uuid = :uuid AND u.deletedAt IS NULL")
     Optional<User> findByUuid(@Param("uuid") UUID uuid);
 

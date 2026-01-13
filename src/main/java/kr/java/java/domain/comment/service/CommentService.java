@@ -22,7 +22,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.UUID;
 
 @Slf4j
 @Service
@@ -38,14 +37,14 @@ public class CommentService {
     private final ApplicationEventPublisher applicationEventPublisher;
 
     @Transactional
-    public Long createComment(UUID userUuid, CommentCreateRequest request) {
-        log.info("문의 생성 시도 - uuid: {}, spaceId: {}, portfolioId: {}",
-                userUuid, request.spaceId(), request.portfolioId());
+    public Long createComment(Long userId, CommentCreateRequest request) {
+        log.info("문의 생성 시도 - userId: {}, spaceId: {}, portfolioId: {}",
+                userId, request.spaceId(), request.portfolioId());
 
         // 1. 유저 검증 및 조회
-        User user = userRepository.findByUuid(userUuid)
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> {
-                    log.warn("존재하지 않는 유저입니다. userId: {}", userUuid);
+                    log.warn("존재하지 않는 유저입니다. userId: {}", userId);
                     return new UserNotFoundException("존재하지 않는 사용자입니다.");
                 });
 
@@ -73,7 +72,7 @@ public class CommentService {
             notificationReceiver = portfolio.getUser();
             notificationRelatedUrl = "piece/portfolios/" + portfolio.getId();
         } else {
-            log.warn("문의 대상 누락 - userId: {}", userUuid);
+            log.warn("문의 대상 누락 - userId: {}", userId);
             throw new CommentTargetMissingException("문의를 남길 대상(공간 또는 포트폴리오)이 지정되지 않았습니다.");
         }
 
@@ -88,10 +87,10 @@ public class CommentService {
 
         Comment savedComment = commentRepository.save(comment);
 
-        log.info("문의 저장 성공 - commentId: {}, userId: {}", savedComment.getId(), userUuid);
+        log.info("문의 저장 성공 - commentId: {}, userId: {}", savedComment.getId(), userId);
 
-        if (notificationReceiver != null && !notificationReceiver.getId().equals(userUuid)) {
-            applicationEventPublisher.publishEvent(new CommentCreatedEvent(notificationReceiver.getId(), user.getNickname(), notificationRelatedUrl));
+        if (notificationReceiver != null && !notificationReceiver.getId().equals(userId)) {
+            applicationEventPublisher.publishEvent(new CommentCreatedEvent(notificationReceiver.getUuid(), user.getNickname(), notificationRelatedUrl));
         }
         else
         {
@@ -102,9 +101,8 @@ public class CommentService {
     }
 
     // 공간별 문의 조회
-    public List<CommentResponse> getCommentsBySpace(Long spaceId, UUID viewerUuid) {
-        log.info("공간별 문의 조회 요청 - spaceId: {}, viewerId: {}", spaceId, viewerUuid);
-        Long viewerId = resolveViewerId(viewerUuid);
+    public List<CommentResponse> getCommentsBySpace(Long spaceId, Long viewerId) {
+        log.info("공간별 문의 조회 요청 - spaceId: {}, viewerId: {}", spaceId, viewerId);
         List<Comment> comments = commentRepository.findAllBySpaceIdOrderByCreatedAtDesc(spaceId);
         log.info("공간(ID:{}) 문의 조회 성공 - 총 {}건", spaceId, comments.size());
         return comments.stream()
@@ -113,9 +111,8 @@ public class CommentService {
     }
 
     // 포트폴리오별 문의 조회
-    public List<CommentResponse> getCommentsByPortfolio(Long portfolioId, UUID viewerUuid) {
-        log.info("포트폴리오별 문의 조회 요청 - portfolioId: {}, viewerId: {}", portfolioId, viewerUuid);
-        Long viewerId = resolveViewerId(viewerUuid);
+    public List<CommentResponse> getCommentsByPortfolio(Long portfolioId, Long viewerId) {
+        log.info("포트폴리오별 문의 조회 요청 - portfolioId: {}, viewerId: {}", portfolioId, viewerId);
         List<Comment> comments = commentRepository.findAllByPortfolioIdOrderByCreatedAtDesc(portfolioId);
         log.info("포트폴리오(ID:{}) 문의 조회 성공 - 총 {}건", portfolioId, comments.size());
         return comments.stream()
@@ -124,31 +121,29 @@ public class CommentService {
     }
 
     // 사용자별 문의 조회
-    public List<CommentResponse> getMyComments(UUID userUuid) {
-        log.info("사용자별 문의 조회 요청 - uuid: {}", userUuid);
-        User user = userRepository.findByUuid(userUuid)
-                .orElseThrow(() -> new UserNotFoundException("존재하지 않는 사용자입니다."));
-        List<Comment> comments = commentRepository.findAllByUserIdOrderByCreatedAtDesc(user.getUuid());
-        log.info("사용자(ID:{}) 문의 조회 성공 - 총 {}건", userUuid, comments.size());
+    public List<CommentResponse> getMyComments(Long userId) {
+        log.info("사용자별 문의 조회 요청 - userId: {}", userId);
+        validateUser(userId);
+        List<Comment> comments = commentRepository.findAllByUserIdOrderByCreatedAtDesc(userId);
+        log.info("사용자(ID:{}) 문의 조회 성공 - 총 {}건", userId, comments.size());
         return comments.stream()
-                .map(comment -> CommentResponse.of(comment, user.getId()))
+                .map(comment -> CommentResponse.of(comment, userId))
                 .toList();
     }
 
     @Transactional
-    public void deleteComment(Long commentId, UUID userUuid) {
-        log.info("문의 삭제 시도 - commentId: {}, uuid: {}", commentId, userUuid);
-        User user = userRepository.findByUuid(userUuid)
-                .orElseThrow(() -> new UserNotFoundException("존재하지 않는 사용자입니다."));
+    public void deleteComment(Long commentId, Long userId) {
+        log.info("문의 삭제 시도 - commentId: {}, userId: {}", commentId, userId);
+        validateUser(userId);
 
         // 삭제할 문의 조회
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new CommentNotFoundException("존재하지 않는 문의입니다."));
 
         // 권한 검증
-        if (!comment.getUser().getId().equals(user.getId())) {
+        if (!comment.getUser().getId().equals(userId)) {
             log.warn("문의 삭제 실패 - 권한 없음. writerId: {}, requesterId: {}",
-                    comment.getUser().getId(), user.getId());
+                    comment.getUser().getId(), userId);
             throw new CommentAccessDeniedException("본인이 작성한 문의만 삭제할 수 있습니다.");
         }
 
@@ -157,19 +152,18 @@ public class CommentService {
     }
 
     @Transactional
-    public void updateComment(UUID userUuid, Long commentId, CommentUpdateRequest request) {
-        log.info("문의 수정 시작 - commentId: {}, uuid: {}", commentId, userUuid);
-        User user = userRepository.findByUuid(userUuid)
-                .orElseThrow(() -> new UserNotFoundException("존재하지 않는 사용자입니다."));
+    public void updateComment(Long userId, Long commentId, CommentUpdateRequest request) {
+        log.info("문의 수정 시작 - commentId: {}, userId: {}", commentId, userId);
+        validateUser(userId);
 
         // 문의 조회
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new CommentNotFoundException("존재하지 않는 문의입니다."));
 
         // 권한 검증
-        if (!comment.getUser().getId().equals(user.getId())) {
+        if (!comment.getUser().getId().equals(userId)) {
             log.warn("문의 수정 실패 - 권한 없음. writerId: {}, requesterId: {}",
-                    comment.getUser().getId(), user.getId());
+                    comment.getUser().getId(), userId);
             throw new CommentAccessDeniedException("본인이 작성한 문의만 수정할 수 있습니다.");
         }
 
@@ -179,13 +173,12 @@ public class CommentService {
         log.info("문의 수정 성공 - commentId: {}", commentId);
     }
 
-    private Long resolveViewerId(UUID viewerUuid) {
-        if (viewerUuid == null) {
-            return null;
+    private void validateUser(Long userId) {
+        if (userId == null) {
+            return;
         }
-        return userRepository.findByUuid(viewerUuid)
-                .map(User::getId)
-                .orElse(null);
+        userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("존재하지 않는 사용자입니다."));
     }
 
 }

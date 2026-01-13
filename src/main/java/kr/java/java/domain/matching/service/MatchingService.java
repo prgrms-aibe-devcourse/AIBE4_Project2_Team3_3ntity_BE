@@ -11,8 +11,6 @@ import kr.java.java.domain.matching.event.*;
 import kr.java.java.domain.matching.exception.MatchingErrorCode;
 import kr.java.java.domain.matching.exception.MatchingException;
 import kr.java.java.domain.matching.repository.MatchingRepository;
-import kr.java.java.domain.notification.enums.NotificationType;
-import kr.java.java.domain.notification.service.NotificationService;
 import kr.java.java.domain.space.entity.Space;
 import kr.java.java.domain.space.exception.NotFoundSpaceException;
 import kr.java.java.domain.space.exception.NotFoundUserException;
@@ -26,11 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -40,7 +34,6 @@ public class MatchingService {
     private final UserRepository userRepository;
     private final SpaceRepository spaceRepository;
     private final MatchingRepository matchingRepository;
-    private final NotificationService notificationService;
     private final ApplicationEventPublisher applicationEventPublisher;
     private final ImageService imageService;
 
@@ -50,14 +43,15 @@ public class MatchingService {
     public void createUserToSpace(
             Long spaceId,
             CreateMatchingToSpaceRequest request,
-            Long loginUserId
+            UUID userUuid
     ) {
-        Space space = spaceRepository.findById(spaceId).orElse(null);
+        Space space = spaceRepository.findById(spaceId)
+                .orElseThrow(() -> new NotFoundSpaceException("해당 공간이 없습니다."));
 
         CreateMatchingCommand command = new CreateMatchingCommand(
                 spaceId,
-                loginUserId,
-                space.getUser().getId(),
+                userUuid,
+                space.getUser().getUuid(),
                 request.message(),
                 request.startDate(),
                 request.months()
@@ -68,14 +62,14 @@ public class MatchingService {
 
     @Transactional
     public void createSpaceToUser(
-            Long targetUserId,
+            UUID targetUserUuid,
             CreateMatchingToUserRequest request,
-            Long loginUserId
+            UUID userUuid
     ) {
-        User sender = userRepository.findById(loginUserId)
+        User sender = userRepository.findByUuid(userUuid)
                 .orElseThrow(() -> new NotFoundUserException("로그인 유저 없음"));
         Space space = spaceRepository.findById(request.spaceId())
-                .orElseThrow(() -> new NotFoundSpaceException("해당 공간이 없습니다. id=" + request.spaceId()));
+                .orElseThrow(() -> new NotFoundSpaceException("해당 공간이 없습니다."));
 
         if (!space.getUser().getId().equals(sender.getId())) {
             throw new MatchingException(MatchingErrorCode.HOST_CANNOT_MATCH_OTHER_SPACE);
@@ -83,8 +77,8 @@ public class MatchingService {
 
         CreateMatchingCommand command = new CreateMatchingCommand(
                 space.getId(),
-                sender.getId(),
-                targetUserId,
+                sender.getUuid(),
+                targetUserUuid,
                 request.message(),
                 request.startDate(),
                 request.months()
@@ -97,10 +91,10 @@ public class MatchingService {
             CreateMatchingCommand command
     ) {
         log.info("[매칭 service] 매칭 생성 시작");
-        User sender = userRepository.findById(command.senderId())
+        User sender = userRepository.findByUuid(command.senderUuid())
                 .orElseThrow(() -> new NotFoundUserException("로그인 유저 없음"));
 
-        User receiver = userRepository.findById(command.receiverId())
+        User receiver = userRepository.findByUuid(command.receiverUuid())
                 .orElseThrow(() -> new NotFoundUserException("로그인 유저 없음"));
 
         Space space = spaceRepository.findById(command.spaceId())
@@ -122,7 +116,7 @@ public class MatchingService {
 
         String relatedUrl = createMatchingRelatedUrl(matching, MatchStatus.WAITING);
         applicationEventPublisher.publishEvent(new MatchingCreatedEvent(
-                matching.getReceiver().getId(),
+                matching.getReceiver().getUuid(),
                 matching.getUser().getNickname(),
                 relatedUrl
         ));
@@ -167,26 +161,26 @@ public class MatchingService {
     }
 
     @Transactional(readOnly = true)
-    public List<MatchingResponse> getMatchings(Long userId, MatchStatus status) {
-        List<Matching> matchings = matchingRepository.findAllByUserIdAndStatus(userId, status);
+    public List<MatchingResponse> getMatchings(UUID userUuid, MatchStatus status) {
+        List<Matching> matchings = matchingRepository.findAllByUserUuidAndStatus(userUuid, status);
 
-        return convertToResponse(matchings, userId);
+        return convertToResponse(matchings, userUuid);
     }
 
     @Transactional(readOnly = true)
-    public List<MatchingResponse> getMatchingsAsHost(Long userId, MatchStatus status) {
-        List<Matching> matchings = matchingRepository.findAllBySpaceHostId(userId, status);
-        return convertToResponse(matchings, userId);
+    public List<MatchingResponse> getMatchingsAsHost(UUID userUuid, MatchStatus status) {
+        List<Matching> matchings = matchingRepository.findAllBySpaceHostId(userUuid, status);
+        return convertToResponse(matchings, userUuid);
     }
 
     @Transactional(readOnly = true)
-    public List<MatchingResponse> getMatchingsAsMaker(Long userId, MatchStatus status) {
-        List<Matching> matchings = matchingRepository.findAllAsMakerId(userId, status);
-        return convertToResponse(matchings, userId);
+    public List<MatchingResponse> getMatchingsAsMaker(UUID userUuid, MatchStatus status) {
+        List<Matching> matchings = matchingRepository.findAllAsMakerId(userUuid, status);
+        return convertToResponse(matchings, userUuid);
     }
 
     // TODO space entity에 썸네일 url을 추가할지 의논 후 로직 최종 결정
-    private List<MatchingResponse> convertToResponse(List<Matching> matchings, Long userId) {
+    private List<MatchingResponse> convertToResponse(List<Matching> matchings, UUID userUuid) {
         if (matchings.isEmpty()) {
             return Collections.emptyList();
         }
@@ -204,30 +198,30 @@ public class MatchingService {
                             matching.getSpace().getId(),
                             "default-image-url"
                     );
-                    return MatchingResponse.from(matching, userId, mainImageUrl);
+                    return MatchingResponse.from(matching, userUuid, mainImageUrl);
                 })
                 .collect(Collectors.toList());
     }
 
     @Transactional
-    public void acceptMatching(Long matchingId, Long userId){
+    public void acceptMatching(Long matchingId, UUID userUuid){
         Matching matching = findMatchingById(matchingId);
-        validateReceiverAndStatus(matching, userId);
+        validateReceiverAndStatus(matching, userUuid);
 
         matching.updateStatus(MatchStatus.ONGOING);
 
-        boolean isHost = matching.getReceiver().getId().equals(userId);
+        boolean isHost = matching.getReceiver().getUuid().equals(userUuid);
 
         if(isHost){
             autoRejectOverlappingMatchings(matching);
-            log.info("[매칭 수락 - HOST] MatchingID: {}, 수락자: {}", matchingId, userId);
+            log.info("[매칭 수락 - HOST] MatchingID: {}, 수락자: {}", matchingId, userUuid);
         } else{
-            log.info("[매칭 수락 - USER] MatchingID: {}, 수락자: {}", matchingId, userId);
+            log.info("[매칭 수락 - USER] MatchingID: {}, 수락자: {}", matchingId, userUuid);
         }
 
         String relatedUrl = createMatchingRelatedUrl(matching, MatchStatus.ONGOING);
         applicationEventPublisher.publishEvent(new MatchingAcceptedEvent(
-                matching.getUser().getId(),
+                matching.getUser().getUuid(),
                 matching.getReceiver().getNickname(),
                 relatedUrl
         ));
@@ -247,19 +241,18 @@ public class MatchingService {
     }
 
     @Transactional
-    public void rejectMatching(Long matchingId, Long userId) {
+    public void rejectMatching(Long matchingId, UUID userUuid) {
         Matching matching = findMatchingById(matchingId);
-        validateReceiverAndStatus(matching, userId);
+        validateReceiverAndStatus(matching, userUuid);
 
         matching.updateStatus(MatchStatus.REJECTED);
 
         String relatedUrl = createMatchingRelatedUrl(matching, MatchStatus.REJECTED);
         applicationEventPublisher.publishEvent(new MatchingRejectedEvent(
-                matching.getUser().getId(),
+                matching.getUser().getUuid(),
                 matching.getReceiver().getNickname(),
                 relatedUrl
         ));
-        log.info("[매칭 거절] MatchingID: {}, 거절자: {}", matchingId, userId);
     }
 
     private Matching findMatchingById(Long matchingId){
@@ -267,10 +260,10 @@ public class MatchingService {
                 .orElseThrow(() -> new MatchingException(MatchingErrorCode.MATCHING_NOT_FOUND));
     }
 
-    private void validateReceiverAndStatus(Matching matching, Long userId) {
+    private void validateReceiverAndStatus(Matching matching, UUID userUuid) {
         log.info("[검증 로그] DB ReceiverID: {}, 요청 LoginUserID: {}",
-                matching.getReceiver().getId(), userId);
-        if (!matching.getReceiver().getId().equals(userId)) {
+                matching.getReceiver().getUuid(), userUuid);
+        if (!matching.getReceiver().getUuid().equals(userUuid)) {
             throw new MatchingException(MatchingErrorCode.NOT_AUTHORIZED_RECEIVER);
         }
 
@@ -280,24 +273,22 @@ public class MatchingService {
     }
 
     @Transactional
-    public void cancelMatching(Long matchingId, Long userId) {
+    public void cancelMatching(Long matchingId, UUID userUuid) {
         Matching matching = findMatchingById(matchingId);
-        validateSenderAndStatus(matching, userId);
+        validateSenderAndStatus(matching, userUuid);
 
         matching.updateStatus(MatchStatus.CANCELLED);
 
         String relatedUrl = createMatchingRelatedUrl(matching, MatchStatus.CANCELLED);
         applicationEventPublisher.publishEvent(new MatchingCanceledEvent(
-                matching.getReceiver().getId(),
+                matching.getReceiver().getUuid(),
                 matching.getUser().getNickname(),
                 relatedUrl
         ));
-
-        log.info("[매칭 취소] MatchingID: {}, 거절자: {}", matchingId, userId);
     }
 
-    private void validateSenderAndStatus(Matching matching, Long userId) {
-        if (!matching.getUser().getId().equals(userId)) {
+    private void validateSenderAndStatus(Matching matching, UUID userUuid) {
+        if (!matching.getUser().getUuid().equals(userUuid)) {
             throw new MatchingException(MatchingErrorCode.NOT_AUTHORIZED_SENDER);
         }
 
@@ -321,9 +312,9 @@ public class MatchingService {
 
                 MatchingExpiredEvent event = new MatchingExpiredEvent(
                         matching.getId(),
-                        matching.getUser().getId(),
+                        matching.getUser().getUuid(),
                         matching.getUser().getNickname(),
-                        matching.getReceiver().getId(),
+                        matching.getReceiver().getUuid(),
                         matching.getReceiver().getNickname()
                 );
                 expiredMatchingEvents.add(event);
@@ -356,7 +347,7 @@ public class MatchingService {
                 matching.rejectMatch();
 
                 MatchingRejectedEvent event = new MatchingRejectedEvent(
-                        matching.getUser().getId(),
+                        matching.getUser().getUuid(),
                         matching.getReceiver().getNickname(),
                         createMatchingRelatedUrl(matching, MatchStatus.REJECTED));
                 rejectedMatchingEvents.add(event);
