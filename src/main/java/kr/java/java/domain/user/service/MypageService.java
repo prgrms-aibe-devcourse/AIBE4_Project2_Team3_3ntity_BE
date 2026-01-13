@@ -59,7 +59,7 @@ public class MypageService {
 
         MypageResponse.StatsInfo stats = MypageResponse.StatsInfo.builder()
                 .spacesCount(spaceRepository.countSpacesByUserId(user.getUuid()))
-                .portfoliosCount(portfolioRepository.countPortfoliosByUserId(userId))
+                .portfoliosCount(portfolioRepository.countPortfoliosByUserId(user.getUuid()))
                 .reviewsCount(reviewRepository.countReviewsByUserId(userId))
                 .likesCount(0L) //TODO
                 .matchingsCount(matchingRepository.countByUserIdAndStatus(userId, null))

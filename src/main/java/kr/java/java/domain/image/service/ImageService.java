@@ -49,6 +49,11 @@ public class ImageService {
     private String supabaseUrl;
 
     public void uploadImage(List<MultipartFile> files, TargetType targetType, Long targetId) throws IOException {
+
+        if (files == null || files.isEmpty()) {
+            return;
+        }
+
         for (int i=0; i<files.size(); i++) {
             MultipartFile file = files.get(i);
             if(file.isEmpty()) continue;
