@@ -102,7 +102,7 @@ public class MatchingController {
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("form/{spaceId}")
+    @GetMapping("/form/{spaceId}")
     public ResponseEntity<SpaceMatchingFormResponse> getUserToSpaceMatchingForm(@PathVariable Long spaceId){
         SpaceMatchingFormResponse response = spaceService.getSpaceMatchingFormCard(spaceId);
         return ResponseEntity.ok(response);
