@@ -11,16 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 public class WebConfig implements WebMvcConfigurer {
 
 
-    private final CorsProperties corsProperties;
-
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        registry
-                .addMapping("/piece/**")
-                .allowedOrigins(corsProperties.getAllowedOrigins().toArray(new String[0]))
-                .allowedMethods(corsProperties.getAllowedMethods().toArray(new String[0]))
-                .allowedHeaders("*")
-                .allowCredentials(true)
-                .maxAge(corsProperties.getMaxAge());
     }
 }

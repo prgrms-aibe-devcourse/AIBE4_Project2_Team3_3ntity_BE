@@ -98,4 +98,21 @@ public class JwtTokenProvider {
     public long getAccessTokenExpirationInSeconds() {
         return accessTokenExpiration / 1000;
     }
+
+    public long getRemainingExpirationTime(String token) {
+        try {
+            Claims claims = Jwts.parser()
+                    .verifyWith(secretKey)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+
+            long expirationTime = claims.getExpiration().getTime();
+            long currentTime = System.currentTimeMillis();
+
+            return Math.max(0, (expirationTime - currentTime) / 1000);
+        } catch (Exception e) {
+            return 0;
+        }
+    }
 }
