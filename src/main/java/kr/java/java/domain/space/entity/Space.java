@@ -11,6 +11,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -22,6 +24,8 @@ import java.util.List;
 @Table(name = "spaces")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@SQLRestriction("deleted_at IS NULL")
+@SQLDelete(sql = "UPDATE spaces SET deleted_at = NOW() WHERE space_id = ?")
 public class Space {
 
     @Id
@@ -58,6 +62,9 @@ public class Space {
     @Column(name = "status", length = 20)
     private SpaceStatus status;
 
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -70,7 +77,7 @@ public class Space {
     private List<Matching> matchings = new ArrayList<>();
 
     @Builder
-    public Space(String title, String description, SpaceCategory category, String address, String detailAddress, BigDecimal latitude, BigDecimal longitude, Integer pricePerMonth,User user){
+    public Space(String title, String description, SpaceCategory category, String address, String detailAddress, BigDecimal latitude, BigDecimal longitude, Integer pricePerMonth,LocalDateTime createdAt,User user){
         this.title = title;
         this.description = description;
         this.category = category;
@@ -79,6 +86,7 @@ public class Space {
         this.latitude = latitude;
         this.longitude = longitude;
         this.pricePerMonth = pricePerMonth;
+        this.createdAt = LocalDateTime.now();
         this.user = user;
         this.status = SpaceStatus.RECRUITING;
     }
