@@ -95,8 +95,10 @@ public class SecurityConfig {
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
                         .requestMatchers("/").permitAll() // 루트 경로 허용
                         .requestMatchers("/api/auth/**", "/login/**", "/oauth2/**", "/piece/auths/**", "/error").permitAll()
-                        .requestMatchers("/piece/spaces/**").permitAll()
-                        .requestMatchers("/piece/portfolios/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/piece/spaces/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/piece/portfolios/**").permitAll()
+                        .requestMatchers("/piece/spaces/**").authenticated()
+                        .requestMatchers("/piece/portfolios/**").authenticated()
                         .requestMatchers("/piece/reviews/**").permitAll()
                         .requestMatchers("/piece/comments/**").permitAll()
                         .requestMatchers("/piece/favorites/**").permitAll()
