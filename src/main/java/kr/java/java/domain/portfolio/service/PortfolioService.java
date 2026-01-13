@@ -44,14 +44,11 @@ public class PortfolioService {
         Portfolio portfolio = portfolioRequest.toEntity(user);
         portfolioRepository.save(portfolio);
 
-        if (images != null && !images.isEmpty()) {
-            try {
-                // TargetType.SPACE와 방금 만든 space.getId()를 넘김
-                imageService.uploadImage(images, TargetType.SPACE, portfolio.getId());
-            } catch (IOException e) {
-                log.error("이미지 업로드 실패", e);
-                throw new ImageNotUploadException("이미지 업로드 중 오류가 발생했습니다.");
-            }
+        try {
+            imageService.uploadImage(images, TargetType.PORTFOLIO, portfolio.getId());
+        } catch (IOException e) {
+            log.error("이미지 업로드 실패", e);
+            throw new ImageNotUploadException("이미지 업로드 중 오류가 발생했습니다.");
         }
     }
 
