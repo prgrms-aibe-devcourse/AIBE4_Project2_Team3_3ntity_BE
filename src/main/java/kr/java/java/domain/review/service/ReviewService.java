@@ -40,17 +40,17 @@ public class ReviewService {
     private final ImageService imageService;
 
     @Transactional
-    public Long createReview(UUID userId, ReviewCreateRequest request, List<MultipartFile> files) throws IOException {
-        log.info("리뷰 생성 시도 - userId: {}, matchingId: {}", userId, request.matchingId());
+    public Long createReview(UUID userUuid, ReviewCreateRequest request, List<MultipartFile> files) throws IOException {
+        log.info("리뷰 생성 시도 - uuid: {}, matchingId: {}", userUuid, request.matchingId());
 
         if (files != null && files.size() > 3) {
             throw new MaxImageLimitException("이미지는 최대 3장까지만 첨부할 수 있습니다.");
         }
 
         // 1. 유저 검증 및 조회
-        User user = userRepository.findByUuid(userId)
+        User user = userRepository.findByUuid(userUuid)
                 .orElseThrow(() -> {
-                    log.warn("존재하지 않는 유저입니다. userId: {}", userId);
+                    log.warn("존재하지 않는 유저입니다. uuid: {}", userUuid);
                     return new UserNotFoundException("존재하지 않는 사용자입니다.");
                 });
 
@@ -63,7 +63,7 @@ public class ReviewService {
 
         // 3. 중복 리뷰 검증
         if (reviewRepository.existsByMatchingIdAndUserUuid(request.matchingId(), user.getUuid())) {
-            log.warn("이미 작성된 리뷰가 존재합니다. matchingId: {}, userId: {}", request.matchingId(), userId);
+            log.warn("이미 작성된 리뷰가 존재합니다. matchingId: {}, uuid: {}", request.matchingId(), userUuid);
             throw new DuplicateReviewException("이미 해당 매칭에 대한 리뷰를 작성하셨습니다.");
         }
 
@@ -106,14 +106,14 @@ public class ReviewService {
     }
 
     // 사용자별 리뷰 조회
-    public List<ReviewResponse> getMyReviews(UUID userId) {
-        log.info("사용자별 리뷰 조회 요청 - uuid: {}", userId);
-        User user = userRepository.findByUuid(userId)
+    public List<ReviewResponse> getMyReviews(UUID userUuid) {
+        log.info("사용자별 리뷰 조회 요청 - uuid: {}", userUuid);
+        User user = userRepository.findByUuid(userUuid)
                 .orElseThrow(() -> new UserNotFoundException("존재하지 않는 사용자입니다."));
 
         List<Review> reviews = reviewRepository.findAllByUserId(user.getUuid());
 
-        log.info("사용자(ID:{}) 리뷰 조회 성공 - 총 {}건", userId, reviews.size());
+        log.info("사용자(uuid:{}) 리뷰 조회 성공 - 총 {}건", userUuid, reviews.size());
 
         return reviews.stream()
                 .map(review -> {
@@ -124,9 +124,9 @@ public class ReviewService {
     }
 
     @Transactional
-    public void deleteReview(Long reviewId, UUID userId) {
-        log.info("리뷰 삭제 시작 - reviewId: {}, userId: {}", reviewId, userId);
-        User user = userRepository.findByUuid(userId)
+    public void deleteReview(Long reviewId, UUID userUuid) {
+        log.info("리뷰 삭제 시작 - reviewId: {}, uuid: {}", reviewId, userUuid);
+        User user = userRepository.findByUuid(userUuid)
                 .orElseThrow(() -> new UserNotFoundException("존재하지 않는 사용자입니다."));
 
         // 1. 리뷰 조회
@@ -138,7 +138,7 @@ public class ReviewService {
 
         // 2. 작성자 권한 검증
         if (!review.getUser().getId().equals(user.getId())) {
-            log.warn("리뷰 삭제 권한 없음 - 작성자: {}, 요청자: {}", review.getUser().getId(), userId);
+            log.warn("리뷰 삭제 권한 없음 - 작성자: {}, 요청자: {}", review.getUser().getId(), user.getId());
             throw new ReviewAccessDeniedException("본인이 작성한 리뷰만 삭제할 수 있습니다.");
         }
 
@@ -158,9 +158,9 @@ public class ReviewService {
     }
 
     @Transactional
-    public void updateReview(Long reviewId, UUID userId, ReviewUpdateRequest request, List<MultipartFile> newFiles) throws IOException {
-        log.info("리뷰 수정 시작 - reviewId: {}, userId: {}", reviewId, userId);
-        User user = userRepository.findByUuid(userId)
+    public void updateReview(Long reviewId, UUID userUuid, ReviewUpdateRequest request, List<MultipartFile> newFiles) throws IOException {
+        log.info("리뷰 수정 시작 - reviewId: {}, uuid: {}", reviewId, userUuid);
+        User user = userRepository.findByUuid(userUuid)
                 .orElseThrow(() -> new UserNotFoundException("존재하지 않는 사용자입니다."));
 
         // 1. 리뷰 조회
@@ -172,7 +172,7 @@ public class ReviewService {
 
         // 2. 작성자 권한 검증
         if (!review.getUser().getId().equals(user.getId())) {
-            log.warn("리뷰 수정 권한 없음 - 작성자: {}, 요청자: {}", review.getUser().getId(), userId);
+            log.warn("리뷰 수정 권한 없음 - 작성자: {}, 요청자: {}", review.getUser().getId(), user.getId());
             throw new ReviewAccessDeniedException("본인이 작성한 리뷰만 수정할 수 있습니다.");
         }
 

@@ -30,11 +30,9 @@ public class CommentController {
         if (userDetails == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        log.info("POST /piece/comments 요청 발생 - (테스트용) 작성자 ID: {}", userDetails.getUuid());
+        log.info("POST /piece/comments 요청 발생 - (테스트용) 작성자 UUID: {}", userDetails.getUuid());
 
-        // TODO: 인증 기능 완성 후에 다시 loginUserId로 변경
         Long commentId = commentService.createComment(userDetails.getUuid(), request);
-        //Long commentId = commentService.createComment(loginUserId, request);
 
         log.info("문의 등록 완료 응답 반환 - 생성된 commentId: {}", commentId);
 
@@ -50,7 +48,7 @@ public class CommentController {
         UUID viewerUuid = (userDetails != null) ? userDetails.getUuid() : null;
 
         log.info("GET /piece/comments/space/{} 요청 발생", spaceId);
-        log.info("조회자(Viewer) ID: {}", viewerUuid);
+        log.info("조회자(Viewer) UUID: {}", viewerUuid);
 
         List<CommentResponse> responses = commentService.getCommentsBySpace(spaceId, viewerUuid);
 
@@ -67,7 +65,7 @@ public class CommentController {
         UUID viewerUuid = (userDetails != null) ? userDetails.getUuid() : null;
 
         log.info("GET /piece/comments/portfolio/{} 요청 발생", portfolioId);
-        log.info("조회자(Viewer) ID: {}", viewerUuid);
+        log.info("조회자(Viewer) UUID: {}", viewerUuid);
 
         List<CommentResponse> responses = commentService.getCommentsByPortfolio(portfolioId, viewerUuid);
 
@@ -97,7 +95,7 @@ public class CommentController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        log.info("DELETE /piece/comments/{} 요청 발생 - 요청자 ID: {}", commentId, userDetails.getUuid());
+        log.info("DELETE /piece/comments/{} 요청 발생 - 요청자 UUID: {}", commentId, userDetails.getUuid());
 
         commentService.deleteComment(commentId, userDetails.getUuid());
 
@@ -117,7 +115,7 @@ public class CommentController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        log.info("PATCH /piece/comments/{} 요청 발생 - 요청자 ID: {}", commentId, userDetails.getUuid());
+        log.info("PATCH /piece/comments/{} 요청 발생 - 요청자 UUID: {}", commentId, userDetails.getUuid());
 
         commentService.updateComment(userDetails.getUuid(), commentId, request);
 
