@@ -77,17 +77,17 @@ public interface MatchingRepository extends JpaRepository<Matching, Long> {
     );
 
     // userId의 공간에 대한 매칭들의 개수 조회(status 설정 시 해당 status를 가진 데이터만 조회)
-    @Query("SELECT COUNT(m) FROM Matching m JOIN m.space s WHERE s.user.id = :userId AND (:status IS NULL OR m.status = :status)")
+    @Query("SELECT COUNT(m) FROM Matching m JOIN m.space s WHERE s.user.uuid = :userUuid AND (:status IS NULL OR m.status = :status)")
     long countAllBySpaceHostId(
-            @Param("userId") Long userId,
+            @Param("userUuid") UUID userUuid,
             @Param("status") MatchStatus status
     );
 
     // userId의 공간을 제외한 매칭들의 개수 조회(status 설정 시 해당 status를 가진 데이터만 조회)
     @Query("SELECT COUNT(m) FROM Matching m JOIN m.space s " +
-            "WHERE (m.user.id = :userId OR m.receiver.id = :userId) AND s.user.id != :userId AND (:status IS NULL OR m.status = :status)")
+            "WHERE (m.user.uuid = :userUuid OR m.receiver.uuid = :userUuid) AND s.user.uuid != :userUuid AND (:status IS NULL OR m.status = :status)")
     long countAllAsMakerId(
-            @Param("userId") Long userId,
+            @Param("userUuid") UUID userUuid,
             @Param("status") MatchStatus status
     );
 

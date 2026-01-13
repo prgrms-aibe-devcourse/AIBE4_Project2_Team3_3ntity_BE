@@ -23,7 +23,6 @@ import java.util.UUID;
 public class MatchingController {
     private final MatchingService matchingService;
 
-    // TODO: loginUserId: 추후 token에서 추출하도록 변경
     @PostMapping("/spaces/{spaceId}")
     public ResponseEntity<Void> createMatchingToSpace(
             @PathVariable Long spaceId,
@@ -74,9 +73,9 @@ public class MatchingController {
     @PatchMapping("/{matchingId}/accept")
     public ResponseEntity<Void> updateMatching(
             @PathVariable(name = "matchingId") Long matchingId,
-            @RequestParam(name = "userId") Long userId){
+            @AuthenticationPrincipal CustomUserDetails userDetails){
 
-        matchingService.acceptMatching(matchingId, userId);
+        matchingService.acceptMatching(matchingId, userDetails.getUuid());
 
         return ResponseEntity.ok().build();
     }
@@ -84,9 +83,9 @@ public class MatchingController {
     @PatchMapping("/{matchingId}/reject")
     public ResponseEntity<Void> rejectMatching(
             @PathVariable(name = "matchingId") Long matchingId,
-            @RequestParam(name = "userId") Long userId) {
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
 
-        matchingService.rejectMatching(matchingId, userId);
+        matchingService.rejectMatching(matchingId, userDetails.getUuid());
 
         return ResponseEntity.ok().build();
     }
@@ -94,10 +93,9 @@ public class MatchingController {
     @PatchMapping("/{matchingId}/cancel")
     public ResponseEntity<Void> cancelMatching(
             @PathVariable(name = "matchingId") Long matchingId,
-            @RequestParam(name = "userId") Long userId) {
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
 
-        log.info("[API 요청] 매칭 취소 - MatchingID: {}, LoginUserID: {}", matchingId, userId);
-        matchingService.cancelMatching(matchingId, userId);
+        matchingService.cancelMatching(matchingId, userDetails.getUuid());
 
         return ResponseEntity.ok().build();
     }
