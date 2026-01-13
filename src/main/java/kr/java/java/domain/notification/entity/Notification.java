@@ -2,14 +2,11 @@ package kr.java.java.domain.notification.entity;
 
 import jakarta.persistence.*;
 import kr.java.java.domain.notification.enums.NotificationType;
-import kr.java.java.domain.user.entity.User;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.LocalDateTime;
 
@@ -24,10 +21,9 @@ public class Notification {
     @Column(name = "notification_id")
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    @OnDelete(action = OnDeleteAction.CASCADE)
-    private User userId;
+    // TODO: uuid로 변경
+    @Column(name = "user_id", nullable = false)
+    private Long receiverId;
 
     @Column(nullable = false)
     private String content;
@@ -39,7 +35,7 @@ public class Notification {
     private boolean isRead;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, length = 50)
     private NotificationType notificationType;
 
     @CreationTimestamp
@@ -47,8 +43,8 @@ public class Notification {
     private LocalDateTime createdAt;
 
     @Builder
-    public Notification(User userId, String content, String relatedUrl, NotificationType notificationType) {
-        this.userId = userId;
+    public Notification(Long receiverId, String content, String relatedUrl, NotificationType notificationType) {
+        this.receiverId = receiverId;
         this.content = content;
         this.relatedUrl = relatedUrl;
         this.notificationType = notificationType;

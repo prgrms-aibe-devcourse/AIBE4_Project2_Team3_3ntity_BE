@@ -34,7 +34,7 @@ public class SpaceService {
         //TODO 로그인 유저 권한 체크하는 부분 추가 예정
         if (spaceRepository.existsByAddressAndDetailAddress(spaceRequest.address(), spaceRequest.detailAddress())) {
             log.error("동일한 공간이 존재합니다");
-            throw new DuplicateSpaceException("동일한 공간이 존해합니다.");
+            throw new DuplicateSpaceException("동일한 공간이 존재합니다.");
         }
 
         User user = userRepository.getReferenceById(loginUserId);
