@@ -63,4 +63,8 @@ public class Image {
         this.space = space;
         this.portfolio = portfolio;
     }
+
+    public void updateSortOrder(Integer sortOrder) {
+        this.sortOrder = sortOrder;
+    }
 }

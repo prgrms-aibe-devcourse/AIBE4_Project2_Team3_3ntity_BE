@@ -61,6 +61,7 @@ public class MypageService {
                 .portfoliosCount(portfolioRepository.countPortfoliosByUserId(userId))
                 .reviewsCount(reviewRepository.countReviewsByUserId(userId))
                 .likesCount(0L) //TODO
+                .matchingsCount(matchingRepository.countByUserIdAndStatus(userId, null))
                 .build();
 
         return MypageResponse.of(user, stats);

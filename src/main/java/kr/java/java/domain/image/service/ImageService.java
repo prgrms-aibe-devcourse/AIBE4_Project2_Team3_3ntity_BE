@@ -1,5 +1,6 @@
 package kr.java.java.domain.image.service;
 
+import jakarta.transaction.Transactional;
 import kr.java.java.domain.image.dto.ImageResponse;
 import kr.java.java.domain.image.entity.Image;
 import kr.java.java.domain.image.enums.ImageDomain;
@@ -113,6 +114,61 @@ public class ImageService {
         return images.stream()
                 .map(ImageResponse::from)
                 .toList();
+    }
+
+    @Transactional
+    public void updateImages(TargetType targetType, Long targetId, List<Long> remainImageIds, List<MultipartFile> newFiles) throws IOException{
+        List<Image> currentImages = switch(targetType) {
+            case REVIEW -> imageRepository.findAllByReviewIdOrderBySortOrderAsc(targetId);
+            case SPACE -> imageRepository.findAllBySpaceIdOrderBySortOrderAsc(targetId);
+            case PORTFOLIO -> imageRepository.findAllByPortfolioIdOrderBySortOrderAsc(targetId);
+        };
+
+        // 삭제할 이미지들 추출
+        List<Image> toDelete = currentImages.stream()
+                .filter(img -> !remainImageIds.contains(img.getId()))
+                .toList();
+
+        // TODO 한 번에 삭제할 수 있도록 추후 작성
+        for(Image image : toDelete) {
+            deleteSingleImage(image.getId());
+        }
+
+        int newFileIndex = 0;
+        for(int i=0; i<remainImageIds.size(); i++) {
+            Long imageId = remainImageIds.get(i);
+            int targetSortOrder = i+1;
+
+            // 원래 있던 이미지라면
+            if(imageId != null){
+                // TODO 추후 이미지 한 번에 가져와 루프에서 꺼내기
+                imageRepository.findById(imageId).ifPresent(img ->{
+                    img.updateSortOrder(targetSortOrder);
+                });
+            } else{
+                if(newFiles != null && newFileIndex < newFiles.size()) {
+                    MultipartFile file = newFiles.get(newFileIndex++);
+                    if(!file.isEmpty()) {
+                        uploadAndSaveSingleImage(file, targetType, targetId, targetSortOrder);
+                    }
+                }
+            }
+        }
+    }
+
+    private void uploadAndSaveSingleImage(MultipartFile file, TargetType targetType, Long targetId, int sortOrder) throws IOException {
+        String fileName = FileUtil.createFileName(file.getOriginalFilename());
+
+        s3Client.putObject(PutObjectRequest.builder()
+                .bucket(bucket)
+                .key(fileName)
+                .contentType(file.getContentType())
+                .build(), RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
+
+        String fileUrl = String.format("%s/storage/v1/object/public/%s/%s", supabaseUrl, bucket, fileName);
+
+        Image image = createEntityByTargetType(targetType, targetId, fileUrl, sortOrder);
+        imageRepository.save(image);
     }
 
     public void deleteSingleImage(Long imageId) {
