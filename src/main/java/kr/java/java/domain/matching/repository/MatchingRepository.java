@@ -36,7 +36,7 @@ public interface MatchingRepository extends JpaRepository<Matching, Long> {
             "WHERE (u.uuid = :userUuid OR r.uuid = :userUuid)" +
             "AND (:status IS NULL OR m.status = :status)" +
             "ORDER BY m.createdAt DESC")
-    List<Matching> findAllByUserIdAndStatus(
+    List<Matching> findAllByUserUuidAndStatus(
             @Param("userUuid") UUID userUuid,
             @Param("status") MatchStatus status
     );

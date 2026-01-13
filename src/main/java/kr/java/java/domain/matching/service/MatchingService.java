@@ -11,8 +11,6 @@ import kr.java.java.domain.matching.event.*;
 import kr.java.java.domain.matching.exception.MatchingErrorCode;
 import kr.java.java.domain.matching.exception.MatchingException;
 import kr.java.java.domain.matching.repository.MatchingRepository;
-import kr.java.java.domain.notification.enums.NotificationType;
-import kr.java.java.domain.notification.service.NotificationService;
 import kr.java.java.domain.space.entity.Space;
 import kr.java.java.domain.space.exception.NotFoundSpaceException;
 import kr.java.java.domain.space.exception.NotFoundUserException;
@@ -164,7 +162,7 @@ public class MatchingService {
 
     @Transactional(readOnly = true)
     public List<MatchingResponse> getMatchings(UUID userUuid, MatchStatus status) {
-        List<Matching> matchings = matchingRepository.findAllByUserIdAndStatus(userUuid, status);
+        List<Matching> matchings = matchingRepository.findAllByUserUuidAndStatus(userUuid, status);
 
         return convertToResponse(matchings, userUuid);
     }
