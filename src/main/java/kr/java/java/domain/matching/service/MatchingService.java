@@ -116,7 +116,7 @@ public class MatchingService {
 
         String relatedUrl = createMatchingRelatedUrl(matching, MatchStatus.WAITING);
         applicationEventPublisher.publishEvent(new MatchingCreatedEvent(
-                matching.getReceiver().getId(),
+                matching.getReceiver().getUuid(),
                 matching.getUser().getNickname(),
                 relatedUrl
         ));
@@ -221,7 +221,7 @@ public class MatchingService {
 
         String relatedUrl = createMatchingRelatedUrl(matching, MatchStatus.ONGOING);
         applicationEventPublisher.publishEvent(new MatchingAcceptedEvent(
-                matching.getUser().getId(),
+                matching.getUser().getUuid(),
                 matching.getReceiver().getNickname(),
                 relatedUrl
         ));
@@ -249,7 +249,7 @@ public class MatchingService {
 
         String relatedUrl = createMatchingRelatedUrl(matching, MatchStatus.REJECTED);
         applicationEventPublisher.publishEvent(new MatchingRejectedEvent(
-                matching.getUser().getId(),
+                matching.getUser().getUuid(),
                 matching.getReceiver().getNickname(),
                 relatedUrl
         ));
@@ -281,7 +281,7 @@ public class MatchingService {
 
         String relatedUrl = createMatchingRelatedUrl(matching, MatchStatus.CANCELLED);
         applicationEventPublisher.publishEvent(new MatchingCanceledEvent(
-                matching.getReceiver().getId(),
+                matching.getReceiver().getUuid(),
                 matching.getUser().getNickname(),
                 relatedUrl
         ));
@@ -347,7 +347,7 @@ public class MatchingService {
                 matching.rejectMatch();
 
                 MatchingRejectedEvent event = new MatchingRejectedEvent(
-                        matching.getUser().getId(),
+                        matching.getUser().getUuid(),
                         matching.getReceiver().getNickname(),
                         createMatchingRelatedUrl(matching, MatchStatus.REJECTED));
                 rejectedMatchingEvents.add(event);

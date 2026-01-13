@@ -90,7 +90,7 @@ public class CommentService {
         log.info("문의 저장 성공 - commentId: {}, userId: {}", savedComment.getId(), userId);
 
         if (notificationReceiver != null && !notificationReceiver.getId().equals(userId)) {
-            applicationEventPublisher.publishEvent(new CommentCreatedEvent(notificationReceiver.getId(), user.getNickname(), notificationRelatedUrl));
+            applicationEventPublisher.publishEvent(new CommentCreatedEvent(notificationReceiver.getUuid(), user.getNickname(), notificationRelatedUrl));
         }
         else
         {
