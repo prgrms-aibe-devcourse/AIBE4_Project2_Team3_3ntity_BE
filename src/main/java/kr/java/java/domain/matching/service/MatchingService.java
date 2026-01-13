@@ -36,7 +36,6 @@ public class MatchingService {
     private final UserRepository userRepository;
     private final SpaceRepository spaceRepository;
     private final MatchingRepository matchingRepository;
-    private final NotificationService notificationService;
     private final ApplicationEventPublisher applicationEventPublisher;
     private final ImageService imageService;
 
@@ -46,14 +45,15 @@ public class MatchingService {
     public void createUserToSpace(
             Long spaceId,
             CreateMatchingToSpaceRequest request,
-            Long loginUserId
+            UUID userUuid
     ) {
-        Space space = spaceRepository.findById(spaceId).orElse(null);
+        Space space = spaceRepository.findById(spaceId)
+                .orElseThrow(() -> new NotFoundSpaceException("해당 공간이 없습니다."));
 
         CreateMatchingCommand command = new CreateMatchingCommand(
                 spaceId,
-                loginUserId,
-                space.getUser().getId(),
+                userUuid,
+                space.getUser().getUuid(),
                 request.message(),
                 request.startDate(),
                 request.months()
@@ -64,14 +64,14 @@ public class MatchingService {
 
     @Transactional
     public void createSpaceToUser(
-            Long targetUserId,
+            UUID targetUserUuid,
             CreateMatchingToUserRequest request,
-            Long loginUserId
+            UUID userUuid
     ) {
-        User sender = userRepository.findById(loginUserId)
+        User sender = userRepository.findByUuid(userUuid)
                 .orElseThrow(() -> new NotFoundUserException("로그인 유저 없음"));
         Space space = spaceRepository.findById(request.spaceId())
-                .orElseThrow(() -> new NotFoundSpaceException("해당 공간이 없습니다. id=" + request.spaceId()));
+                .orElseThrow(() -> new NotFoundSpaceException("해당 공간이 없습니다."));
 
         if (!space.getUser().getId().equals(sender.getId())) {
             throw new MatchingException(MatchingErrorCode.HOST_CANNOT_MATCH_OTHER_SPACE);
@@ -79,8 +79,8 @@ public class MatchingService {
 
         CreateMatchingCommand command = new CreateMatchingCommand(
                 space.getId(),
-                sender.getId(),
-                targetUserId,
+                sender.getUuid(),
+                targetUserUuid,
                 request.message(),
                 request.startDate(),
                 request.months()
@@ -93,10 +93,10 @@ public class MatchingService {
             CreateMatchingCommand command
     ) {
         log.info("[매칭 service] 매칭 생성 시작");
-        User sender = userRepository.findById(command.senderId())
+        User sender = userRepository.findByUuid(command.senderUuid())
                 .orElseThrow(() -> new NotFoundUserException("로그인 유저 없음"));
 
-        User receiver = userRepository.findById(command.receiverId())
+        User receiver = userRepository.findByUuid(command.receiverUuid())
                 .orElseThrow(() -> new NotFoundUserException("로그인 유저 없음"));
 
         Space space = spaceRepository.findById(command.spaceId())

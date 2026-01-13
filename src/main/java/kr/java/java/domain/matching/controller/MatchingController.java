@@ -14,6 +14,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @RestController
@@ -27,19 +28,19 @@ public class MatchingController {
     public ResponseEntity<Void> createMatchingToSpace(
             @PathVariable Long spaceId,
             @RequestBody CreateMatchingToSpaceRequest request,
-            @RequestParam Long userId
+            @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        matchingService.createUserToSpace(spaceId, request, userId);
+        matchingService.createUserToSpace(spaceId, request, userDetails.getUuid());
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @PostMapping("/users/{targetUserId}")
     public ResponseEntity<Void> createMatchingToUser(
-            @PathVariable Long targetUserId,
+            @PathVariable UUID targetUserUuid,
             @RequestBody CreateMatchingToUserRequest request,
-            @RequestParam Long userId
+            @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        matchingService.createSpaceToUser(targetUserId, request, userId);
+        matchingService.createSpaceToUser(targetUserUuid, request, userDetails.getUuid());
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
