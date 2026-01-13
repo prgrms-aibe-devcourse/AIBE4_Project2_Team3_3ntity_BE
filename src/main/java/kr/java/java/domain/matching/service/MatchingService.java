@@ -312,9 +312,9 @@ public class MatchingService {
 
                 MatchingExpiredEvent event = new MatchingExpiredEvent(
                         matching.getId(),
-                        matching.getUser().getId(),
+                        matching.getUser().getUuid(),
                         matching.getUser().getNickname(),
-                        matching.getReceiver().getId(),
+                        matching.getReceiver().getUuid(),
                         matching.getReceiver().getNickname()
                 );
                 expiredMatchingEvents.add(event);
