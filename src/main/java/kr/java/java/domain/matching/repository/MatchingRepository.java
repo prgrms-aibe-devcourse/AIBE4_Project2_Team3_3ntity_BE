@@ -70,9 +70,9 @@ public interface MatchingRepository extends JpaRepository<Matching, Long> {
     );
 
     // userId와 관계 있는 매칭들의 개수 조회(status 설정 시 해당 status를 가진 데이터만 조회)
-    @Query("SELECT COUNT(m) FROM Matching m WHERE (m.user.id = :userId OR m.receiver.id = :userId) AND (:status IS NULL OR m.status = :status)")
+    @Query("SELECT COUNT(m) FROM Matching m WHERE (m.user.uuid = :userUuid OR m.receiver.uuid = :userUuid) AND (:status IS NULL OR m.status = :status)")
     long countByUserIdAndStatus(
-            @Param("userId") Long userId,
+            @Param("userUuid") UUID userUuid,
             @Param("status") MatchStatus status
     );
 
