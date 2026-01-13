@@ -3,6 +3,7 @@ package kr.java.java.domain.notification.repository;
 import kr.java.java.domain.notification.entity.Notification;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -27,4 +28,9 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     List<Notification> findReadNotifications(@Param("userId") Long userId,
                                              @Param("lastId") Long lastId,
                                              Pageable pageable);
+
+    // 사용자별 알림 삭제
+    @Modifying(clearAutomatically = true)
+    @Query("DELETE FROM Notification n WHERE n.receiverId = :receiverId")
+    void deleteByReceiverId(@Param("receiverId") Long receiverId);
 }
