@@ -1,6 +1,8 @@
 package kr.java.java.domain.portfolio.service;
 
 
+import kr.java.java.domain.auth.exception.AuthErrorCode;
+import kr.java.java.domain.auth.exception.AuthException;
 import kr.java.java.domain.image.enums.TargetType;
 import kr.java.java.domain.image.service.ImageService;
 import kr.java.java.domain.portfolio.dto.*;
@@ -22,6 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @Slf4j
@@ -32,14 +35,14 @@ public class PortfolioService {
     private final ImageService imageService;
 
     @Transactional
-    public void createPortfolio(PortfolioRequest portfolioRequest, Long loginUserId, List<MultipartFile> images){
+    public void createPortfolio(PortfolioRequest portfolioRequest, UUID userId, List<MultipartFile> images){
         if (portfolioRepository.existsByBrandNameAndTitle(portfolioRequest.brandName(), portfolioRequest.title())) {
             log.error("동일한 포트폴리오가 존재합니다.");
             throw new DuplicatePortfolioException("동일한 포트폴리오가 존재합니다.");
         }
 
-        // TODO 로그인한 유저 권한검증 추가예정
-        User user = userRepository.getReferenceById(loginUserId);
+        User user = userRepository.findByUuid(userId)
+                .orElseThrow(() -> new AuthException(AuthErrorCode.OAUTH2_USER_NOT_FOUND));
 
         Portfolio portfolio = portfolioRequest.toEntity(user);
         portfolioRepository.save(portfolio);
@@ -60,11 +63,8 @@ public class PortfolioService {
     }
 
     @Transactional(readOnly = true)
-    public List<PortfolioListResponse> portfoliosByUserId(Long userId) {
-        if (!userRepository.existsById(userId)) {
-            //TODO 나중에 유저에서 커스텀예외가 생기면 예외를 변경할 예정
-            throw new NotFoundUserException("존재하지 않는 유저입니다. ID: " + userId);
-        }
+    public List<PortfolioListResponse> portfoliosByUserId(UUID userId) {
+        userRepository.findByUuid(userId).orElseThrow(() -> new AuthException(AuthErrorCode.OAUTH2_USER_NOT_FOUND));
         return portfolioRepository.findByUserIdOrderByIdDesc(userId).stream()
                 .map(PortfolioListResponse::new)
                 .toList();
@@ -78,10 +78,11 @@ public class PortfolioService {
     }
 
     @Transactional
-    public void deletePortfolio(Long id, Long userId){
+    public void deletePortfolio(Long id, UUID userId){
         Portfolio portfolio = portfolioRepository.findById(id)
                 .orElseThrow(()-> new NotFoundPortfolioException("해당 포트폴리오가 없습니다. id="+id));
-        if (!portfolio.getUser().getId().equals(userId)) {
+        if(!portfolio.getUser().getUuid().equals(userId)){
+            log.warn("삭제 권한 없음 - 작성자: {}, 요청자: {}", portfolio.getUser().getUuid(), userId);
             throw new UnAuthorizedException("삭제 권한이 없습니다.");
         }
 
@@ -94,11 +95,12 @@ public class PortfolioService {
     }
 
     @Transactional
-    public PortfolioResponse updatePortfolio(Long id, PortfolioUpdateRequest request, Long userId) {
+    public PortfolioResponse updatePortfolio(Long id, PortfolioUpdateRequest request, UUID userId) {
         Portfolio portfolio = portfolioRepository.findById(id)
                 .orElseThrow(() -> new NotFoundPortfolioException("해당 포트폴리오가 없습니다. id="+id));
 
-        if(!portfolio.getUser().getId().equals(userId)){
+        if(!portfolio.getUser().getUuid().equals(userId)){
+            log.warn("수정 권한 없음 - 작성자: {}, 요청자: {}", portfolio.getUser().getUuid(), userId);
             throw new UnAuthorizedException("수정 권한이 없습니다.");
         }
 
