@@ -4,8 +4,8 @@ import java.util.UUID;
 
 public record MatchingExpiredEvent (
     Long spaceId,
-    UUID senderUuid,
+    UUID senderId,
     String senderNickname,
-    UUID receiverUuid,
+    UUID receiverId,
     String receiverNickname
 ){}

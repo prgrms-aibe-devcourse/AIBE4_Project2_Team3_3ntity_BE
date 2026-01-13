@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -21,9 +22,8 @@ public class Notification {
     @Column(name = "notification_id")
     private Long id;
 
-    // TODO: uuid로 변경
-    @Column(name = "user_id", nullable = false)
-    private Long receiverId;
+    @Column(name = "user_id", nullable = false, columnDefinition = "BINARY(16)")
+    private UUID receiverId;
 
     @Column(nullable = false)
     private String content;
@@ -43,7 +43,7 @@ public class Notification {
     private LocalDateTime createdAt;
 
     @Builder
-    public Notification(Long receiverId, String content, String relatedUrl, NotificationType notificationType) {
+    public Notification(UUID receiverId, String content, String relatedUrl, NotificationType notificationType) {
         this.receiverId = receiverId;
         this.content = content;
         this.relatedUrl = relatedUrl;
