@@ -108,4 +108,12 @@ public interface MatchingRepository extends JpaRepository<Matching, Long> {
             @Param("today") LocalDate today,
             @Param("status") MatchStatus status
     );
+
+    @Query("SELECT m FROM Matching m " +
+            "JOIN FETCH m.user " +
+            "JOIN FETCH m.receiver " +
+            "JOIN FETCH m.space s " +
+            "JOIN FETCH s.user " +
+            "WHERE m.id = :id")
+    Optional<Matching> findByIdWithFetchJoin(@Param("id") Long id);
 }

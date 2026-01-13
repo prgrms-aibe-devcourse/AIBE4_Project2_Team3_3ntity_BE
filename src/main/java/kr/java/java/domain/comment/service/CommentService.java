@@ -4,8 +4,11 @@ import kr.java.java.domain.comment.dto.CommentCreateRequest;
 import kr.java.java.domain.comment.dto.CommentResponse;
 import kr.java.java.domain.comment.dto.CommentUpdateRequest;
 import kr.java.java.domain.comment.entity.Comment;
+import kr.java.java.domain.comment.event.CommentCreatedEvent;
 import kr.java.java.domain.comment.repository.CommentRepository;
 import kr.java.java.domain.comment.exception.*;
+import kr.java.java.domain.notification.enums.NotificationType;
+import kr.java.java.domain.notification.service.NotificationService;
 import kr.java.java.domain.portfolio.entity.Portfolio;
 import kr.java.java.domain.portfolio.repository.PortfolioRepository;
 import kr.java.java.domain.space.entity.Space;
@@ -14,6 +17,7 @@ import kr.java.java.domain.user.entity.User;
 import kr.java.java.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +33,8 @@ public class CommentService {
     private final UserRepository userRepository;
     private final SpaceRepository spaceRepository;
     private final PortfolioRepository portfolioRepository;
+    private final NotificationService notificationService;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Transactional
     public Long createComment(Long userId, CommentCreateRequest request) {
@@ -45,6 +51,9 @@ public class CommentService {
         Space space = null;
         Portfolio portfolio = null;
 
+        User notificationReceiver = null;
+        String notificationRelatedUrl = "";
+
         // 2. 대상 검증 및 조회
         if (request.spaceId() != null) {
             space = spaceRepository.findById(request.spaceId())
@@ -52,12 +61,16 @@ public class CommentService {
                         log.warn("존재하지 않는 공간입니다. spaceId: {}", request.spaceId());
                         return new SpaceNotFoundException("존재하지 않는 공간입니다.");
                     });
+            notificationReceiver = space.getUser();
+            notificationRelatedUrl = "piece/spaces/" + space.getId();
         } else if (request.portfolioId() != null) {
             portfolio = portfolioRepository.findById(request.portfolioId())
                     .orElseThrow(() -> {
                         log.warn("존재하지 않는 포트폴리오입니다. portfolioId: {}", request.portfolioId());
                         return new PortfolioNotFoundException("존재하지 않는 포트폴리오입니다.");
                     });
+            notificationReceiver = portfolio.getUser();
+            notificationRelatedUrl = "piece/portfolios/" + portfolio.getId();
         } else {
             log.warn("문의 대상 누락 - userId: {}", userId);
             throw new CommentTargetMissingException("문의를 남길 대상(공간 또는 포트폴리오)이 지정되지 않았습니다.");
@@ -74,7 +87,15 @@ public class CommentService {
 
         Comment savedComment = commentRepository.save(comment);
 
-        log.info("문의 저장 성공 - commentId: {}", savedComment.getId());
+        log.info("문의 저장 성공 - commentId: {}, userId: {}", savedComment.getId(), userId);
+
+        if (notificationReceiver != null && !notificationReceiver.getId().equals(userId)) {
+            applicationEventPublisher.publishEvent(new CommentCreatedEvent(notificationReceiver.getId(), user.getNickname(), notificationRelatedUrl));
+        }
+        else
+        {
+            log.error("수신자를 찾을 수 없거나 수신자와 발신자가 같은 문의입니다.");
+        }
 
         return savedComment.getId();
     }
