@@ -28,7 +28,6 @@ public class MypageResponse {
         @JsonProperty("userId")
         private UUID uuid;
 
-
         private String nickname;
         private String email;
         private String profileImageUrl;
@@ -45,6 +44,7 @@ public class MypageResponse {
         private Long portfoliosCount;
         private Long reviewsCount;
         private Long likesCount;
+        private Long matchingsCount;
     }
 
     public static MypageResponse of(User user, StatsInfo stats) {
