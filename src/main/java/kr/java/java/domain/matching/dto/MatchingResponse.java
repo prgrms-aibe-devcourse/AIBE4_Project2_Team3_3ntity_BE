@@ -4,14 +4,15 @@ import kr.java.java.domain.matching.entity.Matching;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 public record MatchingResponse(
         Long matchingId,
         String spaceTitle,
         String mainImageUrl,
         String opponentNickname,
-        Long senderId,
-        Long receiverId,
+        UUID senderUuid,
+        UUID receiverUuid,
         boolean isReceiver,
         String category,
         String categoryName,
@@ -23,19 +24,20 @@ public record MatchingResponse(
         LocalDateTime createdAt
 
 ) {
-    public static MatchingResponse from(Matching matching, Long userId, String mainImageUrl) {
-        String opponentNickname = matching.getUser().getId().equals(userId)
-                ? matching.getReceiver().getNickname() : matching.getUser().getNickname();
+    public static MatchingResponse from(Matching matching, UUID userUuid, String mainImageUrl) {
+        boolean isReceiver = matching.getReceiver().getUuid().equals(userUuid);
 
-        boolean isReceiver = matching.getReceiver().getId().equals(userId);
+        String opponentNickname = isReceiver
+                ? matching.getUser().getNickname()
+                : matching.getReceiver().getNickname();
 
         return new MatchingResponse(
                 matching.getId(),
                 matching.getSpace().getTitle(),
                 mainImageUrl,
                 opponentNickname,
-                matching.getUser().getId(),
-                matching.getReceiver().getId(),
+                matching.getUser().getUuid(),
+                matching.getReceiver().getUuid(),
                 isReceiver,
                 matching.getSpace().getCategory().name(),
                 matching.getSpace().getCategory().getDescription(),
