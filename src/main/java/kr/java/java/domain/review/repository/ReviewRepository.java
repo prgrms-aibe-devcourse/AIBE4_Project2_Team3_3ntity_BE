@@ -7,25 +7,26 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.data.jpa.repository.Modifying;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 public interface ReviewRepository extends JpaRepository<Review, Long> {
 
-    boolean existsByMatchingIdAndUserId(Long matchingId, Long userId);
+    boolean existsByMatchingIdAndUserUuid(Long matchingId, UUID userUuid);
 
     // 특정 공간의 리뷰 조회
     @Query("SELECT r FROM Review r JOIN FETCH r.user JOIN FETCH r.matching WHERE r.matching.space.id = :spaceId")
     List<Review> findAllByMatchingSpaceId(@Param("spaceId") Long spaceId);
 
     // 내가 쓴 리뷰 조회
-    @Query("SELECT r FROM Review r JOIN FETCH r.user JOIN FETCH r.matching WHERE r.user.id = :userId")
-    List<Review> findAllByUserId(@Param("userId") Long userId);
+    @Query("SELECT r FROM Review r JOIN FETCH r.user JOIN FETCH r.matching WHERE r.user.uuid = :userUuid")
+    List<Review> findAllByUserId(@Param("userUuid") UUID userUuid);
 
-    @Query("SELECT COUNT(r) FROM Review r WHERE r.user.id = :userId")
-    long countReviewsByUserId(@Param("userId") Long userId);
+    @Query("SELECT COUNT(r) FROM Review r WHERE r.user.uuid = :userUuid")
+    long countReviewsByUserId(@Param("userUuid") UUID userUuid);
 
     @Modifying(clearAutomatically = true)
-    @Query("UPDATE Review r SET r.deletedAt = :deletedAt WHERE r.user.id = :userId AND r.deletedAt IS NULL")
-    int softDeleteAllByUserId(@Param("userId") Long userId, @Param("deletedAt") LocalDateTime deletedAt);
+    @Query("UPDATE Review r SET r.deletedAt = :deletedAt WHERE r.user.uuid = :userUuid AND r.deletedAt IS NULL")
+    int softDeleteAllByUserId(@Param("userUuid") UUID userUuid, @Param("deletedAt") LocalDateTime deletedAt);
 
     // 특정 공간의 리뷰 개수 조회
     @Query("SELECT COUNT(r) FROM Review r WHERE r.matching.space.id = :spaceId")
