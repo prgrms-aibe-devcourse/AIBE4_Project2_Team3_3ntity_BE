@@ -89,6 +89,18 @@ public class ReviewService {
         return savedReview.getId();
     }
 
+    // 리뷰 단건 조회
+    public ReviewResponse getReview(Long reviewId) {
+        log.info("리뷰 단건 조회 요청 - reviewId: {}", reviewId);
+
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new ReviewNotFoundException("존재하지 않는 리뷰입니다."));
+
+        List<ImageResponse> images = imageService.getImages(TargetType.REVIEW, review.getId());
+
+        return ReviewResponse.of(review, images);
+    }
+
     // 공간별 리뷰 조회
     public List<ReviewResponse> getReviewsBySpaceId(Long spaceId) {
         log.info("공간별 리뷰 조회 요청 - spaceId: {}", spaceId);

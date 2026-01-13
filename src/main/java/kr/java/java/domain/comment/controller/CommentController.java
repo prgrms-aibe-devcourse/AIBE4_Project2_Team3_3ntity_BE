@@ -39,6 +39,23 @@ public class CommentController {
         return ResponseEntity.ok(commentId);
     }
 
+    // 문의 단건 조회 API
+    @GetMapping("/{commentId}")
+    public ResponseEntity<CommentResponse> getComment(
+            @PathVariable Long commentId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        UUID viewerUuid = (userDetails != null) ? userDetails.getUuid() : null;
+
+        log.info("GET /piece/comments/{} 단건 조회 요청 발생", commentId);
+        log.info("조회자(Viewer) UUID: {}", viewerUuid);
+
+        CommentResponse response = commentService.getComment(commentId, viewerUuid);
+
+        log.info("문의 단건 조회 완료 - commentId: {}", commentId);
+        return ResponseEntity.ok(response);
+    }
+
     // 공간별 문의 조회 API
     @GetMapping("/space/{spaceId}")
     public ResponseEntity<List<CommentResponse>> getCommentsBySpace(
