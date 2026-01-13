@@ -53,4 +53,17 @@ public class ImageController {
         imageService.deleteSingleImage(imageId);
         return ResponseEntity.noContent().build();
     }
+
+    @PatchMapping("/{targetType}/{targetId}")
+    public ResponseEntity<Void> updateImages(
+            @PathVariable TargetType targetType,
+            @PathVariable Long targetId,
+            @RequestParam(value = "remainImageIds", required = false) List<Long> remainImageIds,
+            @RequestPart(value = "newFiles", required = false) List<MultipartFile> newFiles
+    ) throws IOException {
+
+        imageService.updateImages(targetType, targetId, remainImageIds, newFiles);
+
+        return ResponseEntity.ok().build();
+    }
 }
