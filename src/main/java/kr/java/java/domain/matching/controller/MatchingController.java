@@ -1,5 +1,6 @@
 package kr.java.java.domain.matching.controller;
 
+import kr.java.java.domain.auth.security.CustomUserDetails;
 import kr.java.java.domain.matching.dto.CreateMatchingToSpaceRequest;
 import kr.java.java.domain.matching.dto.CreateMatchingToUserRequest;
 import kr.java.java.domain.matching.dto.MatchingResponse;
@@ -9,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -43,28 +45,28 @@ public class MatchingController {
 
     @GetMapping
     public ResponseEntity<List<MatchingResponse>> getMachingList(
-            @RequestParam(name = "userId") Long userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam(name = "status", required = false) MatchStatus status
     ){
-        List<MatchingResponse> responses = matchingService.getMatchings(userId, status);
+        List<MatchingResponse> responses = matchingService.getMatchings(userDetails.getUuid(), status);
         return ResponseEntity.ok(responses);
     }
 
     @GetMapping("/hosts")
     public ResponseEntity<List<MatchingResponse>> getMatchingsAsHost(
-            @RequestParam(name = "userId") Long userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam(name = "status", required = false) MatchStatus status)
     {
-        List<MatchingResponse> responses = matchingService.getMatchingsAsHost(userId, status);
+        List<MatchingResponse> responses = matchingService.getMatchingsAsHost(userDetails.getUuid(), status);
         return ResponseEntity.ok(responses);
     }
 
     @GetMapping("/users")
     public ResponseEntity<List<MatchingResponse>> getMatchingsAsMaker(
-            @RequestParam(name = "userId") Long userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam(name = "status", required = false) MatchStatus status)
     {
-        List<MatchingResponse> responses = matchingService.getMatchingsAsMaker(userId, status);
+        List<MatchingResponse> responses = matchingService.getMatchingsAsMaker(userDetails.getUuid(), status);
         return ResponseEntity.ok(responses);
     }
 

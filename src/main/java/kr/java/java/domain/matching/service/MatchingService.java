@@ -26,11 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -167,26 +163,26 @@ public class MatchingService {
     }
 
     @Transactional(readOnly = true)
-    public List<MatchingResponse> getMatchings(Long userId, MatchStatus status) {
-        List<Matching> matchings = matchingRepository.findAllByUserIdAndStatus(userId, status);
+    public List<MatchingResponse> getMatchings(UUID userUuid, MatchStatus status) {
+        List<Matching> matchings = matchingRepository.findAllByUserIdAndStatus(userUuid, status);
 
-        return convertToResponse(matchings, userId);
+        return convertToResponse(matchings, userUuid);
     }
 
     @Transactional(readOnly = true)
-    public List<MatchingResponse> getMatchingsAsHost(Long userId, MatchStatus status) {
-        List<Matching> matchings = matchingRepository.findAllBySpaceHostId(userId, status);
-        return convertToResponse(matchings, userId);
+    public List<MatchingResponse> getMatchingsAsHost(UUID userUuid, MatchStatus status) {
+        List<Matching> matchings = matchingRepository.findAllBySpaceHostId(userUuid, status);
+        return convertToResponse(matchings, userUuid);
     }
 
     @Transactional(readOnly = true)
-    public List<MatchingResponse> getMatchingsAsMaker(Long userId, MatchStatus status) {
-        List<Matching> matchings = matchingRepository.findAllAsMakerId(userId, status);
-        return convertToResponse(matchings, userId);
+    public List<MatchingResponse> getMatchingsAsMaker(UUID userUuid, MatchStatus status) {
+        List<Matching> matchings = matchingRepository.findAllAsMakerId(userUuid, status);
+        return convertToResponse(matchings, userUuid);
     }
 
     // TODO space entity에 썸네일 url을 추가할지 의논 후 로직 최종 결정
-    private List<MatchingResponse> convertToResponse(List<Matching> matchings, Long userId) {
+    private List<MatchingResponse> convertToResponse(List<Matching> matchings, UUID userUuid) {
         if (matchings.isEmpty()) {
             return Collections.emptyList();
         }
@@ -204,7 +200,7 @@ public class MatchingService {
                             matching.getSpace().getId(),
                             "default-image-url"
                     );
-                    return MatchingResponse.from(matching, userId, mainImageUrl);
+                    return MatchingResponse.from(matching, userUuid, mainImageUrl);
                 })
                 .collect(Collectors.toList());
     }

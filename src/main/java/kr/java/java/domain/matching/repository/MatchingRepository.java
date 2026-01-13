@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public interface MatchingRepository extends JpaRepository<Matching, Long> {
@@ -33,23 +34,23 @@ public interface MatchingRepository extends JpaRepository<Matching, Long> {
             "JOIN FETCH m.space s " +
             "JOIN FETCH m.user u " +
             "JOIN FETCH m.receiver r " +
-            "WHERE (u.id = :userId OR r.id = :userId)" +
+            "WHERE (u.uuid = :userUuid OR r.uuid = :userUuid)" +
             "AND (:status IS NULL OR m.status = :status)" +
             "ORDER BY m.createdAt DESC")
     List<Matching> findAllByUserIdAndStatus(
-            @Param("userId") Long userId,
+            @Param("userUuid") UUID userUuid,
             @Param("status") MatchStatus status
     );
 
-    @Query("SELECT m FROM Matching m JOIN FETCH m.space s WHERE (s.user.id = :userId) AND (:status IS NULL OR m.status = :status) ORDER BY m.createdAt DESC")
+    @Query("SELECT m FROM Matching m JOIN FETCH m.space s WHERE (s.user.uuid = :userUuid) AND (:status IS NULL OR m.status = :status) ORDER BY m.createdAt DESC")
     List<Matching> findAllBySpaceHostId(
-            @Param("userId") Long userId,
+            @Param("userUuid") UUID userUuid,
             @Param("status") MatchStatus status
     );
 
-    @Query("SELECT m FROM Matching m JOIN FETCH m.space s WHERE (m.user.id = :userId OR m.receiver.id = :userId) AND s.user.id != :userId AND (:status IS NULL OR m.status = :status) ORDER BY m.createdAt DESC")
+    @Query("SELECT m FROM Matching m JOIN FETCH m.space s WHERE (m.user.uuid = :userUuid OR m.receiver.uuid = :userUuid) AND s.user.uuid != :userUuid AND (:status IS NULL OR m.status = :status) ORDER BY m.createdAt DESC")
     List<Matching> findAllAsMakerId(
-            @Param("userId") Long userId,
+            @Param("userUuid") UUID userUuid,
             @Param("status") MatchStatus status
     );
 
