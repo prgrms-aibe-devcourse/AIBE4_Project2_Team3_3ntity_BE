@@ -14,7 +14,6 @@ import java.util.UUID;
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
 
-    // UUID 기반 사용자 조회
     @Query("SELECT u FROM User u WHERE u.uuid = :uuid AND u.deletedAt IS NULL")
     Optional<User> findByUuid(@Param("uuid") UUID uuid);
 
