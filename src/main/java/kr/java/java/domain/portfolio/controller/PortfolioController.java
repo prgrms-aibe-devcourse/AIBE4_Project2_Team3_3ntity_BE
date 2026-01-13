@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -18,10 +19,11 @@ public class PortfolioController {
     private final PortfolioService portfolioService;
 
     @PostMapping
-    public ResponseEntity<Void> createPortfolio(@RequestBody PortfolioRequest request, Long loginUserId){
+    public ResponseEntity<Void> createPortfolio( @RequestPart("request") PortfolioRequest request, Long loginUserId,
+                                                 @RequestPart(value = "images", required = false) List<MultipartFile> images){
         log.info("포트폴리오 등록 시도 - UserId : {}",loginUserId);
         //TODO 인증이 완성되지 않아서 임시 테스트용으로 더미데이터를 직접 삽입
-        portfolioService.createPortfolio(request,1L);
+        portfolioService.createPortfolio(request,1L,images);
         //TODO 응답 dto를 생성시 응답객체를 반환하도록 수정 예정
         return  ResponseEntity.status(HttpStatus.CREATED).build();
     }

@@ -26,4 +26,12 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     @Modifying(clearAutomatically = true)
     @Query("UPDATE Review r SET r.deletedAt = :deletedAt WHERE r.user.id = :userId AND r.deletedAt IS NULL")
     int softDeleteAllByUserId(@Param("userId") Long userId, @Param("deletedAt") LocalDateTime deletedAt);
+
+    // 특정 공간의 리뷰 개수 조회
+    @Query("SELECT COUNT(r) FROM Review r WHERE r.matching.space.id = :spaceId")
+    long countBySpaceId(@Param("spaceId") Long spaceId);
+
+    // 특정 공간의 평균 별점 조회
+    @Query("SELECT COALESCE(AVG(r.rating), 0.0) FROM Review r WHERE r.matching.space.id = :spaceId")
+    Double getAverageRatingBySpaceId(@Param("spaceId") Long spaceId);
 }

@@ -2,10 +2,12 @@ package kr.java.java.domain.space.repository;
 
 import kr.java.java.domain.space.entity.Space;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -18,4 +20,7 @@ public interface SpaceRepository extends JpaRepository<Space, Long>,
     List<Space> findByUserIdOrderByIdDesc(@Param("userId") Long userId);
     @Query("SELECT COUNT(s) FROM Space s WHERE s.user.id = :userId")
     long countSpacesByUserId(@Param("userId") Long userId);
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Space s SET s.deletedAt = :deletedAt WHERE s.user.id = :userId AND s.deletedAt IS NULL")
+    int softDeleteAllByMemberId(@Param("userId") Long userId, @Param("deletedAt") LocalDateTime deletedAt);
 }
