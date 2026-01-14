@@ -23,5 +23,5 @@ public interface SpaceRepository extends JpaRepository<Space, Long>,
     long countSpacesByUserId(@Param("userId") UUID userId);
     @Modifying(clearAutomatically = true)
     @Query("UPDATE Space s SET s.deletedAt = :deletedAt WHERE s.user.uuid = :userId AND s.deletedAt IS NULL")
-    int softDeleteAllByUserId(@Param("userId") UUID userId, @Param("deletedAt") LocalDateTime deletedAt);
+    int softDeleteAllByMemberId(@Param("userId") UUID userId, @Param("deletedAt") LocalDateTime deletedAt);
 }

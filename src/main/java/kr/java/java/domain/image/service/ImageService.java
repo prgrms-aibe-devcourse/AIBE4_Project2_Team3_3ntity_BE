@@ -246,5 +246,18 @@ public class ImageService {
                         (existing, replacement) -> existing
                 ));
     }
+
+    public Map<Long, String> getThumnailsByPortfolioIds(List<Long> portfolioIds) {
+        if (portfolioIds.isEmpty()) return Collections.emptyMap();
+
+        List<Image> thumbnails = imageRepository.findThumbnailsByPortfolioIds(portfolioIds);
+
+        return thumbnails.stream()
+                .collect(Collectors.toMap(
+                        img -> img.getSpace().getId(),
+                        Image::getFileUrl,
+                        (existing, replacement) -> existing
+                ));
+    }
 }
 

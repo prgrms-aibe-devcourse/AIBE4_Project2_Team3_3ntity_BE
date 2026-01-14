@@ -1,6 +1,7 @@
 package kr.java.java.domain.portfolio.dto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record PortfolioUpdateRequest(
         Long id,
@@ -9,6 +10,7 @@ public record PortfolioUpdateRequest(
         String description,
         String category,
         String externalLink,
-        boolean isOpen
+        boolean isOpen,
+        List<Long> remainImageIds
 ) {
 }
