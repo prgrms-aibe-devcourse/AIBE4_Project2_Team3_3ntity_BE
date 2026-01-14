@@ -5,10 +5,7 @@ import kr.java.java.domain.image.enums.TargetType;
 import kr.java.java.domain.image.service.ImageService;
 import kr.java.java.domain.matching.exception.MatchingErrorCode;
 import kr.java.java.domain.matching.exception.MatchingException;
-import kr.java.java.domain.review.dto.ReviewCreateRequest;
-import kr.java.java.domain.review.dto.ReviewResponse;
-import kr.java.java.domain.review.dto.ReviewTargetResponse;
-import kr.java.java.domain.review.dto.ReviewUpdateRequest;
+import kr.java.java.domain.review.dto.*;
 import kr.java.java.domain.review.entity.Review;
 import kr.java.java.domain.review.exception.*;
 import kr.java.java.domain.review.repository.ReviewRepository;
@@ -234,5 +231,12 @@ public class ReviewService {
                 matching.getEndDate().format(formatter);
 
         return new ReviewTargetResponse(spaceTitle, period);
+    }
+
+    public ReviewSummary getReviewSummaryBySpaceId(Long spaceId) {
+        Double averageRating = reviewRepository.getAverageRatingBySpaceId(spaceId);
+        long reviewCount = reviewRepository.countBySpaceId(spaceId);
+
+        return new ReviewSummary(averageRating, (int) reviewCount);
     }
 }

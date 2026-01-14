@@ -6,6 +6,8 @@ import kr.java.java.domain.matching.dto.CreateMatchingToUserRequest;
 import kr.java.java.domain.matching.dto.MatchingResponse;
 import kr.java.java.domain.matching.enums.MatchStatus;
 import kr.java.java.domain.matching.service.MatchingService;
+import kr.java.java.domain.space.dto.SpaceMatchingFormResponse;
+import kr.java.java.domain.space.service.SpaceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -22,6 +24,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class MatchingController {
     private final MatchingService matchingService;
+    private final SpaceService spaceService;
 
     @PostMapping("/spaces/{spaceId}")
     public ResponseEntity<Void> createMatchingToSpace(
@@ -98,5 +101,11 @@ public class MatchingController {
         matchingService.cancelMatching(matchingId, userDetails.getUuid());
 
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/form/{spaceId}")
+    public ResponseEntity<SpaceMatchingFormResponse> getUserToSpaceMatchingForm(@PathVariable Long spaceId){
+        SpaceMatchingFormResponse response = spaceService.getSpaceMatchingFormCard(spaceId);
+        return ResponseEntity.ok(response);
     }
 }

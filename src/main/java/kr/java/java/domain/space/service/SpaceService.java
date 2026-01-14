@@ -4,6 +4,8 @@ import kr.java.java.domain.auth.exception.AuthErrorCode;
 import kr.java.java.domain.auth.exception.AuthException;
 import kr.java.java.domain.image.enums.TargetType;
 import kr.java.java.domain.image.service.ImageService;
+import kr.java.java.domain.review.dto.ReviewSummary;
+import kr.java.java.domain.review.service.ReviewService;
 import kr.java.java.domain.space.dto.*;
 import kr.java.java.domain.space.entity.Space;
 import kr.java.java.domain.space.exception.*;
@@ -28,6 +30,7 @@ public class SpaceService {
     private final SpaceRepository spaceRepository;
     private final UserRepository userRepository;
     private final ImageService imageService;
+    private final ReviewService reviewService;
 
     @Transactional
     public void createSpace(SpaceRequest spaceRequest, List<MultipartFile> images, UUID userId) {
@@ -120,5 +123,26 @@ public class SpaceService {
         return spaceRepository.search(condition).stream()
                 .map(SpaceListResponse::new)
                 .toList();
+    }
+
+    public SpaceMatchingFormResponse getSpaceMatchingFormCard(Long id) {
+        Space space = spaceRepository.findById(id)
+                .orElseThrow(() -> new NotFoundSpaceException("해당 공간이 없습니다. id=" + id));
+
+        String thumnailImageUrl = imageService.getSpaceThumnail(id);
+
+        ReviewSummary reviewSummary = reviewService.getReviewSummaryBySpaceId(id);
+
+        return new SpaceMatchingFormResponse(
+                space.getId(),
+                space.getTitle(),
+                thumnailImageUrl,
+                space.getAddress(),
+                space.getDetailAddress(),
+                reviewSummary.averageRating(),
+                reviewSummary.reviewCount(),
+                space.getCategory(),
+                space.getPricePerMonth()
+        );
     }
 }

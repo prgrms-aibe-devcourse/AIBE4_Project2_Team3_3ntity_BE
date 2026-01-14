@@ -1,6 +1,7 @@
 package kr.java.java.global.exception;
 
 import kr.java.java.domain.auth.exception.AuthException;
+import kr.java.java.domain.image.exception.ImageException;
 import kr.java.java.domain.matching.exception.MatchingException;
 import kr.java.java.domain.notification.exception.NotificationException;
 import kr.java.java.domain.notification.exception.UserNotFoundException;
@@ -22,6 +23,19 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MatchingException.class)
     public ResponseEntity<Map<String, Object>> handleMatchingException(MatchingException e) {
         log.error("[MatchingException] {} : {}", e.getErrorCode().name(), e.getErrorCode().getMessage());
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("code", e.getErrorCode().name());
+        body.put("message", e.getErrorCode().getMessage());
+
+        return ResponseEntity
+                .status(e.getErrorCode().getHttpStatus())
+                .body(body);
+    }
+
+    @ExceptionHandler(ImageException.class)
+    public ResponseEntity<Map<String, Object>> handleImageException(ImageException e) {
+        log.error("[ImageException] {} : {}", e.getErrorCode().name(), e.getErrorCode().getMessage());
 
         Map<String, Object> body = new HashMap<>();
         body.put("code", e.getErrorCode().name());
