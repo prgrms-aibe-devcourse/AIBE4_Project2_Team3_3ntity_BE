@@ -17,7 +17,7 @@ public interface SpaceRepository extends JpaRepository<Space, Long>,
     boolean existsByAddressAndDetailAddress(String address, String detailAddress);
     @Query("SELECT s FROM Space s JOIN FETCH s.user ORDER BY s.id DESC")
     List<Space> findAllByOrderByIdDesc();
-    @Query("SELECT s FROM Space s JOIN FETCH s.user WHERE s.user.uuid = :userId ORDER BY s.id DESC")
+    @Query("SELECT s FROM Space s JOIN FETCH s.user WHERE s.user.uuid = :userUuid ORDER BY s.id DESC")
     List<Space> findByUserIdOrderByIdDesc(@Param("userUuid") UUID userUuid);
     @Query("SELECT COUNT(s) FROM Space s WHERE s.user.uuid = :userId")
     long countSpacesByUserId(@Param("userId") UUID userId);
