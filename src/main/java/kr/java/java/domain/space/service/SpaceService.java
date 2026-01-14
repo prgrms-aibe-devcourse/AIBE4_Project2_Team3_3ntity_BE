@@ -4,6 +4,7 @@ import kr.java.java.domain.auth.exception.AuthErrorCode;
 import kr.java.java.domain.auth.exception.AuthException;
 import kr.java.java.domain.image.dto.ImageResponse;
 import kr.java.java.domain.image.service.SpaceImageService;
+import kr.java.java.domain.matching.dto.MySpaceSummary;
 import kr.java.java.domain.review.dto.ReviewSummary;
 import kr.java.java.domain.review.service.ReviewService;
 import kr.java.java.domain.space.dto.*;
@@ -170,6 +171,16 @@ public class SpaceService {
                 space.getCategory(),
                 space.getPricePerMonth()
         );
+    }
+
+    public List<MySpaceSummary> getMySpacesSummary(UUID userId) {
+        return spaceRepository.findAllByUserId(userId)
+                .stream()
+                .map(space -> new MySpaceSummary(
+                        space.getId(),
+                        space.getTitle()
+                ))
+                .toList();
     }
 
     @Transactional(readOnly = true)

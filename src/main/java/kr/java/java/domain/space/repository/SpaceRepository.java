@@ -15,6 +15,8 @@ import java.util.UUID;
 public interface SpaceRepository extends JpaRepository<Space, Long>,
         SpaceRepositoryCustom {
     boolean existsByAddressAndDetailAddress(String address, String detailAddress);
+    @Query("SELECT s FROM Space s WHERE s.user.uuid = :userId")
+    List<Space> findAllByUserId(@Param("userId") UUID userId);
     @Query("SELECT s FROM Space s JOIN FETCH s.user ORDER BY s.id DESC")
     List<Space> findAllByOrderByIdDesc();
     @Query("SELECT s FROM Space s JOIN FETCH s.user WHERE s.user.uuid = :userUuid ORDER BY s.id DESC")

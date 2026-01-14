@@ -1,7 +1,6 @@
 package kr.java.java.domain.user.service;
 
-import jakarta.persistence.EntityNotFoundException;
-import kr.java.java.domain.user.dto.UserMatchingFormResponse;
+import kr.java.java.domain.user.dto.UserFormResponse;
 import kr.java.java.domain.user.entity.User;
 import kr.java.java.domain.user.exception.UserErrorCode;
 import kr.java.java.domain.user.exception.UserException;
@@ -16,10 +15,10 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserService {
     private final UserRepository userRepository;
 
-    public UserMatchingFormResponse getUserInfoForMatching(Long userId) {
+    public UserFormResponse getUserInfoForMatching(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
 
-        return UserMatchingFormResponse.from(user);
+        return UserFormResponse.from(user);
     }
 }

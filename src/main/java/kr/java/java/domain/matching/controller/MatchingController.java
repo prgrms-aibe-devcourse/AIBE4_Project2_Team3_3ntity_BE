@@ -4,11 +4,12 @@ import kr.java.java.domain.auth.security.CustomUserDetails;
 import kr.java.java.domain.matching.dto.CreateMatchingToSpaceRequest;
 import kr.java.java.domain.matching.dto.CreateMatchingToUserRequest;
 import kr.java.java.domain.matching.dto.MatchingResponse;
+import kr.java.java.domain.matching.dto.UserMatchingFormResponse;
 import kr.java.java.domain.matching.enums.MatchStatus;
 import kr.java.java.domain.matching.service.MatchingService;
 import kr.java.java.domain.space.dto.SpaceMatchingFormResponse;
 import kr.java.java.domain.space.service.SpaceService;
-import kr.java.java.domain.user.dto.UserMatchingFormResponse;
+import kr.java.java.domain.user.dto.UserFormResponse;
 import kr.java.java.domain.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -113,8 +114,8 @@ public class MatchingController {
     }
 
     @GetMapping("/form/user/{userId}")
-    public ResponseEntity<UserMatchingFormResponse> getHostToUserMatchingForm(@PathVariable Long userId){
-        UserMatchingFormResponse response = userService.getUserInfoForMatching(userId);
+    public ResponseEntity<UserMatchingFormResponse> getHostToUserMatchingForm(@PathVariable Long userId, @AuthenticationPrincipal CustomUserDetails userDetails){
+        UserMatchingFormResponse response = matchingService.getHostToUserMatchingForm(userId, userDetails.getUuid());
         return ResponseEntity.ok(response);
     }
 }

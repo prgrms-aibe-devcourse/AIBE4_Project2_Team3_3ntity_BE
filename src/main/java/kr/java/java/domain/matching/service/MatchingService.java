@@ -1,10 +1,7 @@
 package kr.java.java.domain.matching.service;
 
 import kr.java.java.domain.image.service.SpaceImageService;
-import kr.java.java.domain.matching.dto.CreateMatchingCommand;
-import kr.java.java.domain.matching.dto.CreateMatchingToSpaceRequest;
-import kr.java.java.domain.matching.dto.CreateMatchingToUserRequest;
-import kr.java.java.domain.matching.dto.MatchingResponse;
+import kr.java.java.domain.matching.dto.*;
 import kr.java.java.domain.matching.entity.Matching;
 import kr.java.java.domain.matching.enums.MatchStatus;
 import kr.java.java.domain.matching.event.*;
@@ -15,8 +12,11 @@ import kr.java.java.domain.space.entity.Space;
 import kr.java.java.domain.space.exception.NotFoundSpaceException;
 import kr.java.java.domain.space.exception.NotFoundUserException;
 import kr.java.java.domain.space.repository.SpaceRepository;
+import kr.java.java.domain.space.service.SpaceService;
+import kr.java.java.domain.user.dto.UserFormResponse;
 import kr.java.java.domain.user.entity.User;
 import kr.java.java.domain.user.repository.UserRepository;
+import kr.java.java.domain.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -36,6 +36,8 @@ public class MatchingService {
     private final MatchingRepository matchingRepository;
     private final ApplicationEventPublisher applicationEventPublisher;
     private final SpaceImageService  spaceImageService;
+    private final SpaceService spaceService;
+    private final UserService userService;
 
     //TODO 해당 서비스 페이지에 있는 User 에러처리는 추후 User 도메인의 exception에 생기면 변경
 
@@ -363,5 +365,17 @@ public class MatchingService {
         }
 
         return rejectedMatchingEvents;
+    }
+
+    public UserMatchingFormResponse getHostToUserMatchingForm(Long targetUserId, UUID loginUserId){
+        UserFormResponse targetUser = userService.getUserInfoForMatching(targetUserId);
+        List<MySpaceSummary> mySpaces = spaceService.getMySpacesSummary(loginUserId);
+
+        return UserMatchingFormResponse.builder()
+                .userId(targetUser.userId())
+                .nickname(targetUser.nickname())
+                .profileImageUrl(targetUser.profileImageUrl())
+                .mySpaces(mySpaces)
+                .build();
     }
 }
