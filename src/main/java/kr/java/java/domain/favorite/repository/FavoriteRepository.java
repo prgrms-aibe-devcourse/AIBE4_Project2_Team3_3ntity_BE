@@ -31,4 +31,8 @@ public interface FavoriteRepository extends JpaRepository<Favorite, Long> {
     @Query("SELECT COUNT(f) FROM Favorite f WHERE f.portfolio.id = :portfolioId")
     long countByPortfolioId(@Param("portfolioId") Long portfolioId);
 
+    // 사용자별 찜 개수 조회
+    @Query("SELECT COUNT(f) FROM Favorite f WHERE f.user.uuid = :userUuid")
+    long countFavoritesByUserId(@Param("userUuid") UUID userUuid);
+
 }

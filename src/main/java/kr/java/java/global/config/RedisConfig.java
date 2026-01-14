@@ -9,6 +9,7 @@ import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactor
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.beans.factory.annotation.Value;
+import java.time.Duration;
 
 @Configuration
 public class RedisConfig {
@@ -19,8 +20,14 @@ public class RedisConfig {
     @Value("${spring.data.redis.port}")
     private int port;
 
-    @Value("${spring.data.redis.password}")
+    @Value("${spring.data.redis.password:}")
     private String password;
+
+    @Value("${spring.data.redis.ssl.enabled:false}")
+    private boolean sslEnabled;
+
+    @Value("${spring.data.redis.timeout:10000}")
+    private long timeout;
 
     @Bean
     public RedisConnectionFactory redisConnectionFactory() {
@@ -30,9 +37,16 @@ public class RedisConfig {
             config.setPassword(password);
         }
 
-        LettuceClientConfiguration clientConfig = LettuceClientConfiguration.builder()
-                .useSsl()  // 이 한 줄이 application.yml의 ssl 설정을 대신합니다.
-                .build();
+        LettuceClientConfiguration.LettuceClientConfigurationBuilder builder =
+                LettuceClientConfiguration.builder()
+                        .commandTimeout(Duration.ofMillis(timeout));
+
+        // 로컬 호스트이거나 SSL이 명시적으로 비활성화된 경우 SSL 사용 안 함
+        if (sslEnabled && !host.equals("localhost") && !host.equals("127.0.0.1")) {
+            builder.useSsl();
+        }
+
+        LettuceClientConfiguration clientConfig = builder.build();
 
         return new LettuceConnectionFactory(config, clientConfig);
     }

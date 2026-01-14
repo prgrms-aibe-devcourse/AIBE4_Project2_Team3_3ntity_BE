@@ -55,14 +55,13 @@ public class MypageService {
         User user = userRepository.findByUuid(uuid)
                 .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
 
-        Long userId = user.getId();
 
         MypageResponse.StatsInfo stats = MypageResponse.StatsInfo.builder()
                 .spacesCount(spaceRepository.countSpacesByUserId(user.getUuid()))
                 .portfoliosCount(portfolioRepository.countPortfoliosByUserId(user.getUuid()))
-                .reviewsCount(reviewRepository.countReviewsByUserId(userId))
-                .likesCount(0L) //TODO
-                .matchingsCount(matchingRepository.countByUserIdAndStatus(userId, null))
+                .reviewsCount(reviewRepository.countReviewsByUserId(user.getUuid()))
+                .likesCount(favoriteRepository.countFavoritesByUserId(user.getUuid()))
+                .matchingsCount(matchingRepository.countByUserIdAndStatus(uuid, null))
                 .build();
 
         return MypageResponse.of(user, stats);
@@ -118,7 +117,7 @@ public class MypageService {
                 .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
 
         // 진행 중인 매칭이 있는지 확인
-        List<Matching> ongoingMatchings = matchingRepository.findAllByUserIdAndStatus(uuid, MatchStatus.ONGOING);
+        List<Matching> ongoingMatchings = matchingRepository.findAllByUserUuidAndStatus(uuid, MatchStatus.ONGOING);
         if (!ongoingMatchings.isEmpty()) {
             throw new UserException(UserErrorCode.CANNOT_DELETE_USER_WITH_ACTIVE_MATCHING);
         }
@@ -129,16 +128,16 @@ public class MypageService {
 
         // Review, Portfolio, Space soft delete (벌크 업데이트)
         LocalDateTime deletedAt = LocalDateTime.now();
-        int deletedReviews = reviewRepository.softDeleteAllByUserId(userId, deletedAt);
-        int deletedPortfolios = portfolioRepository.softDeleteAllByUserId(userId, deletedAt);
-        int deletedSpaces = spaceRepository.softDeleteAllByMemberId(userId, deletedAt);
+        int deletedReviews = reviewRepository.softDeleteAllByUserId(uuid, deletedAt);
+        int deletedPortfolios = portfolioRepository.softDeleteAllByUserId(uuid, deletedAt);
+        int deletedSpaces = spaceRepository.softDeleteAllByUserId(uuid, deletedAt);
         
         log.info("회원 탈퇴 - Soft Delete 완료: Review {}건, Portfolio {}건, Space {}건", 
                 deletedReviews, deletedPortfolios, deletedSpaces);
 
         // 알림 수동 삭제
-        notificationRepository.deleteByReceiverId(userId);
-        log.info("회원 탈퇴 - 알림 삭제 완료: uuid {}, userId {}", uuid, userId);
+        notificationRepository.deleteByReceiverId(uuid);
+        log.info("회원 탈퇴 - 알림 삭제 완료: uuid {}", uuid);
 
         refreshTokenService.deleteRefreshToken(uuid);
 
