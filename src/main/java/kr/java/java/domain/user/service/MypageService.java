@@ -3,6 +3,7 @@ package kr.java.java.domain.user.service;
 
 import kr.java.java.domain.auth.service.RefreshTokenService;
 import kr.java.java.domain.favorite.repository.FavoriteRepository;
+import kr.java.java.domain.image.service.S3StorageService;
 import kr.java.java.domain.matching.entity.Matching;
 import kr.java.java.domain.matching.enums.MatchStatus;
 import kr.java.java.domain.matching.repository.MatchingRepository;
@@ -41,7 +42,7 @@ public class MypageService {
     private final MatchingRepository matchingRepository;
     private final FavoriteRepository favoriteRepository;
     private final RefreshTokenService refreshTokenService;
-    private final ImageService imageService;
+    private final S3StorageService  s3StorageService;
     private final NotificationRepository notificationRepository;
 
     // 마이페이지 메인
@@ -80,10 +81,10 @@ public class MypageService {
         if (file != null && !file.isEmpty()) {
             // 기존 이미지가 S3 이미지라면 삭제
             if (user.isCustomImage(user.getProfileImageUrl())) {
-                imageService.deleteProfileImage(user.getProfileImageUrl());
+                s3StorageService.deleteFile(user.getProfileImageUrl());
             }
             // 새 이미지 업로드
-            newImageUrl = imageService.uploadProfileImage(file);
+            newImageUrl = s3StorageService.uploadProfileImage(file);
         }
 
         user.updateProfile(newNickname, newImageUrl);
@@ -96,7 +97,7 @@ public class MypageService {
                 .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
 
         if (user.isCustomImage(user.getProfileImageUrl())) {
-            imageService.deleteProfileImage(user.getProfileImageUrl());
+            s3StorageService.deleteFile(user.getProfileImageUrl());
         }
 
         String defaultImageUrl = ProfileImageUrlGenerator.generate(user.getUuid());
@@ -117,7 +118,7 @@ public class MypageService {
         }
 
         if (user.isCustomImage(user.getProfileImageUrl())) {
-            imageService.deleteProfileImage(user.getProfileImageUrl());
+            s3StorageService.deleteFile(user.getProfileImageUrl());
         }
 
         // Review, Portfolio, Space soft delete (벌크 업데이트)
