@@ -8,6 +8,7 @@ import java.util.UUID;
 
 public record MatchingResponse(
         Long matchingId,
+        Long spaceId,
         String spaceTitle,
         String mainImageUrl,
         String opponentNickname,
@@ -33,6 +34,7 @@ public record MatchingResponse(
 
         return new MatchingResponse(
                 matching.getId(),
+                matching.getSpace().getId(),
                 matching.getSpace().getTitle(),
                 mainImageUrl,
                 opponentNickname,
