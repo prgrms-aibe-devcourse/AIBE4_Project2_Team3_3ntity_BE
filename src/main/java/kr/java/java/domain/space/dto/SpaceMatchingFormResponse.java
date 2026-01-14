@@ -5,7 +5,7 @@ import kr.java.java.domain.space.enums.SpaceCategory;
 public record SpaceMatchingFormResponse(
         Long spaceId,
         String title,
-        String thumnailImageUrl,
+        String thumbnailImageUrl,
         String address,
         String detailAddress,
         Double averageRating,

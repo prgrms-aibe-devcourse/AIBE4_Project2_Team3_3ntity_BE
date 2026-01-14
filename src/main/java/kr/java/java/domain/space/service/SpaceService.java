@@ -156,14 +156,14 @@ public class SpaceService {
         Space space = spaceRepository.findById(id)
                 .orElseThrow(() -> new NotFoundSpaceException("해당 공간이 없습니다. id=" + id));
 
-        String thumnailImageUrl = spaceImageService.getSpaceThumbnail(id);
+        String thumbnailImageUrl = spaceImageService.getSpaceThumbnail(id);
 
         ReviewSummary reviewSummary = reviewService.getReviewSummaryBySpaceId(id);
 
         return new SpaceMatchingFormResponse(
                 space.getId(),
                 space.getTitle(),
-                thumnailImageUrl,
+                thumbnailImageUrl,
                 space.getAddress(),
                 space.getDetailAddress(),
                 reviewSummary.averageRating(),
