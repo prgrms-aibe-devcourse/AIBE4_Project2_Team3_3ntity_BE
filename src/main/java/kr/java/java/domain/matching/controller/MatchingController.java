@@ -9,8 +9,6 @@ import kr.java.java.domain.matching.enums.MatchStatus;
 import kr.java.java.domain.matching.service.MatchingService;
 import kr.java.java.domain.space.dto.SpaceMatchingFormResponse;
 import kr.java.java.domain.space.service.SpaceService;
-import kr.java.java.domain.user.dto.UserFormResponse;
-import kr.java.java.domain.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -19,7 +17,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.UUID;
 
 @Slf4j
 @RestController
@@ -28,7 +25,6 @@ import java.util.UUID;
 public class MatchingController {
     private final MatchingService matchingService;
     private final SpaceService spaceService;
-    private final UserService userService;
 
     @PostMapping("/spaces/{spaceId}")
     public ResponseEntity<Void> createMatchingToSpace(
@@ -40,13 +36,13 @@ public class MatchingController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @PostMapping("/users/{targetUserUuid}")
+    @PostMapping("/users/{targetUserId}")
     public ResponseEntity<Void> createMatchingToUser(
-            @PathVariable UUID targetUserUuid,
+            @PathVariable Long targetUserId,
             @RequestBody CreateMatchingToUserRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        matchingService.createSpaceToUser(targetUserUuid, request, userDetails.getUuid());
+        matchingService.createSpaceToUser(targetUserId, request, userDetails.getUuid());
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 

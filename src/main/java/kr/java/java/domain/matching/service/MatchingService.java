@@ -18,7 +18,6 @@ import kr.java.java.domain.space.service.SpaceService;
 import kr.java.java.domain.user.dto.UserFormResponse;
 import kr.java.java.domain.user.entity.User;
 import kr.java.java.domain.user.repository.UserRepository;
-import kr.java.java.domain.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -40,7 +39,6 @@ public class MatchingService {
     private final ApplicationEventPublisher applicationEventPublisher;
     private final SpaceImageService  spaceImageService;
     private final SpaceService spaceService;
-    private final UserService userService;
 
     //TODO 해당 서비스 페이지에 있는 User 에러처리는 추후 User 도메인의 exception에 생기면 변경
 
@@ -67,12 +65,15 @@ public class MatchingService {
 
     @Transactional
     public void createSpaceToUser(
-            UUID targetUserUuid,
+            Long targetUserId,
             CreateMatchingToUserRequest request,
             UUID userUuid
     ) {
         User sender = userRepository.findByUuid(userUuid)
                 .orElseThrow(() -> new NotFoundUserException("로그인 유저 없음"));
+        User receiver = userRepository.findById(targetUserId)
+                .orElseThrow(() -> new NotFoundUserException("상대방 유저를 찾을 수 없습니다."));
+        UUID targetUserUuid = receiver.getUuid();
         Space space = spaceRepository.findById(request.spaceId())
                 .orElseThrow(() -> new NotFoundSpaceException("해당 공간이 없습니다."));
 
@@ -98,9 +99,14 @@ public class MatchingService {
         log.info("[매칭 service] 매칭 생성 시작");
         User sender = userRepository.findByUuid(command.senderUuid())
                 .orElseThrow(() -> new NotFoundUserException("로그인 유저 없음"));
+        log.info("[매칭 service] 발신자 확인: ID={}, Nickname={}, UUID={}",
+                sender.getId(), sender.getNickname(), sender.getUuid());
 
+        // 2. 수신자(Receiver) 조회 및 로그
         User receiver = userRepository.findByUuid(command.receiverUuid())
-                .orElseThrow(() -> new NotFoundUserException("로그인 유저 없음"));
+                .orElseThrow(() -> new NotFoundUserException("수신 유저 없음"));
+        log.info("[매칭 service] 수신자 확인: ID={}, Nickname={}, UUID={}",
+                receiver.getId(), receiver.getNickname(), receiver.getUuid());
 
         Space space = spaceRepository.findById(command.spaceId())
                 .orElseThrow(() -> new NotFoundSpaceException("해당 공간이 없습니다. id=" + command.spaceId()));
