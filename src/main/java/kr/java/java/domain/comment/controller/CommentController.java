@@ -2,6 +2,7 @@ package kr.java.java.domain.comment.controller;
 
 import jakarta.validation.Valid;
 import kr.java.java.domain.auth.security.CustomUserDetails;
+import kr.java.java.domain.comment.dto.CommentAnswerRequest;
 import kr.java.java.domain.comment.dto.CommentCreateRequest;
 import kr.java.java.domain.comment.dto.CommentResponse;
 import kr.java.java.domain.comment.dto.CommentUpdateRequest;
@@ -139,5 +140,25 @@ public class CommentController {
         log.info("문의 수정 완료 - 수정된 commentId: {}", commentId);
 
         return ResponseEntity.ok("문의가 성공적으로 수정되었습니다.");
+    }
+
+    // 문의 답변 등록 API
+    @PatchMapping("/{commentId}/answer")
+    public ResponseEntity<String> registerAnswer(
+            @PathVariable Long commentId,
+            @Valid @RequestBody CommentAnswerRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        log.info("PATCH /piece/comments/{}/answer 답변 등록 요청 - 호스트 UUID: {}", commentId, userDetails.getUuid());
+
+        commentService.registerAnswer(userDetails.getUuid(), commentId, request.answer());
+
+        log.info("답변 등록 성공 - commentId: {}", commentId);
+
+        return ResponseEntity.ok("답변이 성공적으로 등록되었습니다.");
     }
 }

@@ -191,6 +191,41 @@ public class CommentService {
         log.info("문의 수정 성공 - commentId: {}", commentId);
     }
 
+    // 답변 등록
+    @Transactional
+    public void registerAnswer(UUID userUuid, Long commentId, String answerContent) {
+        log.info("답변 등록 시도 - commentId: {}, userUuid: {}", commentId, userUuid);
+
+        // 1. 답변 작성자(현재 로그인 유저) 조회
+        User currentUser = userRepository.findByUuid(userUuid)
+                .orElseThrow(() -> new UserNotFoundException("존재하지 않는 사용자입니다."));
+
+        // 2. 문의글 조회
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new CommentNotFoundException("존재하지 않는 문의입니다."));
+
+        // 3. 권한 검증: 공간의 주인이거나, 포트폴리오의 주인인지 확인
+        boolean isOwner = false;
+
+        if (comment.getSpace() != null) {
+            isOwner = comment.getSpace().getUser().getId().equals(currentUser.getId());
+        } else if (comment.getPortfolio() != null) {
+            isOwner = comment.getPortfolio().getUser().getId().equals(currentUser.getId());
+        }
+
+        if (!isOwner) {
+            log.warn("답변 등록 실패 - 권한 없음. resourceOwnerId, requesterId: {}", currentUser.getId());
+            throw new CommentAccessDeniedException("해당 게시물의 작성자(호스트)만 답변을 등록할 수 있습니다.");
+        }
+
+        // 4. 답변 등록
+        comment.registerAnswer(answerContent);
+
+        log.info("답변 등록 완료 - commentId: {}", commentId);
+
+        // 답변 알림
+    }
+
     private Long resolveViewerId(UUID viewerUuid) {
         if (viewerUuid == null) {
             return null;

@@ -35,6 +35,12 @@ public class Comment {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(columnDefinition = "TEXT", nullable = true)
+    private String answer;
+
+    @Column(name = "answered_at", nullable = true)
+    private LocalDateTime answeredAt;
+
 
     // 작성자
     @ManyToOne(fetch = FetchType.LAZY)
@@ -68,5 +74,11 @@ public class Comment {
         if (isSecret != null) {
             this.isSecret = isSecret;
         }
+    }
+
+    // 답변 등록, 수정 메서드
+    public void registerAnswer(String answer) {
+        this.answer = answer;
+        this.answeredAt = LocalDateTime.now();
     }
 }
