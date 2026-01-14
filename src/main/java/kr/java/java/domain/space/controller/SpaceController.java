@@ -89,4 +89,11 @@ public class SpaceController {
         List<SpaceListResponse> responses = spaceService.searchSpaces(condition);
         return ResponseEntity.ok(responses);
     }
+
+    @GetMapping("/recommend")
+    public ResponseEntity<List<AiSpaceListResponse>> getAiRecommendations() {
+        log.info("🤖 메인 페이지 AI 추천 공간 조회 요청");
+        List<AiSpaceListResponse> responses = spaceService.getAiRecommendedSpaces();
+        return ResponseEntity.ok(responses);
+    }
 }

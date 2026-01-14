@@ -8,8 +8,10 @@ import kr.java.java.domain.image.service.SpaceImageService;
 import kr.java.java.domain.review.dto.ReviewSummary;
 import kr.java.java.domain.review.service.ReviewService;
 import kr.java.java.domain.space.dto.*;
+import kr.java.java.domain.space.entity.AiRecommendation;
 import kr.java.java.domain.space.entity.Space;
 import kr.java.java.domain.space.exception.*;
+import kr.java.java.domain.space.repository.AiRecommendationRepository;
 import kr.java.java.domain.space.repository.SpaceRepository;
 import kr.java.java.domain.user.entity.User;
 import kr.java.java.domain.user.repository.UserRepository;
@@ -34,6 +36,7 @@ public class SpaceService {
     private final UserRepository userRepository;
     private final SpaceImageService spaceImageService;
     private final ReviewService reviewService;
+    private final AiRecommendationRepository aiRecommendationRepository;
 
     @Transactional
     public void createSpace(SpaceRequest spaceRequest, List<MultipartFile> images, UUID userId) {
@@ -169,5 +172,30 @@ public class SpaceService {
                 space.getCategory(),
                 space.getPricePerMonth()
         );
+    }
+
+    @Transactional(readOnly = true)
+    public List<AiSpaceListResponse> getAiRecommendedSpaces() {
+        // 1. 저장된 추천 목록 가져오기 (Space 정보도 같이 페치 조인)
+        List<AiRecommendation> recommendations = aiRecommendationRepository.findAllWithSpace();
+
+        if (recommendations.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // 2. 썸네일 이미지 가져오기
+        List<Long> spaceIds = recommendations.stream()
+                .map(r -> r.getSpace().getId())
+                .toList();
+        Map<Long, String> thumbnailMap = imageService.getThumnailsBySpaceIds(spaceIds);
+
+        // 3. 응답 DTO로 변환
+        return recommendations.stream()
+                .map(r -> AiSpaceListResponse.of( // 🔥 new 대신 .of() 사용
+                        r.getSpace(),
+                        thumbnailMap.get(r.getSpace().getId()),
+                        r.getReason()
+                ))
+                .toList();
     }
 }

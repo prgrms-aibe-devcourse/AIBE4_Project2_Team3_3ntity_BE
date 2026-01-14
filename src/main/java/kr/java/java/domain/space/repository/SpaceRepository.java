@@ -24,4 +24,6 @@ public interface SpaceRepository extends JpaRepository<Space, Long>,
     @Modifying(clearAutomatically = true)
     @Query("UPDATE Space s SET s.deletedAt = :deletedAt WHERE s.user.uuid = :userId AND s.deletedAt IS NULL")
     int softDeleteAllByUserId(@Param("userId") UUID userId, @Param("deletedAt") LocalDateTime deletedAt);
+    @Query(value = "SELECT * FROM spaces WHERE deleted_at IS NULL AND status = 'RECRUITING' ORDER BY RAND() LIMIT :limit", nativeQuery = true)
+    List<Space> findRandomSpaces(@Param("limit") int limit);
 }
