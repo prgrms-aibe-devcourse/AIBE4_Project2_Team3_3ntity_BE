@@ -1,8 +1,11 @@
 package kr.java.java.domain.portfolio.dto;
 
+import kr.java.java.domain.image.dto.ImageResponse;
 import kr.java.java.domain.portfolio.entity.Portfolio;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
 
 public record PortfolioResponse(
         Long id,
@@ -13,11 +16,14 @@ public record PortfolioResponse(
         String externalLink,
         boolean isOpen,
         LocalDateTime createdAt,
-        String userName
+        String userName,
+        List<ImageResponse> images,
+        UUID hostUuid
 ) {
     // Entity를 DTO로 변환하는 생성자 (편의를 위해 추가)
-    public PortfolioResponse(Portfolio portfolio) {
-        this(portfolio.getId(),
+    public static PortfolioResponse of(Portfolio portfolio, List<ImageResponse> images) {
+        return new PortfolioResponse(
+                portfolio.getId(),
                 portfolio.getBrandName(),
                 portfolio.getTitle(),
                 portfolio.getDescription(),
@@ -25,7 +31,9 @@ public record PortfolioResponse(
                 portfolio.getExternalLink(),
                 portfolio.isOpen(),
                 portfolio.getCreatedAt(),
-                portfolio.getUser().getNickname()
+                portfolio.getUser().getNickname(),
+                images,
+                portfolio.getUser().getUuid()
         );
     }
 }

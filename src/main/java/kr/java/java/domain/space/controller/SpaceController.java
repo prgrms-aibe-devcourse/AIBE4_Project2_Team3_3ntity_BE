@@ -62,18 +62,22 @@ public class SpaceController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<SpaceResponse> updateSpace(@PathVariable Long id, @RequestBody SpaceUpdateRequest request,
+    public ResponseEntity<SpaceResponse> updateSpace(@PathVariable Long id,
+                                                     @RequestPart(value = "request") SpaceUpdateRequest request,
+                                                     @RequestPart(value = "files", required = false) List<MultipartFile> files,
                                                      @AuthenticationPrincipal CustomUserDetails userDetails) {
         log.info("공간 전체 수정 시도 - ID: {}", id);
-        SpaceResponse response = spaceService.updateSpace(id, request, userDetails.getUuid());
+        SpaceResponse response = spaceService.updateSpace(id, request, files,userDetails.getUuid());
         return ResponseEntity.ok(response);
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<SpaceResponse> updateSpacePartial(@PathVariable Long id, @RequestBody SpaceUpdateRequest request,
+    public ResponseEntity<SpaceResponse> updateSpacePartial(@PathVariable Long id,
+                                                            @RequestPart(value = "request") SpaceUpdateRequest request,
+                                                            @RequestPart(value = "files", required = false) List<MultipartFile> files,
                                                             @AuthenticationPrincipal CustomUserDetails userDetails) {
         log.info("공간 부분 수정 시도 - ID: {}", id);
-        SpaceResponse response = spaceService.updateSpace(id, request, userDetails.getUuid());
+        SpaceResponse response = spaceService.updateSpace(id, request, files,userDetails.getUuid());
         return ResponseEntity.ok(response);
     }
 

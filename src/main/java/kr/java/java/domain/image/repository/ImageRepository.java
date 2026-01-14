@@ -16,6 +16,9 @@ public interface ImageRepository extends JpaRepository<Image, Long> {
     @Query("SELECT i FROM Image i WHERE i.space.id IN :spaceIds AND i.sortOrder = 1")
     List<Image> findThumbnailsBySpaceIds(@Param("spaceIds") List<Long> spaceIds);
 
+    @Query("SELECT i FROM Image i WHERE i.portfolio.id IN :portfolioIds AND i.sortOrder = 1")
+    List<Image> findThumbnailsByPortfolioIds(@Param("portfolioIds") List<Long> portfolioIds);
+
     List<Image> findAllByReviewIdOrderBySortOrderAsc(Long targetId);
 
     List<Image> findAllBySpaceIdOrderBySortOrderAsc(Long targetId);
