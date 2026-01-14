@@ -254,7 +254,7 @@ public class ImageService {
 
         return thumbnails.stream()
                 .collect(Collectors.toMap(
-                        img -> img.getSpace().getId(),
+                        img -> img.getPortfolio().getId(),
                         Image::getFileUrl,
                         (existing, replacement) -> existing
                 ));
