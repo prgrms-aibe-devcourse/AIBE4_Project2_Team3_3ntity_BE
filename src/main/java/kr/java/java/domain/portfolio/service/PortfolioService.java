@@ -5,7 +5,7 @@ import kr.java.java.domain.auth.exception.AuthErrorCode;
 import kr.java.java.domain.auth.exception.AuthException;
 import kr.java.java.domain.image.dto.ImageResponse;
 import kr.java.java.domain.image.enums.TargetType;
-import kr.java.java.domain.image.service.ImageService;
+import kr.java.java.domain.image.service.PortfolioImageService;
 import kr.java.java.domain.portfolio.dto.*;
 import kr.java.java.domain.portfolio.entity.Portfolio;
 import kr.java.java.domain.portfolio.exception.DuplicatePortfolioException;
@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
 public class PortfolioService {
     private final PortfolioRepository portfolioRepository;
     private final UserRepository userRepository;
-    private final ImageService imageService;
+    private final PortfolioImageService portfolioImageService;
 
     @Transactional
     public void createPortfolio(PortfolioRequest portfolioRequest, UUID userId, List<MultipartFile> images){
@@ -52,12 +52,7 @@ public class PortfolioService {
         Portfolio portfolio = portfolioRequest.toEntity(user);
         portfolioRepository.save(portfolio);
 
-        try {
-            imageService.uploadImage(images, TargetType.PORTFOLIO, portfolio.getId());
-        } catch (IOException e) {
-            log.error("이미지 업로드 실패", e);
-            throw new ImageNotUploadException("이미지 업로드 중 오류가 발생했습니다.");
-        }
+        portfolioImageService.uploadImages(portfolio.getId(), images);
     }
 
     @Transactional(readOnly = true)
@@ -65,7 +60,7 @@ public class PortfolioService {
         List<Portfolio> portfolios = portfolioRepository.findAllByIsOpenTrueOrderByIdDesc();
 
         List<Long> portfolioIds = portfolios.stream().map(Portfolio::getId).collect(Collectors.toList());
-        Map<Long, String> thumbnailMap = imageService.getThumnailsByPortfolioIds(portfolioIds);
+        Map<Long, String> thumbnailMap = portfolioImageService.getThumbnailsByPortfolioIds(portfolioIds);
 
         return portfolios.stream()
                 .map(portfolio -> new PortfolioListResponse(portfolio, thumbnailMap.get(portfolio.getId())))
@@ -79,7 +74,7 @@ public class PortfolioService {
         List<Portfolio> portfolios = portfolioRepository.findByUserIdOrderByIdDesc(userId);
 
         List<Long> portfolioIds = portfolios.stream().map(Portfolio::getId).collect(Collectors.toList());
-        Map<Long, String> thumbnailMap = imageService.getThumnailsByPortfolioIds(portfolioIds);
+        Map<Long, String> thumbnailMap = portfolioImageService.getThumbnailsByPortfolioIds(portfolioIds);
 
         return portfolios.stream()
                 .map(portfolio -> new PortfolioListResponse(portfolio, thumbnailMap.get(portfolio.getId())))
@@ -90,7 +85,7 @@ public class PortfolioService {
     public PortfolioResponse getPortfolio(Long id) {
         Portfolio portfolio = portfolioRepository.findById(id)
                 .orElseThrow(()-> new NotFoundPortfolioException("해당 포트폴리오가 없습니다. id="+id));
-        List<ImageResponse> images = imageService.getImages(TargetType.PORTFOLIO, id);
+        List<ImageResponse> images = portfolioImageService.getImages(id);
 
         return PortfolioResponse.of(portfolio,images);
     }
@@ -123,21 +118,16 @@ public class PortfolioService {
         }
 
         portfolio.update(request);
-        try {
-            List<Long> remainIds = request.remainImageIds() != null ? request.remainImageIds() : new ArrayList<>();
 
-            imageService.updateImages(
-                    TargetType.PORTFOLIO,
-                    id,
-                    remainIds,
-                    newFiles
-            );
-        } catch (IOException e) {
-            log.error("이미지 수정 중 오류 발생", e);
-            throw new ImageNotUploadException("이미지 수정 실패");
-        }
+        List<Long> remainIds = request.remainImageIds() != null ? request.remainImageIds() : new ArrayList<>();
 
-        List<ImageResponse> currentImages = imageService.getImages(TargetType.PORTFOLIO, id);
+        portfolioImageService.updateImages(
+                id,
+                remainIds,
+                newFiles
+        );
+
+        List<ImageResponse> currentImages = portfolioImageService.getImages(id);
         return PortfolioResponse.of(portfolio, currentImages);
     }
 
@@ -146,7 +136,7 @@ public class PortfolioService {
         List<Portfolio> portfolios = portfolioRepository.search(condition);;
 
         List<Long> portfolioIds = portfolios.stream().map(Portfolio::getId).collect(Collectors.toList());
-        Map<Long, String> thumbnailMap = imageService.getThumnailsByPortfolioIds(portfolioIds);
+        Map<Long, String> thumbnailMap = portfolioImageService.getThumbnailsByPortfolioIds(portfolioIds);
 
         return portfolios.stream()
                 .map(portfolio -> new PortfolioListResponse(portfolio, thumbnailMap.get(portfolio.getId())))
