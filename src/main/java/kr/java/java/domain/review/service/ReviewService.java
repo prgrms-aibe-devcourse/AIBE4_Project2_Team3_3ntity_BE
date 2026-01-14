@@ -2,10 +2,8 @@ package kr.java.java.domain.review.service;
 
 import kr.java.java.domain.image.dto.ImageResponse;
 import kr.java.java.domain.image.enums.TargetType;
-import kr.java.java.domain.image.service.ImageService;
+import kr.java.java.domain.image.service.ReviewImageService;
 import kr.java.java.domain.matching.enums.MatchStatus;
-import kr.java.java.domain.matching.exception.MatchingErrorCode;
-import kr.java.java.domain.matching.exception.MatchingException;
 import kr.java.java.domain.review.dto.*;
 import kr.java.java.domain.review.entity.Review;
 import kr.java.java.domain.review.exception.*;
@@ -35,7 +33,7 @@ public class ReviewService {
     private final ReviewRepository reviewRepository;
     private final UserRepository userRepository;
     private final MatchingRepository matchingRepository;
-    private final ImageService imageService;
+    private final ReviewImageService reviewImageService;
 
     @Transactional
     public Long createReview(UUID userUuid, ReviewCreateRequest request, List<MultipartFile> files) throws IOException {
@@ -86,7 +84,7 @@ public class ReviewService {
         if (files != null && !files.isEmpty()) {
             log.info("리뷰 이미지 업로드 시작 - 파일 개수: {}", files.size());
 
-            imageService.uploadImage(files, TargetType.REVIEW, savedReview.getId());
+            reviewImageService.uploadImages(savedReview.getId(), files);
         }
 
         log.info("리뷰 저장 성공 - reviewId: {}", savedReview.getId());
@@ -101,7 +99,7 @@ public class ReviewService {
         Review review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new ReviewNotFoundException("존재하지 않는 리뷰입니다."));
 
-        List<ImageResponse> images = imageService.getImages(TargetType.REVIEW, review.getId());
+        List<ImageResponse> images = reviewImageService.getImages(review.getId());
 
         return ReviewResponse.of(review, images);
     }
@@ -116,7 +114,7 @@ public class ReviewService {
 
         return reviews.stream()
                 .map(review -> {
-                    List<ImageResponse> images = imageService.getImages(TargetType.REVIEW, review.getId());
+                    List<ImageResponse> images = reviewImageService.getImages(review.getId());
                     return ReviewResponse.of(review, images);
                 })
                 .toList();
@@ -134,7 +132,7 @@ public class ReviewService {
 
         return reviews.stream()
                 .map(review -> {
-                    List<ImageResponse> images = imageService.getImages(TargetType.REVIEW, review.getId());
+                    List<ImageResponse> images = reviewImageService.getImages(review.getId());
                     return ReviewResponse.of(review, images);
                 })
                 .toList();
@@ -160,12 +158,12 @@ public class ReviewService {
         }
 
         // 3. 연관된 이미지 삭제
-        List<ImageResponse> images = imageService.getImages(TargetType.REVIEW, reviewId);
+        List<ImageResponse> images = reviewImageService.getImages(reviewId);
 
         if (!images.isEmpty()) {
             log.info("리뷰 삭제 전 이미지 삭제 - 이미지 개수: {}", images.size());
             for (ImageResponse image : images) {
-                imageService.deleteSingleImage(image.id());
+                reviewImageService.deleteSingleImage(image.id());
             }
         }
 
@@ -197,7 +195,7 @@ public class ReviewService {
         review.updateReview(request.rating(), request.content());
 
         // 3-1. 현재 저장된 이미지 목록 조회
-        List<ImageResponse> currentImages = imageService.getImages(TargetType.REVIEW, reviewId);
+        List<ImageResponse> currentImages = reviewImageService.getImages(reviewId);
         int currentSize = currentImages.size();
 
         // 3-2. 삭제 요청된 이미지 개수 계산
@@ -227,13 +225,13 @@ public class ReviewService {
                     .toList();
 
             for (Long imageId : validDeleteIds) {
-                imageService.deleteSingleImage(imageId);
+                reviewImageService.deleteSingleImage(imageId);
             }
         }
 
         // 3-6. 추가 로직 수행 (추가 이미지 업로드)
         if (newFiles != null && !newFiles.isEmpty()) {
-            imageService.uploadImage(newFiles, TargetType.REVIEW, reviewId);
+            reviewImageService.uploadImages(reviewId, newFiles);
         }
 
         log.info("리뷰 수정 완료 - reviewId: {}", reviewId);
