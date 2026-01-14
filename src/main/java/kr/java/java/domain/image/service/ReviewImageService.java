@@ -2,6 +2,8 @@ package kr.java.java.domain.image.service;
 
 import kr.java.java.domain.image.dto.ImageResponse;
 import kr.java.java.domain.image.entity.ReviewImage;
+import kr.java.java.domain.image.exception.ImageErrorCode;
+import kr.java.java.domain.image.exception.ImageException;
 import kr.java.java.domain.image.repository.ReviewImageRepository;
 import kr.java.java.domain.review.entity.Review;
 import kr.java.java.domain.review.exception.ReviewNotFoundException;
@@ -99,5 +101,14 @@ public class ReviewImageService {
                 .sortOrder(sortOrder)
                 .review(review)
                 .build());
+    }
+
+    public void deleteSingleImage(Long imageId) {
+        ReviewImage image = reviewImageRepository.findById(imageId)
+                .orElseThrow(() -> new ImageException(ImageErrorCode.DB_IMAGE_NOT_FOUND));
+
+        s3StorageService.deleteFile(image.getFileUrl());
+
+        reviewImageRepository.delete(image);
     }
 }
