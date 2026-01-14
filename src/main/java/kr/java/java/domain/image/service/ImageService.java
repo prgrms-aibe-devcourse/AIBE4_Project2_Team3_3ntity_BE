@@ -122,44 +122,49 @@ public class ImageService {
     }
 
     @Transactional
-    public void updateImages(TargetType targetType, Long targetId, List<Long> remainImageIds, List<MultipartFile> newFiles) throws IOException{
+    public void updateImages(TargetType targetType, Long targetId, List<Long> remainImageIds, List<MultipartFile> newFiles) throws IOException {
+
+        // 1. 기존 이미지 불러오기
         List<Image> currentImages = switch(targetType) {
             case REVIEW -> imageRepository.findAllByReviewIdOrderBySortOrderAsc(targetId);
             case SPACE -> imageRepository.findAllBySpaceIdOrderBySortOrderAsc(targetId);
             case PORTFOLIO -> imageRepository.findAllByPortfolioIdOrderBySortOrderAsc(targetId);
         };
 
-        // 삭제할 이미지들 추출
+        // 2. 삭제 대상 찾아서 지우기 (remainIds에 없는 것들)
         List<Image> toDelete = currentImages.stream()
                 .filter(img -> !remainImageIds.contains(img.getId()))
                 .toList();
 
-        // TODO 한 번에 삭제할 수 있도록 추후 작성
         for(Image image : toDelete) {
             deleteSingleImage(image.getId());
         }
 
-        int newFileIndex = 0;
-        for(int i=0; i<remainImageIds.size(); i++) {
-            Long imageId = remainImageIds.get(i);
-            int targetSortOrder = i+1;
+        // 3. 순서 재정렬을 위한 카운터
+        int currentSortOrder = 1;
 
-            // 원래 있던 이미지라면
-            if(imageId != null){
-                // TODO 추후 이미지 한 번에 가져와 루프에서 꺼내기
-                imageRepository.findById(imageId).ifPresent(img ->{
-                    img.updateSortOrder(targetSortOrder);
-                });
-            } else{
-                if(newFiles != null && newFileIndex < newFiles.size()) {
-                    MultipartFile file = newFiles.get(newFileIndex++);
-                    if(!file.isEmpty()) {
-                        uploadAndSaveSingleImage(file, targetType, targetId, targetSortOrder);
-                    }
+        // 4. [기존 이미지] 순서 업데이트 (남아있는 애들)
+        // remainImageIds 순서대로 정렬값을 다시 매김
+        for (Long imageId : remainImageIds) {
+            // DB에서 다시 조회해서 순서 업데이트 (혹시 모를 정합성 위해)
+            Image img = imageRepository.findById(imageId).orElse(null);
+            if (img != null) {
+                img.updateSortOrder(currentSortOrder++);
+            }
+        }
+
+        // 5. 🔥 [새 이미지] 추가 (여기가 핵심!)
+        // 루프 밖으로 꺼내서 무조건 실행되게 변경
+        if (newFiles != null && !newFiles.isEmpty()) {
+            for (MultipartFile file : newFiles) {
+                if (!file.isEmpty()) {
+                    // 기존 개수 뒤에 이어서 순서(sortOrder) 부여
+                    uploadAndSaveSingleImage(file, targetType, targetId, currentSortOrder++);
                 }
             }
         }
     }
+
 
     private void uploadAndSaveSingleImage(MultipartFile file, TargetType targetType, Long targetId, int sortOrder) throws IOException {
         String fileName = FileUtil.createFileName(file.getOriginalFilename());
