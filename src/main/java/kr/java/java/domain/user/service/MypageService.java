@@ -2,16 +2,11 @@ package kr.java.java.domain.user.service;
 
 
 import kr.java.java.domain.auth.service.RefreshTokenService;
-import kr.java.java.domain.comment.repository.CommentRepository;
-import kr.java.java.domain.favorite.entity.Favorite;
-import kr.java.java.domain.favorite.repository.FavoriteRepository;
-import kr.java.java.domain.image.enums.TargetType;
 import kr.java.java.domain.image.service.ImageService;
 import kr.java.java.domain.matching.entity.Matching;
 import kr.java.java.domain.matching.enums.MatchStatus;
 import kr.java.java.domain.matching.repository.MatchingRepository;
 import kr.java.java.domain.notification.repository.NotificationRepository;
-import kr.java.java.domain.notification.service.NotificationService;
 import kr.java.java.domain.portfolio.repository.PortfolioRepository;
 import kr.java.java.domain.review.repository.ReviewRepository;
 import kr.java.java.domain.space.repository.SpaceRepository;
@@ -43,9 +38,7 @@ public class MypageService {
     private final SpaceRepository spaceRepository;
     private final PortfolioRepository portfolioRepository;
     private final ReviewRepository reviewRepository;
-    private final CommentRepository commentRepository;
     private final MatchingRepository matchingRepository;
-    private final FavoriteRepository favoriteRepository;
     private final RefreshTokenService refreshTokenService;
     private final ImageService imageService;
     private final NotificationRepository notificationRepository;
@@ -60,7 +53,7 @@ public class MypageService {
         MypageResponse.StatsInfo stats = MypageResponse.StatsInfo.builder()
                 .spacesCount(spaceRepository.countSpacesByUserId(user.getUuid()))
                 .portfoliosCount(portfolioRepository.countPortfoliosByUserId(user.getUuid()))
-                .reviewsCount(reviewRepository.countReviewsByUserId(userId))
+                .reviewsCount(reviewRepository.countReviewsByUserId(uuid))
                 .likesCount(0L) //TODO
                 .matchingsCount(matchingRepository.countByUserIdAndStatus(userId, null))
                 .build();
@@ -129,16 +122,16 @@ public class MypageService {
 
         // Review, Portfolio, Space soft delete (벌크 업데이트)
         LocalDateTime deletedAt = LocalDateTime.now();
-        int deletedReviews = reviewRepository.softDeleteAllByUserId(userId, deletedAt);
-        int deletedPortfolios = portfolioRepository.softDeleteAllByUserId(userId, deletedAt);
-        int deletedSpaces = spaceRepository.softDeleteAllByMemberId(userId, deletedAt);
+        int deletedReviews = reviewRepository.softDeleteAllByUserId(uuid, deletedAt);
+        int deletedPortfolios = portfolioRepository.softDeleteAllByUserId(uuid, deletedAt);
+        int deletedSpaces = spaceRepository.softDeleteAllByUserId(uuid, deletedAt);
         
         log.info("회원 탈퇴 - Soft Delete 완료: Review {}건, Portfolio {}건, Space {}건", 
                 deletedReviews, deletedPortfolios, deletedSpaces);
 
         // 알림 수동 삭제
-        notificationRepository.deleteByReceiverId(userId);
-        log.info("회원 탈퇴 - 알림 삭제 완료: uuid {}, userId {}", uuid, userId);
+//        notificationRepository.deleteByReceiverId(userId);
+//        log.info("회원 탈퇴 - 알림 삭제 완료: uuid {}, userId {}", uuid, userId);
 
         refreshTokenService.deleteRefreshToken(uuid);
 
