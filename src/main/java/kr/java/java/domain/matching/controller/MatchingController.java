@@ -40,7 +40,7 @@ public class MatchingController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @PostMapping("/users/{targetUserId}")
+    @PostMapping("/users/{targetUserUuid}")
     public ResponseEntity<Void> createMatchingToUser(
             @PathVariable UUID targetUserUuid,
             @RequestBody CreateMatchingToUserRequest request,
@@ -113,9 +113,9 @@ public class MatchingController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/form/user/{userId}")
-    public ResponseEntity<UserMatchingFormResponse> getHostToUserMatchingForm(@PathVariable Long userId, @AuthenticationPrincipal CustomUserDetails userDetails){
-        UserMatchingFormResponse response = matchingService.getHostToUserMatchingForm(userId, userDetails.getUuid());
+    @GetMapping("/form/portfolio/{portfolioId}")
+    public ResponseEntity<UserMatchingFormResponse> getHostToUserMatchingForm(@PathVariable Long portfolioId, @AuthenticationPrincipal CustomUserDetails userDetails){
+        UserMatchingFormResponse response = matchingService.getHostToUserMatchingForm(portfolioId, userDetails.getUuid());
         return ResponseEntity.ok(response);
     }
 }

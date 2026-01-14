@@ -8,6 +8,8 @@ import kr.java.java.domain.matching.event.*;
 import kr.java.java.domain.matching.exception.MatchingErrorCode;
 import kr.java.java.domain.matching.exception.MatchingException;
 import kr.java.java.domain.matching.repository.MatchingRepository;
+import kr.java.java.domain.portfolio.entity.Portfolio;
+import kr.java.java.domain.portfolio.repository.PortfolioRepository;
 import kr.java.java.domain.space.entity.Space;
 import kr.java.java.domain.space.exception.NotFoundSpaceException;
 import kr.java.java.domain.space.exception.NotFoundUserException;
@@ -34,6 +36,7 @@ public class MatchingService {
     private final UserRepository userRepository;
     private final SpaceRepository spaceRepository;
     private final MatchingRepository matchingRepository;
+    private final PortfolioRepository portfolioRepository;
     private final ApplicationEventPublisher applicationEventPublisher;
     private final SpaceImageService  spaceImageService;
     private final SpaceService spaceService;
@@ -367,14 +370,16 @@ public class MatchingService {
         return rejectedMatchingEvents;
     }
 
-    public UserMatchingFormResponse getHostToUserMatchingForm(Long targetUserId, UUID loginUserId){
-        UserFormResponse targetUser = userService.getUserInfoForMatching(targetUserId);
+    public UserMatchingFormResponse getHostToUserMatchingForm(Long portfolioId, UUID loginUserId){
+        Portfolio portfolio = portfolioRepository.findById(portfolioId).orElse(null);
+        User targetUser = portfolio.getUser();
+        UserFormResponse targetUserResponse = UserFormResponse.from(targetUser);
         List<MySpaceSummary> mySpaces = spaceService.getMySpacesSummary(loginUserId);
 
         return UserMatchingFormResponse.builder()
-                .userId(targetUser.userId())
-                .nickname(targetUser.nickname())
-                .profileImageUrl(targetUser.profileImageUrl())
+                .userId(targetUserResponse.userId())
+                .nickname(targetUserResponse.nickname())
+                .profileImageUrl(targetUserResponse.profileImageUrl())
                 .mySpaces(mySpaces)
                 .build();
     }
