@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.UUID;
 
 public interface CommentRepository extends JpaRepository<Comment, Long> {
 
@@ -18,10 +19,10 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     List<Comment> findAllByPortfolioIdOrderByCreatedAtDesc(@Param("portfolioId") Long portfolioId);
 
     // 사용자별(내가 쓴) 문의 조회
-    @Query("SELECT c FROM Comment c JOIN FETCH c.user LEFT JOIN FETCH c.space LEFT JOIN FETCH c.portfolio WHERE c.user.id = :userId ORDER BY c.createdAt DESC")
-    List<Comment> findAllByUserIdOrderByCreatedAtDesc(@Param("userId") Long userId);
+    @Query("SELECT c FROM Comment c JOIN FETCH c.user LEFT JOIN FETCH c.space LEFT JOIN FETCH c.portfolio WHERE c.user.uuid = :userUuid ORDER BY c.createdAt DESC")
+    List<Comment> findAllByUserIdOrderByCreatedAtDesc(@Param("userUuid") UUID userUuid);
 
     // 내가 쓴 문의 개수 카운팅
-    @Query("SELECT COUNT(c) FROM Comment c WHERE c.user.id = :userId")
-    long countCommentsByUserId(@Param("userId") Long userId);
+    @Query("SELECT COUNT(c) FROM Comment c WHERE c.user.uuid = :userUuid")
+    long countCommentsByUserId(@Param("userUuid") UUID userUuid);
 }

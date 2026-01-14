@@ -1,7 +1,7 @@
 package kr.java.java.domain.review.controller;
 
 import jakarta.validation.Valid;
-import kr.java.java.domain.matching.service.MatchingService;
+import kr.java.java.domain.auth.security.CustomUserDetails;
 import kr.java.java.domain.review.dto.ReviewCreateRequest;
 import kr.java.java.domain.review.dto.ReviewResponse;
 import kr.java.java.domain.review.dto.ReviewTargetResponse;
@@ -9,10 +9,12 @@ import kr.java.java.domain.review.dto.ReviewUpdateRequest;
 import kr.java.java.domain.review.service.ReviewService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 import java.io.IOException;
 import java.util.List;
@@ -30,12 +32,14 @@ public class ReviewController {
     public ResponseEntity<Long> createReview(
             @Valid @RequestPart("request") ReviewCreateRequest request,
             @RequestPart(value = "files", required = false) List<MultipartFile> files,
-            Long loginUserId
+            @AuthenticationPrincipal CustomUserDetails userDetails
     ) throws IOException {
-        log.info("POST /piece/reviews 요청 발생 - 작성자 ID: {}", loginUserId);
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        log.info("POST /piece/reviews 요청 발생 - 작성자 UUID: {}", userDetails.getUuid());
 
-        // TODO: 추후 loginUserId로 변경
-        Long reviewId = reviewService.createReview(1L, request, files);
+        Long reviewId = reviewService.createReview(userDetails.getUuid(), request, files);
 
         log.info("리뷰 등록 완료 응답 반환 - 생성된 reviewId: {}", reviewId);
 
@@ -56,10 +60,13 @@ public class ReviewController {
 
     // 사용자별 리뷰 조회 API
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<ReviewResponse>> getMyReviews(@PathVariable Long userId) {
-        log.info("GET /piece/reviews/user/{} 요청 발생", userId);
+    public ResponseEntity<List<ReviewResponse>> getMyReviews(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        log.info("사용자별 리뷰 조회 요청 - 로그인한 사용자 UUID: {}", userDetails.getUuid());
 
-        List<ReviewResponse> responses = reviewService.getMyReviews(userId);
+        List<ReviewResponse> responses = reviewService.getMyReviews(userDetails.getUuid());
 
         log.info("사용자별 리뷰 조회 완료 - 조회된 리뷰 개수: {}", responses.size());
 
@@ -70,13 +77,14 @@ public class ReviewController {
     @DeleteMapping("/{reviewId}")
     public ResponseEntity<String> deleteReview(
             @PathVariable Long reviewId,
-            Long loginUserId
+            @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        log.info("DELETE /piece/reviews/{} 요청 발생 - 요청자 ID: {}", reviewId, loginUserId);
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        log.info("DELETE /piece/reviews/{} 요청 발생 - 요청자 UUID: {}", reviewId, userDetails.getUuid());
 
-        // TODO: 추후 loginUserId로 변경
-        reviewService.deleteReview(reviewId, 1L);
-        // reviewService.deleteReview(reviewId, loginUserId);
+        reviewService.deleteReview(reviewId, userDetails.getUuid());
 
         log.info("리뷰 삭제 완료 응답 반환 - 삭제된 reviewId: {}", reviewId);
 
@@ -89,12 +97,14 @@ public class ReviewController {
             @PathVariable Long reviewId,
             @Valid @RequestPart("request") ReviewUpdateRequest request,
             @RequestPart(value = "files", required = false) List<MultipartFile> files,
-            Long loginUserId
+            @AuthenticationPrincipal CustomUserDetails userDetails
     ) throws IOException {
-        log.info("PATCH /piece/reviews/{} 요청 발생 - 요청자 ID: {}", reviewId, loginUserId);
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        log.info("PATCH /piece/reviews/{} 요청 발생 - 요청자 UUID: {}", reviewId, userDetails.getUuid());
 
-        // TODO: 추후 loginUserId로 변경
-        reviewService.updateReview(reviewId, 1L, request, files);
+        reviewService.updateReview(reviewId, userDetails.getUuid(), request, files);
 
         log.info("리뷰 수정 완료 응답 반환 - reviewId: {}", reviewId);
 

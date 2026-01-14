@@ -1,16 +1,20 @@
 package kr.java.java.domain.comment.controller;
 
 import jakarta.validation.Valid;
+import kr.java.java.domain.auth.security.CustomUserDetails;
 import kr.java.java.domain.comment.dto.CommentCreateRequest;
 import kr.java.java.domain.comment.dto.CommentResponse;
 import kr.java.java.domain.comment.dto.CommentUpdateRequest;
 import kr.java.java.domain.comment.service.CommentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @RestController
@@ -22,12 +26,13 @@ public class CommentController {
 
     // 문의 등록 API
     @PostMapping
-    public ResponseEntity<Long> createComment(@Valid @RequestBody CommentCreateRequest request, Long loginUserId) {
-        log.info("POST /piece/comments 요청 발생 - (테스트용) 작성자 ID: {}", loginUserId);
+    public ResponseEntity<Long> createComment(@Valid @RequestBody CommentCreateRequest request, @AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        log.info("POST /piece/comments 요청 발생 - (테스트용) 작성자 UUID: {}", userDetails.getUuid());
 
-        // TODO: 인증 기능 완성 후에 다시 loginUserId로 변경
-        Long commentId = commentService.createComment(2L, request);
-        //Long commentId = commentService.createComment(loginUserId, request);
+        Long commentId = commentService.createComment(userDetails.getUuid(), request);
 
         log.info("문의 등록 완료 응답 반환 - 생성된 commentId: {}", commentId);
 
@@ -38,16 +43,14 @@ public class CommentController {
     @GetMapping("/space/{spaceId}")
     public ResponseEntity<List<CommentResponse>> getCommentsBySpace(
             @PathVariable Long spaceId,
-            Long loginUserId
+            @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        // 테스트용 조회자 ID 설정
-        Long viewerId = 1L;
-        // Long viewerId = loginUserId; // TODO: 추후에 loginUserId로 변경
+        UUID viewerUuid = (userDetails != null) ? userDetails.getUuid() : null;
 
         log.info("GET /piece/comments/space/{} 요청 발생", spaceId);
-        log.info("조회자(Viewer) ID: {}", viewerId);
+        log.info("조회자(Viewer) UUID: {}", viewerUuid);
 
-        List<CommentResponse> responses = commentService.getCommentsBySpace(spaceId, viewerId);
+        List<CommentResponse> responses = commentService.getCommentsBySpace(spaceId, viewerUuid);
 
         log.info("공간별 문의 조회 완료 - 조회된 문의 개수: {}", responses.size());
         return ResponseEntity.ok(responses);
@@ -57,16 +60,14 @@ public class CommentController {
     @GetMapping("/portfolio/{portfolioId}")
     public ResponseEntity<List<CommentResponse>> getCommentsByPortfolio(
             @PathVariable Long portfolioId,
-            Long loginUserId
+            @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        // 테스트용 조회자 ID 설정
-        Long viewerId = 1L;
-        // Long viewerId = loginUserId; // TODO: 추후에 loginUserId로 변경
+        UUID viewerUuid = (userDetails != null) ? userDetails.getUuid() : null;
 
         log.info("GET /piece/comments/portfolio/{} 요청 발생", portfolioId);
-        log.info("조회자(Viewer) ID: {}", viewerId);
+        log.info("조회자(Viewer) UUID: {}", viewerUuid);
 
-        List<CommentResponse> responses = commentService.getCommentsByPortfolio(portfolioId, viewerId);
+        List<CommentResponse> responses = commentService.getCommentsByPortfolio(portfolioId, viewerUuid);
 
         log.info("포트폴리오별 문의 조회 완료 - 조회된 문의 개수: {}", responses.size());
         return ResponseEntity.ok(responses);
@@ -74,10 +75,13 @@ public class CommentController {
 
     // 사용자별 문의 조회 API
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<CommentResponse>> getMyComments(@PathVariable Long userId) {
-        log.info("GET /piece/comments/user/{} 요청 발생", userId);
+    public ResponseEntity<List<CommentResponse>> getMyComments(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        log.info("GET /piece/comments/user/{} 요청 발생", userDetails.getUuid());
 
-        List<CommentResponse> responses = commentService.getMyComments(userId);
+        List<CommentResponse> responses = commentService.getMyComments(userDetails.getUuid());
 
         log.info("사용자별 문의 조회 완료 - 조회된 문의 개수: {}", responses.size());
 
@@ -86,14 +90,14 @@ public class CommentController {
 
     // 문의 삭제 API
     @DeleteMapping("/{commentId}")
-    public ResponseEntity<String> deleteComment(@PathVariable Long commentId, Long loginUserId) {
+    public ResponseEntity<String> deleteComment(@PathVariable Long commentId, @AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
 
-        Long userId = 1L;
-        // Long userId = loginUserId; // TODO: 추후에 loginUserId로 변경
+        log.info("DELETE /piece/comments/{} 요청 발생 - 요청자 UUID: {}", commentId, userDetails.getUuid());
 
-        log.info("DELETE /piece/comments/{} 요청 발생 - 요청자 ID: {}", commentId, userId);
-
-        commentService.deleteComment(commentId, userId);
+        commentService.deleteComment(commentId, userDetails.getUuid());
 
         log.info("문의 삭제 완료 - 삭제된 commentId: {}", commentId);
 
@@ -105,15 +109,15 @@ public class CommentController {
     public ResponseEntity<String> updateComment(
             @PathVariable Long commentId,
             @RequestBody CommentUpdateRequest request,
-            Long loginUserId
+            @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
 
-        Long userId = 1L;
-        // Long userId = loginUserId; // TODO: 추후에 loginUserId로 변경
+        log.info("PATCH /piece/comments/{} 요청 발생 - 요청자 UUID: {}", commentId, userDetails.getUuid());
 
-        log.info("PATCH /piece/comments/{} 요청 발생 - 요청자 ID: {}", commentId, userId);
-
-        commentService.updateComment(userId, commentId, request);
+        commentService.updateComment(userDetails.getUuid(), commentId, request);
 
         log.info("문의 수정 완료 - 수정된 commentId: {}", commentId);
 

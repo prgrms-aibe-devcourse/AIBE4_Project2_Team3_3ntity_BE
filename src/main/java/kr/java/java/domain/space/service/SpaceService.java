@@ -1,5 +1,7 @@
 package kr.java.java.domain.space.service;
 
+import kr.java.java.domain.auth.exception.AuthErrorCode;
+import kr.java.java.domain.auth.exception.AuthException;
 import kr.java.java.domain.image.enums.TargetType;
 import kr.java.java.domain.image.service.ImageService;
 import kr.java.java.domain.review.dto.ReviewSummary;
@@ -19,6 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @Slf4j
@@ -30,14 +33,14 @@ public class SpaceService {
     private final ReviewService reviewService;
 
     @Transactional
-    public void createSpace(SpaceRequest spaceRequest, List<MultipartFile> images, Long loginUserId) {
-        //TODO 로그인 유저 권한 체크하는 부분 추가 예정
+    public void createSpace(SpaceRequest spaceRequest, List<MultipartFile> images, UUID userId) {
         if (spaceRepository.existsByAddressAndDetailAddress(spaceRequest.address(), spaceRequest.detailAddress())) {
             log.error("동일한 공간이 존재합니다");
             throw new DuplicateSpaceException("동일한 공간이 존재합니다.");
         }
 
-        User user = userRepository.getReferenceById(loginUserId);
+        User user = userRepository.findByUuid(userId)
+                .orElseThrow(() -> new AuthException(AuthErrorCode.OAUTH2_USER_NOT_FOUND));
 
         Space space = spaceRequest.toEntity(user);
         spaceRepository.save(space);
@@ -72,24 +75,22 @@ public class SpaceService {
     }
 
     @Transactional(readOnly = true)
-    public List<SpaceListResponse> getSpacesByUserId(Long userId) {
-        if (!userRepository.existsById(userId)) {
-            //TODO 나중에 유저에서 커스텀예외가 생기면 예외를 변경할 예정
-            throw new NotFoundUserException("존재하지 않는 유저입니다. ID: " + userId);
-        }
+    public List<SpaceListResponse> getSpacesByUserId(UUID userId) {
+        userRepository.findByUuid(userId).orElseThrow(() -> new AuthException(AuthErrorCode.OAUTH2_USER_NOT_FOUND));
         return spaceRepository.findByUserIdOrderByIdDesc(userId).stream()
                 .map(SpaceListResponse::new)
                 .toList();
     }
 
     @Transactional
-    public void deleteSpace(Long id, Long userId) {
+    public void deleteSpace(Long id, UUID userId) {
 
         Space space = spaceRepository.findById(id)
                 .orElseThrow(() -> new NotFoundSpaceException("해당 공간이 없습니다. id=" + id));
 
-        if (!space.getUser().getId().equals(userId)) {
-            throw new UnAuthorizedException("삭제 권한이 없습니다.");
+        if (!space.getUser().getUuid().equals(userId)) {
+            log.warn("삭제 권한 없음 - 작성자: {}, 요청자: {}", space.getUser().getUuid(), userId);
+            throw new NotMatchedHostException("본인의 공간만 삭제할 수 있습니다.");
         }
 
         try {
@@ -97,17 +98,18 @@ public class SpaceService {
 
         } catch (DataIntegrityViolationException e) {
             log.error("공간 삭제 실패 (참조 데이터 존재) - ID: {}", id);
-            throw new RuntimeException("현재 예약 내역이 있어 삭제할 수 없습니다.");
+            throw new SpaceDeletfFailException("현재 예약 내역이 있어 삭제할 수 없습니다.");
         }
     }
 
     @Transactional
-    public SpaceResponse updateSpace(Long id, SpaceUpdateRequest request, Long userId) {
+    public SpaceResponse updateSpace(Long id, SpaceUpdateRequest request, UUID userId) {
         Space space = spaceRepository.findById(id)
                 .orElseThrow(() -> new NotFoundSpaceException("해당 공간이 없습니다. id=" + id));
 
-        if (!space.getUser().getId().equals(userId)) {
-            throw new UnAuthorizedException("수정 권한이 없습니다.");
+        if (!space.getUser().getUuid().equals(userId)) {
+            log.warn("수정 권한 없음 - 작성자: {}, 요청자: {}", space.getUser().getUuid(), userId);
+            throw new NotMatchedHostException("본인의 공간만 수정할 수 있습니다.");
         }
 
         space.update(request);
