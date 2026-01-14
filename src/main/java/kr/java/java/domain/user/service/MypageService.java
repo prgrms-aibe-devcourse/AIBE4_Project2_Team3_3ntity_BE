@@ -2,6 +2,7 @@ package kr.java.java.domain.user.service;
 
 
 import kr.java.java.domain.auth.service.RefreshTokenService;
+import kr.java.java.domain.favorite.repository.FavoriteRepository;
 import kr.java.java.domain.image.service.ImageService;
 import kr.java.java.domain.matching.entity.Matching;
 import kr.java.java.domain.matching.enums.MatchStatus;
@@ -39,6 +40,7 @@ public class MypageService {
     private final PortfolioRepository portfolioRepository;
     private final ReviewRepository reviewRepository;
     private final MatchingRepository matchingRepository;
+    private final FavoriteRepository favoriteRepository;
     private final RefreshTokenService refreshTokenService;
     private final ImageService imageService;
     private final NotificationRepository notificationRepository;
@@ -48,14 +50,13 @@ public class MypageService {
         User user = userRepository.findByUuid(uuid)
                 .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
 
-        Long userId = user.getId();
 
         MypageResponse.StatsInfo stats = MypageResponse.StatsInfo.builder()
                 .spacesCount(spaceRepository.countSpacesByUserId(user.getUuid()))
                 .portfoliosCount(portfolioRepository.countPortfoliosByUserId(user.getUuid()))
-                .reviewsCount(reviewRepository.countReviewsByUserId(uuid))
-                .likesCount(0L) //TODO
-                .matchingsCount(matchingRepository.countByUserIdAndStatus(userId, null))
+                .reviewsCount(reviewRepository.countReviewsByUserId(user.getUuid()))
+                .likesCount(favoriteRepository.countFavoritesByUserId(user.getUuid()))
+                .matchingsCount(matchingRepository.countByUserIdAndStatus(uuid, null))
                 .build();
 
         return MypageResponse.of(user, stats);
@@ -130,8 +131,8 @@ public class MypageService {
                 deletedReviews, deletedPortfolios, deletedSpaces);
 
         // 알림 수동 삭제
-//        notificationRepository.deleteByReceiverId(userId);
-//        log.info("회원 탈퇴 - 알림 삭제 완료: uuid {}, userId {}", uuid, userId);
+        notificationRepository.deleteByReceiverId(uuid);
+        log.info("회원 탈퇴 - 알림 삭제 완료: uuid {}", uuid);
 
         refreshTokenService.deleteRefreshToken(uuid);
 

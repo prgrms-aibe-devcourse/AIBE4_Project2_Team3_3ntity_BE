@@ -30,5 +30,5 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     // 사용자별 알림 삭제
     @Modifying(clearAutomatically = true)
     @Query("DELETE FROM Notification n WHERE n.receiverId = :receiverId")
-    void deleteByReceiverId(@Param("receiverId") Long receiverId);
+    void deleteByReceiverId(@Param("receiverId") UUID receiverId);
 }
