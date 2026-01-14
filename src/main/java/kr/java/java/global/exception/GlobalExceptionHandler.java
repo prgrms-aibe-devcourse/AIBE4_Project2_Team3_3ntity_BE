@@ -5,6 +5,10 @@ import kr.java.java.domain.image.exception.ImageException;
 import kr.java.java.domain.matching.exception.MatchingException;
 import kr.java.java.domain.notification.exception.NotificationException;
 import kr.java.java.domain.notification.exception.UserNotFoundException;
+import kr.java.java.domain.portfolio.exception.DuplicatePortfolioException;
+import kr.java.java.domain.portfolio.exception.NotFoundPortfolioException;
+import kr.java.java.domain.portfolio.exception.PortfolioDeleteFailException;
+import kr.java.java.domain.space.exception.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -121,5 +125,53 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(org.springframework.http.HttpStatus.BAD_REQUEST)
                 .body(body);
+    }
+
+    @ExceptionHandler(DuplicateSpaceException.class)
+    public ResponseEntity<String> handleDuplicateSpaceException(DuplicateSpaceException e) {
+        log.error("중복 공간 오류 발생 : {} ", e.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+    }
+
+    @ExceptionHandler(NotFoundSpaceException.class)
+    public ResponseEntity<String> handleNotFoundSpaceException(NotFoundSpaceException e) {
+        log.error("공간 없음 오류 발생 : {} ", e.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+    }
+
+    @ExceptionHandler(NotMatchedHostException.class)
+    public ResponseEntity<String> handleNotMatchedHostException(NotMatchedHostException e) {
+        log.error("호스트 매칭 오류 발생 : {} ", e.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+    }
+
+    @ExceptionHandler(SpaceDeleteFailException.class)
+    public ResponseEntity<String> handleSpaceDeleteFailException(SpaceDeleteFailException e) {
+        log.error("공간 삭제 실패 오류 발생 : {} ", e.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+    }
+
+    @ExceptionHandler(UnAuthorizedException.class)
+    public ResponseEntity<String> handleUnAuthorizedException(UnAuthorizedException e){
+        log.error("삭제나 수정 권한 없음 예외 발생 : {}",e.getMessage());
+        return  ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+    }
+
+    @ExceptionHandler(DuplicatePortfolioException.class)
+    public ResponseEntity<String> handleDuplicatePortfolioException(DuplicatePortfolioException e) {
+        log.error("중복 포트폴리오 에외 발생 : {} ", e.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+    }
+
+    @ExceptionHandler(NotFoundPortfolioException.class)
+    public  ResponseEntity<String> handleNotFoundPortfolioException(NotFoundPortfolioException e) {
+        log.error("포트폴리오 없음 예외 발생 : {} ", e.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+    }
+
+    @ExceptionHandler(PortfolioDeleteFailException.class)
+    public ResponseEntity<String> handlePortfolioDeleteFailException(PortfolioDeleteFailException e) {
+        log.error("포트폴리오 삭제 실패 예외 발생 : {} ", e.getMessage());
+        return  ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
     }
 }

@@ -111,7 +111,7 @@ public class SpaceService {
 
         } catch (DataIntegrityViolationException e) {
             log.error("공간 삭제 실패 (참조 데이터 존재) - ID: {}", id);
-            throw new SpaceDeletfFailException("현재 예약 내역이 있어 삭제할 수 없습니다.");
+            throw new SpaceDeleteFailException("현재 예약 내역이 있어 삭제할 수 없습니다.");
         }
     }
 
