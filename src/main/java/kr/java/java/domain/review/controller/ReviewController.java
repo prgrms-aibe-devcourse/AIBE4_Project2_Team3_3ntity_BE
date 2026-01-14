@@ -46,6 +46,14 @@ public class ReviewController {
         return ResponseEntity.ok(reviewId);
     }
 
+    // 리뷰 단건 조회
+    @GetMapping("/{reviewId}")
+    public ResponseEntity<ReviewResponse> getReview(@PathVariable Long reviewId) {
+        log.info("리뷰 단건 조회 요청 - reviewId: {}", reviewId);
+        ReviewResponse response = reviewService.getReview(reviewId);
+        return ResponseEntity.ok(response);
+    }
+
     // 공간별 리뷰 조회 API
     @GetMapping("/space/{spaceId}")
     public ResponseEntity<List<ReviewResponse>> getReviewsBySpace(@PathVariable Long spaceId) {

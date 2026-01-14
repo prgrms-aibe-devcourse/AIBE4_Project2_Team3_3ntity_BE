@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 
 public record CommentResponse(
         Long commentId,
+        Long spaceId,
+        Long portfolioId,
         String content,
         String writerNickname,
         boolean isSecret,
@@ -18,10 +20,14 @@ public record CommentResponse(
 
         // 2. 공간(또는 포트폴리오) 주인인지 확인
         boolean isOwner = false;
+        Long spaceId = null;
+        Long portfolioId = null;
         if (comment.getSpace() != null) {
             isOwner = comment.getSpace().getUser().getId().equals(viewerId);
+            spaceId = comment.getSpace().getId();
         } else if (comment.getPortfolio() != null) {
             isOwner = comment.getPortfolio().getUser().getId().equals(viewerId);
+            portfolioId = comment.getPortfolio().getId();
         }
 
         // 3. 작성자도 아니고 주인도 아니면 내용을 가림
@@ -32,6 +38,8 @@ public record CommentResponse(
 
         return new CommentResponse(
                 comment.getId(),
+                spaceId,
+                portfolioId,
                 contentToSend,
                 comment.getUser().getNickname(),
                 comment.isSecret(),

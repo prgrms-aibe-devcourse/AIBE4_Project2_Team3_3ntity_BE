@@ -3,12 +3,10 @@ package kr.java.java.domain.review.service;
 import kr.java.java.domain.image.dto.ImageResponse;
 import kr.java.java.domain.image.enums.TargetType;
 import kr.java.java.domain.image.service.ImageService;
+import kr.java.java.domain.matching.enums.MatchStatus;
 import kr.java.java.domain.matching.exception.MatchingErrorCode;
 import kr.java.java.domain.matching.exception.MatchingException;
-import kr.java.java.domain.review.dto.ReviewCreateRequest;
-import kr.java.java.domain.review.dto.ReviewResponse;
-import kr.java.java.domain.review.dto.ReviewTargetResponse;
-import kr.java.java.domain.review.dto.ReviewUpdateRequest;
+import kr.java.java.domain.review.dto.*;
 import kr.java.java.domain.review.entity.Review;
 import kr.java.java.domain.review.exception.*;
 import kr.java.java.domain.review.repository.ReviewRepository;
@@ -61,6 +59,13 @@ public class ReviewService {
                     return new MatchingNotFoundException("존재하지 않는 매칭 정보입니다.");
                 });
 
+        // 매칭 상태 검증
+        if (matching.getStatus() != MatchStatus.COMPLETED) {
+            log.warn("완료된 매칭이 아닙니다. matchingId: {}, status: {}",
+                    request.matchingId(), matching.getStatus());
+            throw new ReviewAccessDeniedException("완료된 매칭에 대해서만 리뷰를 작성할 수 있습니다.");
+        }
+
         // 3. 중복 리뷰 검증
         if (reviewRepository.existsByMatchingIdAndUserUuid(request.matchingId(), user.getUuid())) {
             log.warn("이미 작성된 리뷰가 존재합니다. matchingId: {}, uuid: {}", request.matchingId(), userUuid);
@@ -87,6 +92,18 @@ public class ReviewService {
         log.info("리뷰 저장 성공 - reviewId: {}", savedReview.getId());
 
         return savedReview.getId();
+    }
+
+    // 리뷰 단건 조회
+    public ReviewResponse getReview(Long reviewId) {
+        log.info("리뷰 단건 조회 요청 - reviewId: {}", reviewId);
+
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new ReviewNotFoundException("존재하지 않는 리뷰입니다."));
+
+        List<ImageResponse> images = imageService.getImages(TargetType.REVIEW, review.getId());
+
+        return ReviewResponse.of(review, images);
     }
 
     // 공간별 리뷰 조회
@@ -234,5 +251,12 @@ public class ReviewService {
                 matching.getEndDate().format(formatter);
 
         return new ReviewTargetResponse(spaceTitle, period);
+    }
+
+    public ReviewSummary getReviewSummaryBySpaceId(Long spaceId) {
+        Double averageRating = reviewRepository.getAverageRatingBySpaceId(spaceId);
+        long reviewCount = reviewRepository.countBySpaceId(spaceId);
+
+        return new ReviewSummary(averageRating, (int) reviewCount);
     }
 }
