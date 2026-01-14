@@ -4,6 +4,7 @@ import kr.java.java.domain.auth.exception.AuthErrorCode;
 import kr.java.java.domain.auth.exception.AuthException;
 import kr.java.java.domain.image.dto.ImageResponse;
 import kr.java.java.domain.image.enums.TargetType;
+import kr.java.java.domain.image.service.SpaceImageService;
 import kr.java.java.domain.review.dto.ReviewSummary;
 import kr.java.java.domain.review.service.ReviewService;
 import kr.java.java.domain.space.dto.*;
@@ -31,7 +32,7 @@ import java.util.UUID;
 public class SpaceService {
     private final SpaceRepository spaceRepository;
     private final UserRepository userRepository;
-    private final ImageService imageService;
+    private final SpaceImageService spaceImageService;
     private final ReviewService reviewService;
 
     @Transactional
@@ -48,12 +49,7 @@ public class SpaceService {
         spaceRepository.save(space);
 
         if (images != null && !images.isEmpty()) {
-            try {
-                imageService.uploadImage(images, TargetType.SPACE, space.getId());
-            } catch (IOException e) {
-                log.error("이미지 업로드 실패", e);
-                throw new ImageNotUploadException("이미지 업로드 중 오류가 발생했습니다.");
-            }
+            spaceImageService.uploadImages(space.getId(), images);
         }
 
         // 유저 권한 업그레이드
@@ -67,7 +63,7 @@ public class SpaceService {
         Space space = spaceRepository.findById(id)
                 .orElseThrow(() -> new NotFoundSpaceException("해당 공간이 없습니다. id=" + id));
 
-        List<ImageResponse> images = imageService.getImages(TargetType.SPACE, id);
+        List<ImageResponse> images = spaceImageService.getImages(id);
 
         return SpaceResponse.of(space, images);
     }
@@ -77,7 +73,7 @@ public class SpaceService {
         List<Space> spaces = spaceRepository.findAllByOrderByIdDesc();
 
         List<Long> spaceIds = spaces.stream().map(Space::getId).toList();
-        Map<Long, String> thumbnailMap = imageService.getThumnailsBySpaceIds(spaceIds);
+        Map<Long, String> thumbnailMap = spaceImageService.getThumbnailsBySpaceIds(spaceIds);
 
         return spaces.stream()
                 .map(space -> new SpaceListResponse(space, thumbnailMap.get(space.getId())))
@@ -91,7 +87,7 @@ public class SpaceService {
         List<Space> spaces = spaceRepository.findByUserIdOrderByIdDesc(userId);
 
         List<Long> spaceIds = spaces.stream().map(Space::getId).toList();
-        Map<Long, String> thumbnailMap = imageService.getThumnailsBySpaceIds(spaceIds);
+        Map<Long, String> thumbnailMap = spaceImageService.getThumbnailsBySpaceIds(spaceIds);
 
         return spaces.stream()
                 .map(space -> new SpaceListResponse(space, thumbnailMap.get(space.getId())))
@@ -129,21 +125,15 @@ public class SpaceService {
 
         space.update(request);
 
-        try {
-            List<Long> remainIds = request.remainImageIds() != null ? request.remainImageIds() : new ArrayList<>();
+        List<Long> remainIds = request.remainImageIds() != null ? request.remainImageIds() : new ArrayList<>();
 
-            imageService.updateImages(
-                    TargetType.SPACE,
-                    id,
-                    remainIds,
-                    newFiles
-            );
-        } catch (IOException e) {
-            log.error("이미지 수정 중 오류 발생", e);
-            throw new ImageNotUploadException("이미지 수정 실패");
-        }
+        spaceImageService.updateImages(
+                id,
+                remainIds,
+                newFiles
+        );
 
-        List<ImageResponse> currentImages = imageService.getImages(TargetType.SPACE, id);
+        List<ImageResponse> currentImages = spaceImageService.getImages(id);
         return SpaceResponse.of(space, currentImages);
     }
 
@@ -153,7 +143,7 @@ public class SpaceService {
         List<Space> spaces = spaceRepository.search(condition);
 
         List<Long> spaceIds = spaces.stream().map(Space::getId).toList();
-        Map<Long, String> thumbnailMap = imageService.getThumnailsBySpaceIds(spaceIds);
+        Map<Long, String> thumbnailMap = spaceImageService.getThumbnailsBySpaceIds(spaceIds);
 
         return spaces.stream()
                 .map(space -> new SpaceListResponse(space, thumbnailMap.get(space.getId())))
@@ -164,7 +154,7 @@ public class SpaceService {
         Space space = spaceRepository.findById(id)
                 .orElseThrow(() -> new NotFoundSpaceException("해당 공간이 없습니다. id=" + id));
 
-        String thumnailImageUrl = imageService.getSpaceThumnail(id);
+        String thumnailImageUrl = spaceImageService.getSpaceThumbnail(id);
 
         ReviewSummary reviewSummary = reviewService.getReviewSummaryBySpaceId(id);
 
