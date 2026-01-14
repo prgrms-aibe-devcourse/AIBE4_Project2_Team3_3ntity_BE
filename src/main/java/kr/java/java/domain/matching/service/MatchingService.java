@@ -1,5 +1,6 @@
 package kr.java.java.domain.matching.service;
 
+import kr.java.java.domain.image.service.SpaceImageService;
 import kr.java.java.domain.matching.dto.CreateMatchingCommand;
 import kr.java.java.domain.matching.dto.CreateMatchingToSpaceRequest;
 import kr.java.java.domain.matching.dto.CreateMatchingToUserRequest;
@@ -34,7 +35,7 @@ public class MatchingService {
     private final SpaceRepository spaceRepository;
     private final MatchingRepository matchingRepository;
     private final ApplicationEventPublisher applicationEventPublisher;
-    private final ImageService imageService;
+    private final SpaceImageService  spaceImageService;
 
     //TODO 해당 서비스 페이지에 있는 User 에러처리는 추후 User 도메인의 exception에 생기면 변경
 
@@ -189,7 +190,7 @@ public class MatchingService {
                 .distinct()
                 .toList();
 
-        Map<Long, String> thumbnailMap = imageService.getThumnailsBySpaceIds(spaceIds);
+        Map<Long, String> thumbnailMap = spaceImageService.getThumbnailsBySpaceIds(spaceIds);
 
         return matchings.stream()
                 .map(matching -> {
