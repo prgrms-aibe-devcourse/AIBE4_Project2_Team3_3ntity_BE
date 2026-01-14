@@ -118,7 +118,7 @@ public class MypageService {
                 .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
 
         // 진행 중인 매칭이 있는지 확인
-        List<Matching> ongoingMatchings = matchingRepository.findAllByUserIdAndStatus(uuid, MatchStatus.ONGOING);
+        List<Matching> ongoingMatchings = matchingRepository.findAllByUserUuidAndStatus(uuid, MatchStatus.ONGOING);
         if (!ongoingMatchings.isEmpty()) {
             throw new UserException(UserErrorCode.CANNOT_DELETE_USER_WITH_ACTIVE_MATCHING);
         }
