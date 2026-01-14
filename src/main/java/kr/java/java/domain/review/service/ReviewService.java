@@ -3,6 +3,7 @@ package kr.java.java.domain.review.service;
 import kr.java.java.domain.image.dto.ImageResponse;
 import kr.java.java.domain.image.enums.TargetType;
 import kr.java.java.domain.image.service.ImageService;
+import kr.java.java.domain.matching.enums.MatchStatus;
 import kr.java.java.domain.matching.exception.MatchingErrorCode;
 import kr.java.java.domain.matching.exception.MatchingException;
 import kr.java.java.domain.review.dto.*;
@@ -57,6 +58,13 @@ public class ReviewService {
                     log.warn("존재하지 않는 매칭입니다. matchingId: {}", request.matchingId());
                     return new MatchingNotFoundException("존재하지 않는 매칭 정보입니다.");
                 });
+
+        // 매칭 상태 검증
+        if (matching.getStatus() != MatchStatus.COMPLETED) {
+            log.warn("완료된 매칭이 아닙니다. matchingId: {}, status: {}",
+                    request.matchingId(), matching.getStatus());
+            throw new ReviewAccessDeniedException("완료된 매칭에 대해서만 리뷰를 작성할 수 있습니다.");
+        }
 
         // 3. 중복 리뷰 검증
         if (reviewRepository.existsByMatchingIdAndUserUuid(request.matchingId(), user.getUuid())) {
