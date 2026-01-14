@@ -15,9 +15,10 @@ public record SpaceListResponse(
         BigDecimal longitude,
         Integer pricePerMonth,
         String status,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        String thumbnailUrl
 ) {
-    public SpaceListResponse(Space space) {
+    public SpaceListResponse(Space space, String thumbnailUrl) {
         this(
                 space.getId(),
                 space.getTitle(),
@@ -27,7 +28,8 @@ public record SpaceListResponse(
                 space.getLongitude(),
                 space.getPricePerMonth(),
                 space.getStatus().name(),
-                space.getCreatedAt()
+                space.getCreatedAt(),
+                thumbnailUrl
         );
     }
 }

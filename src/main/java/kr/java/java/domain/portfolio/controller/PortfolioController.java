@@ -63,18 +63,22 @@ public class PortfolioController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<PortfolioResponse> updatePortfolio(@PathVariable Long id, @RequestBody PortfolioUpdateRequest request,
+    public ResponseEntity<PortfolioResponse> updatePortfolio(@PathVariable Long id,
+                                                             @RequestPart(value = "request") PortfolioUpdateRequest request,
+                                                             @RequestPart(value = "files", required = false) List<MultipartFile> files,
                                                              @AuthenticationPrincipal CustomUserDetails userDetails){
         log.info("포트폴리오 전체 수정 시도 - ID: {}", id);
-        PortfolioResponse response = portfolioService.updatePortfolio(id, request, userDetails.getUuid());
+        PortfolioResponse response = portfolioService.updatePortfolio(id, request, files ,userDetails.getUuid());
         return ResponseEntity.ok(response);
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<PortfolioResponse> updatePortfolioPartial(@PathVariable Long id, @RequestBody PortfolioUpdateRequest request,
+    public ResponseEntity<PortfolioResponse> updatePortfolioPartial(@PathVariable Long id,
+                                                                    @RequestPart(value = "request") PortfolioUpdateRequest request,
+                                                                    @RequestPart(value = "files", required = false) List<MultipartFile> files,
                                                                     @AuthenticationPrincipal CustomUserDetails userDetails) {
         log.info("포트폴리오 부분 수정 시도 - ID: {}", id);
-        PortfolioResponse response = portfolioService.updatePortfolio(id, request, userDetails.getUuid());
+        PortfolioResponse response = portfolioService.updatePortfolio(id, request, files ,userDetails.getUuid());
         return ResponseEntity.ok(response);
     }
 

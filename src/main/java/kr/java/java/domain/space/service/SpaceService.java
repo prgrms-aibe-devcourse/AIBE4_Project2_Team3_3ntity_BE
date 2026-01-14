@@ -2,6 +2,7 @@ package kr.java.java.domain.space.service;
 
 import kr.java.java.domain.auth.exception.AuthErrorCode;
 import kr.java.java.domain.auth.exception.AuthException;
+import kr.java.java.domain.image.dto.ImageResponse;
 import kr.java.java.domain.image.enums.TargetType;
 import kr.java.java.domain.review.dto.ReviewSummary;
 import kr.java.java.domain.review.service.ReviewService;
@@ -19,7 +20,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -63,21 +66,35 @@ public class SpaceService {
     public SpaceResponse getSpace(Long id) {
         Space space = spaceRepository.findById(id)
                 .orElseThrow(() -> new NotFoundSpaceException("해당 공간이 없습니다. id=" + id));
-        return new SpaceResponse(space);
+
+        List<ImageResponse> images = imageService.getImages(TargetType.SPACE, id);
+
+        return SpaceResponse.of(space, images);
     }
 
     @Transactional(readOnly = true)
     public List<SpaceListResponse> getAllSpaces(){
-        return spaceRepository.findAllByOrderByIdDesc().stream()
-                .map(SpaceListResponse::new)
+        List<Space> spaces = spaceRepository.findAllByOrderByIdDesc();
+
+        List<Long> spaceIds = spaces.stream().map(Space::getId).toList();
+        Map<Long, String> thumbnailMap = imageService.getThumnailsBySpaceIds(spaceIds);
+
+        return spaces.stream()
+                .map(space -> new SpaceListResponse(space, thumbnailMap.get(space.getId())))
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public List<SpaceListResponse> getSpacesByUserId(UUID userId) {
         userRepository.findByUuid(userId).orElseThrow(() -> new AuthException(AuthErrorCode.OAUTH2_USER_NOT_FOUND));
-        return spaceRepository.findByUserIdOrderByIdDesc(userId).stream()
-                .map(SpaceListResponse::new)
+
+        List<Space> spaces = spaceRepository.findByUserIdOrderByIdDesc(userId);
+
+        List<Long> spaceIds = spaces.stream().map(Space::getId).toList();
+        Map<Long, String> thumbnailMap = imageService.getThumnailsBySpaceIds(spaceIds);
+
+        return spaces.stream()
+                .map(space -> new SpaceListResponse(space, thumbnailMap.get(space.getId())))
                 .toList();
     }
 
@@ -102,25 +119,44 @@ public class SpaceService {
     }
 
     @Transactional
-    public SpaceResponse updateSpace(Long id, SpaceUpdateRequest request, UUID userId) {
+    public SpaceResponse updateSpace(Long id, SpaceUpdateRequest request, List<MultipartFile> newFiles, UUID userId) {
         Space space = spaceRepository.findById(id)
                 .orElseThrow(() -> new NotFoundSpaceException("해당 공간이 없습니다. id=" + id));
 
         if (!space.getUser().getUuid().equals(userId)) {
-            log.warn("수정 권한 없음 - 작성자: {}, 요청자: {}", space.getUser().getUuid(), userId);
             throw new NotMatchedHostException("본인의 공간만 수정할 수 있습니다.");
         }
 
         space.update(request);
-        return new SpaceResponse(space);
+
+        try {
+            List<Long> remainIds = request.remainImageIds() != null ? request.remainImageIds() : new ArrayList<>();
+
+            imageService.updateImages(
+                    TargetType.SPACE,
+                    id,
+                    remainIds,
+                    newFiles
+            );
+        } catch (IOException e) {
+            log.error("이미지 수정 중 오류 발생", e);
+            throw new ImageNotUploadException("이미지 수정 실패");
+        }
+
+        List<ImageResponse> currentImages = imageService.getImages(TargetType.SPACE, id);
+        return SpaceResponse.of(space, currentImages);
     }
 
     // 검색 및 필터링
     @Transactional(readOnly = true)
     public List<SpaceListResponse> searchSpaces(SpaceSearchCondition condition) {
-        // QueryDSL로 조회된 Space 엔티티 리스트를 DTO 리스트로 변환
-        return spaceRepository.search(condition).stream()
-                .map(SpaceListResponse::new)
+        List<Space> spaces = spaceRepository.search(condition);
+
+        List<Long> spaceIds = spaces.stream().map(Space::getId).toList();
+        Map<Long, String> thumbnailMap = imageService.getThumnailsBySpaceIds(spaceIds);
+
+        return spaces.stream()
+                .map(space -> new SpaceListResponse(space, thumbnailMap.get(space.getId())))
                 .toList();
     }
 
