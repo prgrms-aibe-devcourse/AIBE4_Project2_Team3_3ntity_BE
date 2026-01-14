@@ -1,20 +1,21 @@
 package kr.java.java.domain.matching.service;
 
 import kr.java.java.domain.image.service.SpaceImageService;
-import kr.java.java.domain.matching.dto.CreateMatchingCommand;
-import kr.java.java.domain.matching.dto.CreateMatchingToSpaceRequest;
-import kr.java.java.domain.matching.dto.CreateMatchingToUserRequest;
-import kr.java.java.domain.matching.dto.MatchingResponse;
+import kr.java.java.domain.matching.dto.*;
 import kr.java.java.domain.matching.entity.Matching;
 import kr.java.java.domain.matching.enums.MatchStatus;
 import kr.java.java.domain.matching.event.*;
 import kr.java.java.domain.matching.exception.MatchingErrorCode;
 import kr.java.java.domain.matching.exception.MatchingException;
 import kr.java.java.domain.matching.repository.MatchingRepository;
+import kr.java.java.domain.portfolio.entity.Portfolio;
+import kr.java.java.domain.portfolio.repository.PortfolioRepository;
 import kr.java.java.domain.space.entity.Space;
 import kr.java.java.domain.space.exception.NotFoundSpaceException;
 import kr.java.java.domain.space.exception.NotFoundUserException;
 import kr.java.java.domain.space.repository.SpaceRepository;
+import kr.java.java.domain.space.service.SpaceService;
+import kr.java.java.domain.user.dto.UserFormResponse;
 import kr.java.java.domain.user.entity.User;
 import kr.java.java.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -34,8 +35,10 @@ public class MatchingService {
     private final UserRepository userRepository;
     private final SpaceRepository spaceRepository;
     private final MatchingRepository matchingRepository;
+    private final PortfolioRepository portfolioRepository;
     private final ApplicationEventPublisher applicationEventPublisher;
     private final SpaceImageService  spaceImageService;
+    private final SpaceService spaceService;
 
     //TODO 해당 서비스 페이지에 있는 User 에러처리는 추후 User 도메인의 exception에 생기면 변경
 
@@ -62,12 +65,15 @@ public class MatchingService {
 
     @Transactional
     public void createSpaceToUser(
-            UUID targetUserUuid,
+            Long targetUserId,
             CreateMatchingToUserRequest request,
             UUID userUuid
     ) {
         User sender = userRepository.findByUuid(userUuid)
                 .orElseThrow(() -> new NotFoundUserException("로그인 유저 없음"));
+        User receiver = userRepository.findById(targetUserId)
+                .orElseThrow(() -> new NotFoundUserException("상대방 유저를 찾을 수 없습니다."));
+        UUID targetUserUuid = receiver.getUuid();
         Space space = spaceRepository.findById(request.spaceId())
                 .orElseThrow(() -> new NotFoundSpaceException("해당 공간이 없습니다."));
 
@@ -93,9 +99,14 @@ public class MatchingService {
         log.info("[매칭 service] 매칭 생성 시작");
         User sender = userRepository.findByUuid(command.senderUuid())
                 .orElseThrow(() -> new NotFoundUserException("로그인 유저 없음"));
+        log.info("[매칭 service] 발신자 확인: ID={}, Nickname={}, UUID={}",
+                sender.getId(), sender.getNickname(), sender.getUuid());
 
+        // 2. 수신자(Receiver) 조회 및 로그
         User receiver = userRepository.findByUuid(command.receiverUuid())
-                .orElseThrow(() -> new NotFoundUserException("로그인 유저 없음"));
+                .orElseThrow(() -> new NotFoundUserException("수신 유저 없음"));
+        log.info("[매칭 service] 수신자 확인: ID={}, Nickname={}, UUID={}",
+                receiver.getId(), receiver.getNickname(), receiver.getUuid());
 
         Space space = spaceRepository.findById(command.spaceId())
                 .orElseThrow(() -> new NotFoundSpaceException("해당 공간이 없습니다. id=" + command.spaceId()));
@@ -363,5 +374,19 @@ public class MatchingService {
         }
 
         return rejectedMatchingEvents;
+    }
+
+    public UserMatchingFormResponse getHostToUserMatchingForm(Long portfolioId, UUID loginUserId){
+        Portfolio portfolio = portfolioRepository.findById(portfolioId).orElse(null);
+        User targetUser = portfolio.getUser();
+        UserFormResponse targetUserResponse = UserFormResponse.from(targetUser);
+        List<MySpaceSummary> mySpaces = spaceService.getMySpacesSummary(loginUserId);
+
+        return UserMatchingFormResponse.builder()
+                .userId(targetUserResponse.userId())
+                .nickname(targetUserResponse.nickname())
+                .profileImageUrl(targetUserResponse.profileImageUrl())
+                .mySpaces(mySpaces)
+                .build();
     }
 }
