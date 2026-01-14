@@ -65,20 +65,20 @@ public class PortfolioImageService {
                     portfolioImageRepository.delete(img);
                 });
 
-        // 순서 변경 및 새 파일 추가
-        int newFileIndex = 0;
-        int size = (remainImageIds != null) ? remainImageIds.size() : 0;
+        int currentSortOrder = 1;
 
-        for (int i = 0; i < size; i++) {
-            Long imageId = remainImageIds.get(i);
-            int targetSortOrder = i + 1;
+        for (Long imageId : remainImageIds) {
+            PortfolioImage img = portfolioImageRepository.findById(imageId)
+                    .orElse(null);
+            if (img != null) {
+                img.updateSortOrder(currentSortOrder++);
+            }
+        }
 
-            if (imageId != null) {
-                portfolioImageRepository.findById(imageId)
-                        .ifPresent(img -> img.updateSortOrder(targetSortOrder));
-            } else {
-                if (newFiles != null && newFileIndex < newFiles.size()) {
-                    uploadSingleImage(portfolioId, newFiles.get(newFileIndex++), targetSortOrder);
+        if (newFiles != null && !newFiles.isEmpty()) {
+            for (MultipartFile file : newFiles) {
+                if (!file.isEmpty()) {
+                    uploadSingleImage(portfolioId, file, currentSortOrder++);
                 }
             }
         }

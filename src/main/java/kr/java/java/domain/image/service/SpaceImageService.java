@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.awt.*;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -87,20 +88,20 @@ public class SpaceImageService {
                     spaceImageRepository.delete(img);
                 });
 
-        // 순서 변경 및 새 파일 추가
-        int newFileIndex = 0;
-        int size = (remainImageIds != null) ? remainImageIds.size() : 0;
+        int currentSortOrder = 1;
 
-        for (int i = 0; i < size; i++) {
-            Long imageId = remainImageIds.get(i);
-            int targetSortOrder = i + 1;
+        for (Long imageId : remainImageIds) {
+            SpaceImage img = spaceImageRepository.findById(imageId)
+                    .orElse(null);
+            if (img != null) {
+                img.updateSortOrder(currentSortOrder++);
+            }
+        }
 
-            if (imageId != null) {
-                spaceImageRepository.findById(imageId)
-                        .ifPresent(img -> img.updateSortOrder(targetSortOrder));
-            } else {
-                if (newFiles != null && newFileIndex < newFiles.size()) {
-                    uploadSingleImage(spaceId, newFiles.get(newFileIndex++), targetSortOrder);
+        if (newFiles != null && !newFiles.isEmpty()) {
+            for (MultipartFile file : newFiles) {
+                if (!file.isEmpty()) {
+                    uploadSingleImage(spaceId, file, currentSortOrder++);
                 }
             }
         }

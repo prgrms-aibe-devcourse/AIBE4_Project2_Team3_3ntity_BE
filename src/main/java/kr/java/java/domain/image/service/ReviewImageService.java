@@ -76,18 +76,21 @@ public class ReviewImageService {
                     reviewImageRepository.delete(img);
                 });
 
-        int newFileIdx = 0;
-        int size = (remainImageIds != null) ? remainImageIds.size() : 0;
+        int currentSortOrder = 1;
 
-        for (int i = 0; i < size; i++) {
-            Long imageId = remainImageIds.get(i);
-            int targetOrder = i + 1;
+        for (Long imageId : remainImageIds) {
+            ReviewImage img = reviewImageRepository.findById(imageId)
+                    .orElse(null);
+            if (img != null) {
+                img.updateSortOrder(currentSortOrder++);
+            }
+        }
 
-            if (imageId != null) {
-                reviewImageRepository.findById(imageId)
-                        .ifPresent(img -> img.updateSortOrder(targetOrder));
-            } else if (newFiles != null && newFileIdx < newFiles.size()) {
-                uploadSingleImage(reviewId, newFiles.get(newFileIdx++), targetOrder);
+        if (newFiles != null && !newFiles.isEmpty()) {
+            for (MultipartFile file : newFiles) {
+                if (!file.isEmpty()) {
+                    uploadSingleImage(reviewId, file, currentSortOrder++);
+                }
             }
         }
     }
