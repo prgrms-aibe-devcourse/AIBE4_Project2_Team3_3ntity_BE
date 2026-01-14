@@ -3,7 +3,6 @@ package kr.java.java.domain.space.service;
 import kr.java.java.domain.auth.exception.AuthErrorCode;
 import kr.java.java.domain.auth.exception.AuthException;
 import kr.java.java.domain.image.dto.ImageResponse;
-import kr.java.java.domain.image.enums.TargetType;
 import kr.java.java.domain.image.service.SpaceImageService;
 import kr.java.java.domain.review.dto.ReviewSummary;
 import kr.java.java.domain.review.service.ReviewService;
@@ -22,7 +21,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -187,7 +185,7 @@ public class SpaceService {
         List<Long> spaceIds = recommendations.stream()
                 .map(r -> r.getSpace().getId())
                 .toList();
-        Map<Long, String> thumbnailMap = imageService.getThumnailsBySpaceIds(spaceIds);
+        Map<Long, String> thumbnailMap = spaceImageService.getThumbnailsBySpaceIds(spaceIds);
 
         // 3. 응답 DTO로 변환
         return recommendations.stream()
