@@ -101,6 +101,18 @@ public class CommentService {
         return savedComment.getId();
     }
 
+    public CommentResponse getComment(Long commentId, UUID viewerUuid) {
+        log.info("문의 단건 조회 요청 - commentId: {}, viewerUuid: {}", commentId, viewerUuid);
+
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new CommentNotFoundException("존재하지 않는 문의입니다."));
+
+        // 보는 사람(Viewer)의 ID 조회 (비밀글 권한 체크용)
+        Long viewerId = resolveViewerId(viewerUuid);
+
+        return CommentResponse.of(comment, viewerId);
+    }
+
     // 공간별 문의 조회
     public List<CommentResponse> getCommentsBySpace(Long spaceId, UUID viewerUuid) {
         log.info("공간별 문의 조회 요청 - spaceId: {}, viewerUuid: {}", spaceId, viewerUuid);
