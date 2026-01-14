@@ -3,7 +3,6 @@ package kr.java.java.domain.user.service;
 
 import kr.java.java.domain.auth.service.RefreshTokenService;
 import kr.java.java.domain.favorite.repository.FavoriteRepository;
-import kr.java.java.domain.image.service.ImageService;
 import kr.java.java.domain.matching.entity.Matching;
 import kr.java.java.domain.matching.enums.MatchStatus;
 import kr.java.java.domain.matching.repository.MatchingRepository;

@@ -3,7 +3,6 @@ package kr.java.java.domain.space.service;
 import kr.java.java.domain.auth.exception.AuthErrorCode;
 import kr.java.java.domain.auth.exception.AuthException;
 import kr.java.java.domain.image.enums.TargetType;
-import kr.java.java.domain.image.service.ImageService;
 import kr.java.java.domain.review.dto.ReviewSummary;
 import kr.java.java.domain.review.service.ReviewService;
 import kr.java.java.domain.space.dto.*;

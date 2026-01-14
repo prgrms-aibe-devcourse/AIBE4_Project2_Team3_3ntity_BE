@@ -2,9 +2,6 @@ package kr.java.java.domain.review.service;
 
 import kr.java.java.domain.image.dto.ImageResponse;
 import kr.java.java.domain.image.enums.TargetType;
-import kr.java.java.domain.image.service.ImageService;
-import kr.java.java.domain.matching.exception.MatchingErrorCode;
-import kr.java.java.domain.matching.exception.MatchingException;
 import kr.java.java.domain.review.dto.*;
 import kr.java.java.domain.review.entity.Review;
 import kr.java.java.domain.review.exception.*;

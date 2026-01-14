@@ -1,6 +1,5 @@
 package kr.java.java.domain.matching.service;
 
-import kr.java.java.domain.image.service.ImageService;
 import kr.java.java.domain.matching.dto.CreateMatchingCommand;
 import kr.java.java.domain.matching.dto.CreateMatchingToSpaceRequest;
 import kr.java.java.domain.matching.dto.CreateMatchingToUserRequest;
