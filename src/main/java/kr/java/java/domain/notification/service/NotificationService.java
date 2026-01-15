@@ -7,7 +7,6 @@ import kr.java.java.domain.notification.event.NotificationSavedEvent;
 import kr.java.java.domain.notification.exception.NotificationNotFoundException;
 import kr.java.java.domain.notification.repository.EmitterRepository;
 import kr.java.java.domain.notification.repository.NotificationRepository;
-import kr.java.java.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -24,30 +23,30 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final EmitterRepository emitterRepository;
-    private final UserRepository userRepository;
     private final ApplicationEventPublisher applicationEventPublisher;
 
-    private static final Long DEFAULT_TIMEOUT = 60L * 1000 * 60; // 60분
+    private static final Long DEFAULT_TIMEOUT = 10 * 60 * 1000L; // 10분
 
     public SseEmitter subscribe(String userUuidString, String lastEventId) {
         String emitterId = userUuidString + "_" + System.currentTimeMillis();
         SseEmitter emitter = emitterRepository.saveEmitter(emitterId, new SseEmitter(DEFAULT_TIMEOUT));
 
         emitter.onCompletion(() -> {
-            log.info("[알림 service] SSE onCompletion callback");
+            log.info("[알림 service] SSE onCompletion callback - emitterId: {}", emitterId);
             emitterRepository.deleteEmitterById(emitterId);
         });
         emitter.onTimeout(() -> {
-            log.info("[알림 service] SSE onTimeout callback");
+            log.info("[알림 service] SSE onTimeout callback - emitterId: {}", emitterId);
+            emitter.complete(); // 타임아웃 시 연결 종료
             emitterRepository.deleteEmitterById(emitterId);
         });
         emitter.onError((e) -> {
-            log.info("[알림 service] SSE onError callback");
+            log.info("[알림 service] SSE onError callback - emitterId: {}", emitterId);
+            emitter.complete();
             emitterRepository.deleteEmitterById(emitterId);
         });
 
@@ -70,7 +69,7 @@ public class NotificationService {
         return emitter;
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional
     public void createNotification(UUID receiverId, NotificationType notificationType, String content, String relatedUrl) {
 
         log.info("[알림 service] 알림 생성 - receiverId: {}, NotificationType: {}, content: {}, relatedUrl: {}", receiverId, notificationType, content, relatedUrl);
@@ -87,7 +86,7 @@ public class NotificationService {
         String receiverIdString = receiverId.toString();
 
         applicationEventPublisher.publishEvent(
-                new NotificationSavedEvent(receiverIdString, notification.getId())
+                new NotificationSavedEvent(receiverIdString, notification)
         );
     }
 
@@ -100,10 +99,12 @@ public class NotificationService {
             log.info("[알림 service] sendToClient - 이벤트 전송, eventName:" + eventName);
         } catch (IOException exception) {
             emitterRepository.deleteEmitterById(emitterId);
+            emitter.completeWithError(exception); // 에러 발생 시 명시적 종료
             log.error("[알림 service] sendToClient - SSE 연결 오류", exception);
         }
     }
 
+    @Transactional(readOnly = true)
     public List<NotificationResponse> getNotifications(UUID userId, Long lastId, Boolean lastIsRead, int limit) {
         boolean isRead = (lastIsRead != null) ? lastIsRead : false;
 
@@ -135,6 +136,7 @@ public class NotificationService {
         return result.stream().map(NotificationResponse::from).collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public long getUnreadNotificationCount(UUID userId) {
         log.info("[알림 service] 미확인 알림 개수 조회 - userId:{}", userId);
         return notificationRepository.countUnreadNotificationsByUserId(userId);
