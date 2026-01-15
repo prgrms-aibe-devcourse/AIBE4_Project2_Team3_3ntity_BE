@@ -13,6 +13,9 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
+import java.util.Arrays;
+import java.util.List;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -25,8 +28,12 @@ public class S3StorageService {
     @Value("${supabase.storage.url}")
     private String supabaseUrl;
 
+    private static final List<String> ALLOWED_EXTENSIONS = Arrays.asList("jpg", "jpeg", "png", "gif", "webp");
+
     public String uploadFile(MultipartFile file){
         if (file == null || file.isEmpty()) return null;
+
+        validateImageFile(file);
 
         String fileName = FileUtil.createFileName(file.getOriginalFilename());
         try {
@@ -52,5 +59,22 @@ public class S3StorageService {
 
     public String uploadProfileImage(MultipartFile file){
         return uploadFile(file);
+    }
+
+    private void validateImageFile(MultipartFile file) {
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null || !originalFilename.contains(".")) {
+            throw new ImageException(ImageErrorCode.INVALID_FILE_EXTENSION);
+        }
+
+        String extension = originalFilename.substring(originalFilename.lastIndexOf(".") + 1).toLowerCase();
+        if (!ALLOWED_EXTENSIONS.contains(extension)) {
+            throw new ImageException(ImageErrorCode.INVALID_FILE_EXTENSION);
+        }
+
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new ImageException(ImageErrorCode.INVALID_FILE_EXTENSION);
+        }
     }
 }
