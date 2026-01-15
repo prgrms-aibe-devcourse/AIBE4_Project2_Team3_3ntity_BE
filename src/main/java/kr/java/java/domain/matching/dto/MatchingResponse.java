@@ -15,6 +15,7 @@ public record MatchingResponse(
         UUID senderUuid,
         UUID receiverUuid,
         boolean isReceiver,
+        boolean canReview,
         String message,
         String category,
         String categoryName,
@@ -26,8 +27,10 @@ public record MatchingResponse(
         LocalDateTime createdAt
 
 ) {
-    public static MatchingResponse from(Matching matching, UUID userUuid, String mainImageUrl) {
+    public static MatchingResponse from(Matching matching, UUID userUuid, String mainImageUrl, boolean hasReviewd) {
         boolean isReceiver = matching.getReceiver().getUuid().equals(userUuid);
+        boolean isHost = matching.getSpace().getUser().getUuid().equals(userUuid);
+        boolean canReview = !isHost && !hasReviewd;
 
         String opponentNickname = isReceiver
                 ? matching.getUser().getNickname()
@@ -42,6 +45,7 @@ public record MatchingResponse(
                 matching.getUser().getUuid(),
                 matching.getReceiver().getUuid(),
                 isReceiver,
+                canReview,
                 matching.getMessage(),
                 matching.getSpace().getCategory().name(),
                 matching.getSpace().getCategory().getDescription(),
