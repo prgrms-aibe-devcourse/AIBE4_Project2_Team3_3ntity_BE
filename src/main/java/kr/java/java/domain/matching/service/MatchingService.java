@@ -10,6 +10,7 @@ import kr.java.java.domain.matching.exception.MatchingException;
 import kr.java.java.domain.matching.repository.MatchingRepository;
 import kr.java.java.domain.portfolio.entity.Portfolio;
 import kr.java.java.domain.portfolio.repository.PortfolioRepository;
+import kr.java.java.domain.review.repository.ReviewRepository;
 import kr.java.java.domain.space.entity.Space;
 import kr.java.java.domain.space.exception.NotFoundSpaceException;
 import kr.java.java.domain.space.exception.NotFoundUserException;
@@ -39,6 +40,7 @@ public class MatchingService {
     private final ApplicationEventPublisher applicationEventPublisher;
     private final SpaceImageService  spaceImageService;
     private final SpaceService spaceService;
+    private final ReviewRepository reviewRepository;
 
     //TODO 해당 서비스 페이지에 있는 User 에러처리는 추후 User 도메인의 exception에 생기면 변경
 
@@ -190,7 +192,6 @@ public class MatchingService {
         return convertToResponse(matchings, userUuid);
     }
 
-    // TODO space entity에 썸네일 url을 추가할지 의논 후 로직 최종 결정
     private List<MatchingResponse> convertToResponse(List<Matching> matchings, UUID userUuid) {
         if (matchings.isEmpty()) {
             return Collections.emptyList();
@@ -201,7 +202,15 @@ public class MatchingService {
                 .distinct()
                 .toList();
 
+        List<Long> matchingIds = matchings.stream().map(Matching::getId).toList();
+
         Map<Long, String> thumbnailMap = spaceImageService.getThumbnailsBySpaceIds(spaceIds);
+        Map<Long, Long> reviewMap = reviewRepository.findReviewIdsByMatchingIds(matchingIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        row -> (Long) row[0], // matchingId
+                        row -> (Long) row[1]  // reviewId
+                ));
 
         return matchings.stream()
                 .map(matching -> {
@@ -209,7 +218,9 @@ public class MatchingService {
                             matching.getSpace().getId(),
                             "default-image-url"
                     );
-                    return MatchingResponse.from(matching, userUuid, mainImageUrl);
+                    Long reviewId = reviewMap.get(matching.getId());
+
+                    return MatchingResponse.from(matching, userUuid, mainImageUrl, reviewId);
                 })
                 .collect(Collectors.toList());
     }
