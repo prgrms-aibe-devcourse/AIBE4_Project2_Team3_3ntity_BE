@@ -4,7 +4,6 @@ import kr.java.java.domain.auth.exception.AuthException;
 import kr.java.java.domain.image.exception.ImageException;
 import kr.java.java.domain.matching.exception.MatchingException;
 import kr.java.java.domain.notification.exception.NotificationException;
-import kr.java.java.domain.notification.exception.UserNotFoundException;
 import kr.java.java.domain.portfolio.exception.DuplicatePortfolioException;
 import kr.java.java.domain.portfolio.exception.NotFoundPortfolioException;
 import kr.java.java.domain.portfolio.exception.PortfolioDeleteFailException;
@@ -80,12 +79,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(e.getErrorCode().getHttpStatus())
                 .body(body);
-    }
-
-    @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<String> handleUserNotFoundException(UserNotFoundException e) {
-        log.error("UserNotFoundException: {}", e.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
     }
 
     @ExceptionHandler(Exception.class)

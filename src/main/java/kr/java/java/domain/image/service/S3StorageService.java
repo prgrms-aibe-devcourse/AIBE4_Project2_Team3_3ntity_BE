@@ -4,6 +4,7 @@ import kr.java.java.domain.image.exception.ImageErrorCode;
 import kr.java.java.domain.image.exception.ImageException;
 import kr.java.java.global.util.FileUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -12,6 +13,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class S3StorageService {
@@ -34,6 +36,7 @@ public class S3StorageService {
                     .contentType(file.getContentType())
                     .build(), RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
         } catch (Exception e) {
+            log.error("이미지 업로드 실패: {}", e.getMessage(), e);
             throw new ImageException(ImageErrorCode.UPLOAD_FAILED);
         }
 

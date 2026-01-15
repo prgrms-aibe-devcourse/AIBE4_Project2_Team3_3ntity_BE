@@ -63,7 +63,7 @@ public class CommentService {
                         return new SpaceNotFoundException("존재하지 않는 공간입니다.");
                     });
             notificationReceiver = space.getUser();
-            notificationRelatedUrl = "piece/spaces/" + space.getId();
+            notificationRelatedUrl = "spaces/" + space.getId();
         } else if (request.portfolioId() != null) {
             portfolio = portfolioRepository.findById(request.portfolioId())
                     .orElseThrow(() -> {
@@ -71,7 +71,7 @@ public class CommentService {
                         return new PortfolioNotFoundException("존재하지 않는 포트폴리오입니다.");
                     });
             notificationReceiver = portfolio.getUser();
-            notificationRelatedUrl = "piece/portfolios/" + portfolio.getId();
+            notificationRelatedUrl = "portfolios/" + portfolio.getId();
         } else {
             log.warn("문의 대상 누락 - uuid: {}", userUuid);
             throw new CommentTargetMissingException("문의를 남길 대상(공간 또는 포트폴리오)이 지정되지 않았습니다.");

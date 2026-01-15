@@ -2,10 +2,12 @@ package kr.java.java.domain.notification.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import kr.java.java.domain.auth.exception.AuthErrorCode;
+import kr.java.java.domain.auth.exception.AuthException;
 import kr.java.java.domain.auth.security.CustomUserDetails;
 import kr.java.java.domain.notification.dto.NotificationResponse;
+import kr.java.java.domain.notification.enums.NotificationType;
 import kr.java.java.domain.notification.exception.NotificationException;
-import kr.java.java.domain.notification.exception.UserNotFoundException;
 import kr.java.java.domain.notification.service.NotificationService;
 import kr.java.java.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -31,15 +33,19 @@ public class NotificationController {
 
     @Operation(summary = "알림 구독", description = "알림 구독을 위해 SSE 연결을 실행합니다.")
     @GetMapping(value = "/subscribe", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter subscribe(@AuthenticationPrincipal CustomUserDetails userDetails,
-                                @RequestHeader(value = "Last-Event-ID", required = false, defaultValue = "") String lastEventId) {
+    public SseEmitter subscribe(@AuthenticationPrincipal CustomUserDetails userDetails,@RequestHeader(value = "Last-Event-ID", required = false, defaultValue = "") String lastEventId) {
+
+        if (userDetails == null) {
+            log.error("[알림 controller] 인증되지 않은 사용자 접근");
+            throw new AuthException(AuthErrorCode.OAUTH2_USER_NOT_FOUND);
+        }
 
         String userUuidString = userDetails.getUuid().toString();
 
         log.info("[알림 controller] SSE 구독 요청, 유저 UUID: {}", userUuidString);
 
          if (userRepository.findByUuid(userDetails.getUuid()).isEmpty()) {
-             throw new UserNotFoundException(userDetails.getUuid());
+             throw new AuthException(AuthErrorCode.OAUTH2_USER_NOT_FOUND);
          }
 
         return notificationService.subscribe(userUuidString, lastEventId);
@@ -52,10 +58,15 @@ public class NotificationController {
             @RequestParam(required = false) Long lastId,
             @RequestParam(required = false) Boolean lastIsRead
     ) {
+        if (userDetails == null) {
+            log.error("[알림 controller] 인증되지 않은 사용자 접근");
+            throw new AuthException(AuthErrorCode.OAUTH2_USER_NOT_FOUND);
+        }
+
         UUID userUuid = userDetails.getUuid();
 
         if (userRepository.findByUuid(userDetails.getUuid()).isEmpty()) {
-            throw new UserNotFoundException(userDetails.getUuid());
+            throw new AuthException(AuthErrorCode.OAUTH2_USER_NOT_FOUND);
         }
 
         List<NotificationResponse> notifications = notificationService.getNotifications(userUuid, lastId, lastIsRead, 25);
@@ -79,14 +90,41 @@ public class NotificationController {
     @Operation(summary = "미확인 알림 개수 확인", description = "특정 사용자의 미확인 알림 개수를 조회합니다.")
     @GetMapping("/unread-count")
     public ResponseEntity<Long> getUnreadNotificationCount(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails == null) {
+            log.error("[알림 controller] 인증되지 않은 사용자 접근");
+            throw new AuthException(AuthErrorCode.OAUTH2_USER_NOT_FOUND);
+        }
+
         UUID userUuid = userDetails.getUuid();
 
         if (userRepository.findByUuid(userDetails.getUuid()).isEmpty()) {
-            throw new UserNotFoundException(userDetails.getUuid());
+            throw new AuthException(AuthErrorCode.OAUTH2_USER_NOT_FOUND);
         }
 
         Long notificationCount = notificationService.getUnreadNotificationCount(userUuid);
         log.info("[알림 controller] 미확인 알림 개수 조회 성공 : 유저 ID: {}, 미확인 알림 총 {}개 ", userUuid,notificationCount);
         return ResponseEntity.ok(notificationCount);
+    }
+
+    @Operation(summary = "테스트용 알림 생성", description = "테스트용 알림 25개를 생성합니다.")
+    @PostMapping("/test-data")
+    public ResponseEntity<String> createTestNotifications(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails == null) {
+            log.error("[알림 controller] 인증되지 않은 사용자 접근");
+            throw new AuthException(AuthErrorCode.OAUTH2_USER_NOT_FOUND);
+        }
+
+        UUID userUuid = userDetails.getUuid();
+
+        for (int i = 1; i <= 25; i++) {
+            notificationService.createNotification(
+                    userUuid,
+                    NotificationType.MATCHING,
+                    "USER " + i + "님이 매칭을 신청했습니다.",
+                    "/matchings"
+            );
+        }
+
+        return ResponseEntity.ok("테스트 알림 25개 생성 완료");
     }
 }

@@ -25,7 +25,7 @@ public class NotificationEventListener {
                     event.receiverId(),
                     NotificationType.MATCHING,
                     event.senderNickname() + "님이 매칭을 신청했습니다.",
-                    event.relatedUrl()
+                    "/matching"
             );
         } catch (Exception e) {
             log.error("[알림 리스너] 매칭 신청 알림 생성 실패", e);
@@ -40,7 +40,7 @@ public class NotificationEventListener {
                     event.receiverId(),
                     NotificationType.MATCHING_COMPLETE,
                     event.senderNickname() + "님이 매칭을 수락하셨습니다.",
-                    event.relatedUrl()
+                    "/matching"
             );
         } catch (Exception e) {
             log.error("[알림 리스너] 매칭 수락 알림 생성 실패", e);
@@ -55,7 +55,7 @@ public class NotificationEventListener {
                     event.receiverId(),
                     NotificationType.MATCHING_CANCELED,
                     event.senderNickname() + "님이 매칭을 취소하셨습니다.",
-                    event.relatedUrl()
+                    "/matching"
             );
         } catch (Exception e) {
             log.error("[알림 리스너] 매칭 취소 알림 생성 실패", e);
@@ -70,7 +70,7 @@ public class NotificationEventListener {
                     event.receiverId(),
                     NotificationType.MATCHING_REJECT,
                     event.senderNickname() + "님이 매칭을 거절하셨습니다.",
-                    event.relatedUrl()
+                    "/matching"
             );
         } catch (Exception e) {
             log.error("[알림 리스너] 매칭 거절 알림 생성 실패", e);
@@ -94,8 +94,8 @@ public class NotificationEventListener {
 
     @EventListener
     public void handleMatchingExpiredEvent(MatchingExpiredEvent event) {
-        String spaceIdString = String.valueOf(event.spaceId());
-        log.info("[알림 리스너] 매칭 만료 이벤트 수신: space ID = {}", spaceIdString);
+        String matchingId = String.valueOf(event.matchingId());
+        log.info("[알림 리스너] 매칭 만료 이벤트 수신: space ID = {}", matchingId);
 
         try {
             //TODO: 만료 시 리뷰 작성 url로 이동
@@ -103,14 +103,14 @@ public class NotificationEventListener {
                     event.senderId(),
                     NotificationType.MATCHING_COMPLETE,
                     event.receiverNickname()+"님과의 매칭이 만료되었습니다",
-                    "/piece/reviews/space/"+spaceIdString
+                    "/reviews/write/"+matchingId
             );
 
             notificationService.createNotification(
                     event.receiverId(),
                     NotificationType.MATCHING_COMPLETE,
                     event.senderNickname()+"님과의 매칭이 만료되었습니다",
-                    "/piece/reviews/space/"+spaceIdString
+                    "/reviews/write/"+matchingId
             );
         } catch (Exception e) {
             log.error("[알림 리스너] 매칭 만료 알림 생성 실패", e);
