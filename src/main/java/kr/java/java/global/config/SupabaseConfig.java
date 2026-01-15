@@ -36,6 +36,7 @@ public class SupabaseConfig {
                 )) // 인증
                 .serviceConfiguration(S3Configuration.builder()
                         .pathStyleAccessEnabled(true)
+                        .checksumValidationEnabled(false)
                         .build())
                 .build();
     }
