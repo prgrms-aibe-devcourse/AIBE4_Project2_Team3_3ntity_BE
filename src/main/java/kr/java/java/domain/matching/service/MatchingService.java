@@ -213,9 +213,9 @@ public class MatchingService {
                             matching.getSpace().getId(),
                             "default-image-url"
                     );
-                    boolean hasReviewd = reviewedMatchingIds.contains(matching.getId());
+                    boolean hasReviewed = reviewedMatchingIds.contains(matching.getId());
 
-                    return MatchingResponse.from(matching, userUuid, mainImageUrl, hasReviewd);
+                    return MatchingResponse.from(matching, userUuid, mainImageUrl, hasReviewed);
                 })
                 .collect(Collectors.toList());
     }
