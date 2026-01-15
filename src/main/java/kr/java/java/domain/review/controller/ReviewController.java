@@ -1,5 +1,12 @@
 package kr.java.java.domain.review.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import kr.java.java.domain.auth.security.CustomUserDetails;
 import kr.java.java.domain.review.dto.ReviewCreateRequest;
@@ -23,16 +30,22 @@ import java.util.List;
 @RestController
 @RequestMapping("/piece/reviews")
 @RequiredArgsConstructor
+@Tag(name = "Review", description = "리뷰 API")
 public class ReviewController {
 
     private final ReviewService reviewService;
 
-    // 리뷰 등록 API
+    @Operation(summary = "리뷰 등록", description = "리뷰 데이터와 이미지를 함께 등록합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "리뷰 등록 성공 (생성된 ID 반환)"),
+            @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자", content = @Content(schema = @Schema(hidden = true))),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청 데이터", content = @Content(schema = @Schema(hidden = true)))
+    })
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Long> createReview(
-            @Valid @RequestPart("request") ReviewCreateRequest request,
-            @RequestPart(value = "files", required = false) List<MultipartFile> files,
-            @AuthenticationPrincipal CustomUserDetails userDetails
+            @Parameter(description = "리뷰 생성 요청 데이터 (JSON)", required = true) @Valid @RequestPart("request") ReviewCreateRequest request,
+            @Parameter(description = "리뷰 이미지 파일 목록", required = false) @RequestPart(value = "files", required = false) List<MultipartFile> files,
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails
     ) throws IOException {
         if (userDetails == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
@@ -46,17 +59,26 @@ public class ReviewController {
         return ResponseEntity.ok(reviewId);
     }
 
-    // 리뷰 단건 조회
+    @Operation(summary = "리뷰 단건 조회", description = "리뷰 ID로 상세 정보를 조회합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공", content = @Content(schema = @Schema(implementation = ReviewResponse.class))),
+            @ApiResponse(responseCode = "404", description = "존재하지 않는 리뷰", content = @Content(schema = @Schema(hidden = true)))
+    })
     @GetMapping("/{reviewId}")
-    public ResponseEntity<ReviewResponse> getReview(@PathVariable Long reviewId) {
+    public ResponseEntity<ReviewResponse> getReview(
+            @Parameter(description = "리뷰 ID", required = true) @PathVariable Long reviewId) {
         log.info("리뷰 단건 조회 요청 - reviewId: {}", reviewId);
         ReviewResponse response = reviewService.getReview(reviewId);
         return ResponseEntity.ok(response);
     }
 
-    // 공간별 리뷰 조회 API
+    @Operation(summary = "공간별 리뷰 조회", description = "특정 공간에 작성된 리뷰 목록을 조회합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공", content = @Content(schema = @Schema(implementation = ReviewResponse.class)))
+    })
     @GetMapping("/space/{spaceId}")
-    public ResponseEntity<List<ReviewResponse>> getReviewsBySpace(@PathVariable Long spaceId) {
+    public ResponseEntity<List<ReviewResponse>> getReviewsBySpace(
+            @Parameter(description = "공간 ID", required = true) @PathVariable Long spaceId) {
         log.info("GET /piece/reviews/space/{} 요청 발생", spaceId);
 
         List<ReviewResponse> responses = reviewService.getReviewsBySpaceId(spaceId);
@@ -66,9 +88,16 @@ public class ReviewController {
         return ResponseEntity.ok(responses);
     }
 
-    // 사용자별 리뷰 조회 API
+    @Operation(summary = "사용자별 리뷰 조회", description = "로그인한 사용자가 작성한 리뷰 목록을 조회합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공", content = @Content(schema = @Schema(implementation = ReviewResponse.class))),
+            @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자", content = @Content(schema = @Schema(hidden = true)))
+    })
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<ReviewResponse>> getMyReviews(@AuthenticationPrincipal CustomUserDetails userDetails) {
+    public ResponseEntity<List<ReviewResponse>> getMyReviews(
+            @Parameter(description = "사용자 ID (URL 경로용)") @PathVariable Long userId,
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
         if (userDetails == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -81,11 +110,16 @@ public class ReviewController {
         return ResponseEntity.ok(responses);
     }
 
-    // 리뷰 삭제 API
+    @Operation(summary = "리뷰 삭제", description = "리뷰를 삭제합니다. (작성자 본인만 가능)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "삭제 성공"),
+            @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자", content = @Content(schema = @Schema(hidden = true))),
+            @ApiResponse(responseCode = "403", description = "삭제 권한 없음", content = @Content(schema = @Schema(hidden = true)))
+    })
     @DeleteMapping("/{reviewId}")
     public ResponseEntity<String> deleteReview(
-            @PathVariable Long reviewId,
-            @AuthenticationPrincipal CustomUserDetails userDetails
+            @Parameter(description = "삭제할 리뷰 ID", required = true) @PathVariable Long reviewId,
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         if (userDetails == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
@@ -99,13 +133,18 @@ public class ReviewController {
         return ResponseEntity.ok("리뷰가 성공적으로 삭제되었습니다.");
     }
 
-    // 리뷰 수정 API
+    @Operation(summary = "리뷰 수정", description = "리뷰 내용 및 이미지를 수정합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "수정 성공"),
+            @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자", content = @Content(schema = @Schema(hidden = true))),
+            @ApiResponse(responseCode = "403", description = "수정 권한 없음", content = @Content(schema = @Schema(hidden = true)))
+    })
     @PatchMapping(value = "/{reviewId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<String> updateReview(
-            @PathVariable Long reviewId,
-            @Valid @RequestPart("request") ReviewUpdateRequest request,
-            @RequestPart(value = "files", required = false) List<MultipartFile> files,
-            @AuthenticationPrincipal CustomUserDetails userDetails
+            @Parameter(description = "수정할 리뷰 ID", required = true) @PathVariable Long reviewId,
+            @Parameter(description = "수정할 내용 데이터", required = true) @Valid @RequestPart("request") ReviewUpdateRequest request,
+            @Parameter(description = "수정할 이미지 파일 목록", required = false) @RequestPart(value = "files", required = false) List<MultipartFile> files,
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails
     ) throws IOException {
         if (userDetails == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
@@ -119,8 +158,14 @@ public class ReviewController {
         return ResponseEntity.ok("리뷰가 성공적으로 수정되었습니다.");
     }
 
+    @Operation(summary = "리뷰 대상 정보 조회", description = "매칭 ID를 통해 리뷰를 작성할 공간/포트폴리오 정보를 조회합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공", content = @Content(schema = @Schema(implementation = ReviewTargetResponse.class))),
+            @ApiResponse(responseCode = "404", description = "매칭 정보 없음", content = @Content(schema = @Schema(hidden = true)))
+    })
     @GetMapping("/target/{matchingId}")
-    public ResponseEntity<ReviewTargetResponse> getTargetInfo(@PathVariable Long matchingId) {
+    public ResponseEntity<ReviewTargetResponse> getTargetInfo(
+            @Parameter(description = "매칭 ID", required = true) @PathVariable Long matchingId) {
         ReviewTargetResponse response = reviewService.getReviewTargetInfo(matchingId);
         return ResponseEntity.ok(response);
     }

@@ -1,5 +1,11 @@
 package kr.java.java.domain.auth.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import kr.java.java.domain.auth.dto.TokenResponse;
@@ -19,6 +25,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/piece/auths")
 @RequiredArgsConstructor
+@Tag(name = "Auth", description = "인증/인가 API (로그인, 토큰 재발급, 로그아웃)")
 public class AuthController {
 
     private static final String REFRESH_TOKEN_COOKIE_NAME = "refreshToken";
@@ -30,6 +37,11 @@ public class AuthController {
     @Value("${app.cookie.secure:false}")
     private boolean cookieSecure;
 
+    @Operation(summary = "OAuth2 토큰 발급", description = "쿠키에 저장된 Refresh Token을 검증하여 초기 Access Token을 발급합니다. (소셜 로그인 직후 호출)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "토큰 발급 성공", content = @Content(schema = @Schema(implementation = TokenResponse.class))),
+            @ApiResponse(responseCode = "401", description = "유효하지 않은 토큰이거나 토큰이 없음", content = @Content(schema = @Schema(hidden = true)))
+    })
     @GetMapping("/oauth2-token")
     public ResponseEntity<TokenResponse> getOAuth2Token(HttpServletRequest request) {
         String refreshToken = getRefreshTokenFromCookie(request);
@@ -59,6 +71,11 @@ public class AuthController {
         return ResponseEntity.ok().body(response);
     }
 
+    @Operation(summary = "토큰 재발급 (Reissue)", description = "쿠키의 Refresh Token을 사용하여 새로운 Access Token과 Refresh Token을 발급합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "재발급 성공", content = @Content(schema = @Schema(implementation = TokenResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Refresh Token이 유효하지 않거나 만료됨 (재로그인 필요)", content = @Content(schema = @Schema(hidden = true)))
+    })
     @PostMapping("/reissue")
     public ResponseEntity<TokenResponse> reissue(HttpServletRequest request) {
 
@@ -99,11 +116,18 @@ public class AuthController {
                 .body(response);
     }
 
+    @Operation(summary = "로그인 성공 확인", description = "OAuth2 로그인 성공 시 리다이렉트되는 단순 확인용 엔드포인트입니다.")
+    @ApiResponse(responseCode = "200", description = "성공 메시지 반환")
     @GetMapping("/login-success")
     public ResponseEntity<String> loginSuccess() {
         return ResponseEntity.ok("소셜 로그인 성공!");
     }
 
+    @Operation(summary = "로그아웃", description = "Refresh Token(DB/쿠키)을 삭제하고 Access Token을 블랙리스트에 등록합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "로그아웃 성공"),
+            @ApiResponse(responseCode = "401", description = "이미 로그아웃 되었거나 유효하지 않은 토큰", content = @Content(schema = @Schema(hidden = true)))
+    })
     @PostMapping("/logout")
     public ResponseEntity<String> logout(HttpServletRequest request) {
 
