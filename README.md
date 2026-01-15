@@ -44,11 +44,12 @@ flowchart TD
     Services --> JPA
     JPA --> DB
     Services <--> Redis
+
 ```
 
 
 ## 🧩 ERD
-
+<p align="center"><img width="1720" height="892" alt="Image" src="https://github.com/user-attachments/assets/d741fe4e-0316-452e-8ee0-70c35dadcc9f" /></p>
 
 ## ✨ 핵심 기능
 ### 🔐 Auth & User
