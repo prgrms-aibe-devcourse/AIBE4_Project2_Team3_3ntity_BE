@@ -13,8 +13,9 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
 
     boolean existsByMatchingIdAndUserUuid(Long matchingId, UUID userUuid);
 
-    @Query("SELECT r.matching.id FROM Review r WHERE r.matching.id IN :matchingIds")
-    List<Long> findMatchingIdsByMatchingIdIn(@Param("matchingIds") List<Long> matchingIds);
+    // 매칭 ID들을 넣으면 {매칭ID, 리뷰ID} 객체 리스트를 반환
+    @Query("SELECT r.matching.id, r.id FROM Review r WHERE r.matching.id IN :matchingIds")
+    List<Object[]> findReviewIdsByMatchingIds(@Param("matchingIds") List<Long> matchingIds);
 
     // 특정 공간의 리뷰 조회
     @Query("SELECT r FROM Review r JOIN FETCH r.user JOIN FETCH r.matching WHERE r.matching.space.id = :spaceId")

@@ -8,6 +8,7 @@ import java.util.UUID;
 
 public record MatchingResponse(
         Long matchingId,
+        Long reviewId,
         Long spaceId,
         String spaceTitle,
         String mainImageUrl,
@@ -28,10 +29,11 @@ public record MatchingResponse(
         LocalDateTime createdAt
 
 ) {
-    public static MatchingResponse from(Matching matching, UUID userUuid, String mainImageUrl, boolean hasReviewed) {
+    public static MatchingResponse from(Matching matching, UUID userUuid, String mainImageUrl, Long reviewId) {
         boolean isReceiver = matching.getReceiver().getUuid().equals(userUuid);
         boolean isHost = matching.getSpace().getUser().getUuid().equals(userUuid);
         boolean canReview = !isHost;
+        boolean hasReviewed = (reviewId != null);
 
         String opponentNickname = isReceiver
                 ? matching.getUser().getNickname()
@@ -39,6 +41,7 @@ public record MatchingResponse(
 
         return new MatchingResponse(
                 matching.getId(),
+                reviewId,
                 matching.getSpace().getId(),
                 matching.getSpace().getTitle(),
                 mainImageUrl,

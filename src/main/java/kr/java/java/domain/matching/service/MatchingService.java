@@ -205,7 +205,12 @@ public class MatchingService {
         List<Long> matchingIds = matchings.stream().map(Matching::getId).toList();
 
         Map<Long, String> thumbnailMap = spaceImageService.getThumbnailsBySpaceIds(spaceIds);
-        Set<Long> reviewedMatchingIds = new HashSet<>(reviewRepository.findMatchingIdsByMatchingIdIn(matchingIds));
+        Map<Long, Long> reviewMap = reviewRepository.findReviewIdsByMatchingIds(matchingIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        row -> (Long) row[0], // matchingId
+                        row -> (Long) row[1]  // reviewId
+                ));
 
         return matchings.stream()
                 .map(matching -> {
@@ -213,9 +218,9 @@ public class MatchingService {
                             matching.getSpace().getId(),
                             "default-image-url"
                     );
-                    boolean hasReviewed = reviewedMatchingIds.contains(matching.getId());
+                    Long reviewId = reviewMap.get(matching.getId());
 
-                    return MatchingResponse.from(matching, userUuid, mainImageUrl, hasReviewed);
+                    return MatchingResponse.from(matching, userUuid, mainImageUrl, reviewId);
                 })
                 .collect(Collectors.toList());
     }
