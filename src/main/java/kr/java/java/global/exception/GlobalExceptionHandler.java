@@ -3,7 +3,8 @@ package kr.java.java.global.exception;
 import kr.java.java.domain.auth.exception.AuthException;
 import kr.java.java.domain.image.exception.ImageException;
 import kr.java.java.domain.matching.exception.MatchingException;
-import kr.java.java.domain.notification.exception.NotificationException;
+import kr.java.java.domain.notification.exception.NotificationNotFoundException;
+import kr.java.java.domain.notification.exception.NotificationSendFailedException;
 import kr.java.java.domain.portfolio.exception.DuplicatePortfolioException;
 import kr.java.java.domain.portfolio.exception.NotFoundPortfolioException;
 import kr.java.java.domain.portfolio.exception.PortfolioDeleteFailException;
@@ -68,16 +69,29 @@ public class GlobalExceptionHandler {
                 .body(body);
     }
 
-    @ExceptionHandler(NotificationException.class)
-    public  ResponseEntity<Map<String, Object>> handleNotificationException(NotificationException e) {
-        log.error("[NotificationException] {} : {}", e.getErrorCode().name(), e.getErrorCode().getMessage());
+    @ExceptionHandler(NotificationNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleNotificationNotFoundException(NotificationNotFoundException e) {
+        log.error("[NotificationNotFoundException] {}", e.getMessage());
 
         Map<String, Object> body = new HashMap<>();
-        body.put("code", e.getErrorCode().name());
-        body.put("message", e.getErrorCode().getMessage());
+        body.put("code", "NOTIFICATION_NOT_FOUND");
+        body.put("message", e.getMessage());
 
         return ResponseEntity
-                .status(e.getErrorCode().getHttpStatus())
+                .status(HttpStatus.NOT_FOUND)
+                .body(body);
+    }
+
+    @ExceptionHandler(NotificationSendFailedException.class)
+    public ResponseEntity<Map<String, Object>> handleNotificationSendFailedException(NotificationSendFailedException e) {
+        log.error("[NotificationSendFailedException] {}", e.getMessage());
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("code", "NOTIFICATION_SEND_FAILED");
+        body.put("message", e.getMessage());
+
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(body);
     }
 

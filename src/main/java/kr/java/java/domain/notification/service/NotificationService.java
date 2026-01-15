@@ -4,8 +4,7 @@ import kr.java.java.domain.notification.dto.NotificationResponse;
 import kr.java.java.domain.notification.entity.Notification;
 import kr.java.java.domain.notification.enums.NotificationType;
 import kr.java.java.domain.notification.event.NotificationSavedEvent;
-import kr.java.java.domain.notification.exception.NotificationErrorCode;
-import kr.java.java.domain.notification.exception.NotificationException;
+import kr.java.java.domain.notification.exception.NotificationNotFoundException;
 import kr.java.java.domain.notification.repository.EmitterRepository;
 import kr.java.java.domain.notification.repository.NotificationRepository;
 import kr.java.java.domain.user.repository.UserRepository;
@@ -146,7 +145,7 @@ public class NotificationService {
         log.info("[알림 service] 알림 읽음 처리");
         Notification notification = notificationRepository
                 .findById(notificationId)
-                .orElseThrow(() -> new NotificationException(notificationId, NotificationErrorCode.NOTIFICATION_NOT_FOUND));
+                .orElseThrow(() -> new NotificationNotFoundException("해당 알림을 찾을 수 없습니다. id=" + notificationId));
         notification.read();
     }
 }
