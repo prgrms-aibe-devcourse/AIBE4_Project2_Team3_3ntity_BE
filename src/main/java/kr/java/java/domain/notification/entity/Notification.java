@@ -22,7 +22,7 @@ public class Notification {
     @Column(name = "notification_id")
     private Long id;
 
-    @Column(name = "user_id", nullable = false, columnDefinition = "BINARY(16)")
+    @Column(name = "user_id", nullable = false, columnDefinition = "VARCHAR(36)")
     private UUID receiverId;
 
     @Column(nullable = false)

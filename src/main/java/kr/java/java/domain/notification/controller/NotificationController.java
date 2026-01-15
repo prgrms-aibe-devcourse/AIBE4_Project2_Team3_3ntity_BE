@@ -34,7 +34,6 @@ import java.util.UUID;
 public class NotificationController {
 
     private final NotificationService notificationService;
-    private final UserRepository userRepository;
 
     @Operation(summary = "알림 구독", description = "알림 구독을 위해 SSE 연결을 실행합니다.")
     @ApiResponses(value = {
@@ -54,10 +53,6 @@ public class NotificationController {
         String userUuidString = userDetails.getUuid().toString();
 
         log.info("[알림 controller] SSE 구독 요청, 유저 UUID: {}", userUuidString);
-
-         if (userRepository.findByUuid(userDetails.getUuid()).isEmpty()) {
-             throw new AuthException(AuthErrorCode.OAUTH2_USER_NOT_FOUND);
-         }
 
         return notificationService.subscribe(userUuidString, lastEventId);
     }
@@ -79,10 +74,6 @@ public class NotificationController {
         }
 
         UUID userUuid = userDetails.getUuid();
-
-        if (userRepository.findByUuid(userDetails.getUuid()).isEmpty()) {
-            throw new AuthException(AuthErrorCode.OAUTH2_USER_NOT_FOUND);
-        }
 
         List<NotificationResponse> notifications = notificationService.getNotifications(userUuid, lastId, lastIsRead, 25);
         log.info("[알림 controller] 알림 내역 조회 성공 - userId: {}, lastId: {}, lastIsRead: {}, 조회된 개수: {}", userUuid, lastId, lastIsRead,notifications.size());
@@ -121,10 +112,6 @@ public class NotificationController {
         }
 
         UUID userUuid = userDetails.getUuid();
-
-        if (userRepository.findByUuid(userDetails.getUuid()).isEmpty()) {
-            throw new AuthException(AuthErrorCode.OAUTH2_USER_NOT_FOUND);
-        }
 
         Long notificationCount = notificationService.getUnreadNotificationCount(userUuid);
         log.info("[알림 controller] 미확인 알림 개수 조회 성공 : 유저 ID: {}, 미확인 알림 총 {}개 ", userUuid,notificationCount);

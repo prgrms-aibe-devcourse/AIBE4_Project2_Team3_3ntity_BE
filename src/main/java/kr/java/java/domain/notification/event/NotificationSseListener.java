@@ -27,11 +27,7 @@ public class NotificationSseListener {
     @Async("notificationExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleNotificationSavedEvent(NotificationSavedEvent event) {
-        log.info("[알림 SSE 리스너] 알림 저장 이벤트 수신 - notificationId: {}, receiverId: {}", event.notificationId(), event.receiverId());
-
-        Notification notification = notificationRepository
-                .findById(event.notificationId())
-                .orElseThrow(() -> new NotificationNotFoundException("해당 알림을 찾을 수 없습니다. id=" + event.notificationId()));
+        log.info("[알림 SSE 리스너] 알림 저장 이벤트 수신 - receiverId: {}", event.receiverId());
 
         Map<String, SseEmitter> emitters = emitterRepository.findAllEmitterStartWithUserId(event.receiverId());
         
@@ -43,9 +39,9 @@ public class NotificationSseListener {
         emitters.forEach(
                 (key, emitter) -> {
                     log.info("[알림 SSE 리스너] 알림 전송 시도 - emitterId: {}", key);
-                    emitterRepository.saveEventCache(key, notification);
+                    emitterRepository.saveEventCache(key, event.notification());
 
-                    notificationService.sendEventToClient(emitter,key,"notification", NotificationResponse.from(notification));
+                    notificationService.sendEventToClient(emitter,key,"notification", NotificationResponse.from(event.notification()));
                 }
         );
     }
