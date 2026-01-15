@@ -3,7 +3,7 @@ package kr.java.java.domain.matching.event;
 import java.util.UUID;
 
 public record MatchingExpiredEvent (
-    Long spaceId,
+    Long matchingId,
     UUID senderId,
     String senderNickname,
     UUID receiverId,

@@ -19,10 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -55,7 +52,12 @@ public class NotificationService {
             emitterRepository.deleteEmitterById(emitterId);
         });
 
-        sendEventToClient(emitter, emitterId, "connect", "SSE 연결되었습니다. [userUuid: " + userUuidString + "]");
+        //sendEventToClient(emitter, emitterId, "connect", "SSE 연결되었습니다. [userUuid: " + userUuidString + "]");
+
+        Map<String, String> connectData = new HashMap<>();
+        connectData.put("message", "SSE 연결되었습니다...");
+        connectData.put("type", "CONNECT"); // notificationType과 유사한 필드 추가
+        sendEventToClient(emitter, emitterId, "connect", connectData);
 
 
         if (!lastEventId.isEmpty()) {
