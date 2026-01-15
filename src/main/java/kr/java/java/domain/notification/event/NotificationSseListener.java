@@ -2,8 +2,7 @@ package kr.java.java.domain.notification.event;
 
 import kr.java.java.domain.notification.dto.NotificationResponse;
 import kr.java.java.domain.notification.entity.Notification;
-import kr.java.java.domain.notification.exception.NotificationErrorCode;
-import kr.java.java.domain.notification.exception.NotificationException;
+import kr.java.java.domain.notification.exception.NotificationNotFoundException;
 import kr.java.java.domain.notification.repository.EmitterRepository;
 import kr.java.java.domain.notification.repository.NotificationRepository;
 import kr.java.java.domain.notification.service.NotificationService;
@@ -32,7 +31,7 @@ public class NotificationSseListener {
 
         Notification notification = notificationRepository
                 .findById(event.notificationId())
-                .orElseThrow(() -> new NotificationException(event.notificationId(), NotificationErrorCode.NOTIFICATION_NOT_FOUND));
+                .orElseThrow(() -> new NotificationNotFoundException("해당 알림을 찾을 수 없습니다. id=" + event.notificationId()));
 
         Map<String, SseEmitter> emitters = emitterRepository.findAllEmitterStartWithUserId(event.receiverId());
         

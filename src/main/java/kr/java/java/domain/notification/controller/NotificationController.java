@@ -12,7 +12,7 @@ import kr.java.java.domain.auth.exception.AuthException;
 import kr.java.java.domain.auth.security.CustomUserDetails;
 import kr.java.java.domain.notification.dto.NotificationResponse;
 import kr.java.java.domain.notification.enums.NotificationType;
-import kr.java.java.domain.notification.exception.NotificationException;
+import kr.java.java.domain.notification.exception.NotificationNotFoundException;
 import kr.java.java.domain.notification.service.NotificationService;
 import kr.java.java.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -101,7 +101,7 @@ public class NotificationController {
             notificationService.readNotification(notificationId);
             log.info("[알림 controller]: 알림 읽음 처리 성공 - {}", notificationId);
             return ResponseEntity.ok("Notification read");
-        } catch (NotificationException e) {
+        } catch (NotificationNotFoundException e) {
             log.error("[알림 controller]: 해당 알림 찾을 수 없음 - {}", e.getMessage());
             throw e;
         }
