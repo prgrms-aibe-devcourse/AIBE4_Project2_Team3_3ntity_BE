@@ -69,7 +69,7 @@ public class NotificationService {
         return emitter;
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void createNotification(UUID receiverId, NotificationType notificationType, String content, String relatedUrl) {
 
         log.info("[알림 service] 알림 생성 - receiverId: {}, NotificationType: {}, content: {}, relatedUrl: {}", receiverId, notificationType, content, relatedUrl);

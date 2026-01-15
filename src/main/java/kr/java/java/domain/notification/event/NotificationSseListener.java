@@ -8,6 +8,7 @@ import kr.java.java.domain.notification.repository.NotificationRepository;
 import kr.java.java.domain.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
@@ -25,7 +26,7 @@ public class NotificationSseListener {
     private final NotificationRepository notificationRepository;
 
     @Async("notificationExecutor")
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @EventListener  //@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleNotificationSavedEvent(NotificationSavedEvent event) {
         log.info("[알림 SSE 리스너] 알림 저장 이벤트 수신 - receiverId: {}", event.receiverId());
 
