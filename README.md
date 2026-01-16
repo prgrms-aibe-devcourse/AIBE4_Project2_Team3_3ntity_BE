@@ -1,14 +1,19 @@
 # 🧀 PIECE
 가게 안의 유휴공간을 임대하는 초단기 샵인샵(Shop-in-Shop) 매칭 플랫폼
+<br /><br />
 
 
 ## 📋 프로젝트 소개
-<p align="center"><img width="350" height="350" alt="Image" src="https://github.com/user-attachments/assets/3d9e2b05-23a0-42a4-9b3a-8c322e1a0b10" /></p>
+<br />
+<p align="center"><img width="250" height="250" alt="Image" src="https://github.com/user-attachments/assets/3d9e2b05-23a0-42a4-9b3a-8c322e1a0b10" /></p>
 Piece는 높은 보증금과 장기 계약 부담 없이 자신의 상품에 대한 오프라인 판매 거점을 확보할 수 있도록 돕습니다. 공간주에게는 월세 부담 완화를, 메이커에게는 팝업 스토어 기회를 제공함으로써 골목 상권 내에서 공간의 재발견과 경제적 상생을 실현하는 온-오프라인 연계(O2O) 웹 서비스를 지향합니다.
+<br /><br />
 
 
 ## 🏗️ 시스템 아키텍처
+<br />
 <p align="center"><img width="800" height="470" alt="Image" src="https://github.com/user-attachments/assets/8c37d2ea-f89f-4969-abc0-69b3769da6e9" /></p>
+<br /><br />
 
 
 ## 🛠 Tech Stack
@@ -21,11 +26,14 @@ Piece는 높은 보증금과 장기 계약 부담 없이 자신의 상품에 대
 | **ORM & Query** | <img src="https://img.shields.io/badge/spring_data_jpa-6DB33F?style=for-the-badge&logo=spring&logoColor=white"> <img src="https://img.shields.io/badge/querydsl-0078D7?style=for-the-badge&logo=brandfolder&logoColor=white"> |
 | **Infrastructure** | <img src="https://img.shields.io/badge/amazon_s3-569A31?style=for-the-badge&logo=amazons3&logoColor=white"> <img src="https://img.shields.io/badge/github_actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white"> <img src="https://img.shields.io/badge/docker-2496ED?style=for-the-badge&logo=docker&logoColor=white"> |
 | **Tools** | <img src="https://img.shields.io/badge/intellij_idea-000000?style=for-the-badge&logo=intellijidea&logoColor=white"> <img src="https://img.shields.io/badge/postman-FF6C37?style=for-the-badge&logo=postman&logoColor=white"> <img src="https://img.shields.io/badge/swagger-85EA2D?style=for-the-badge&logo=swagger&logoColor=black"> <img src="https://img.shields.io/badge/github-181717?style=for-the-badge&logo=github&logoColor=white"> |
+<br /><br />
 
+<br />
 
 ## 🧩 ERD
 <p align="center"><img width="2381" height="1143" alt="Image" src="https://github.com/user-attachments/assets/ff67a860-1d09-4750-b708-a50d877f4749" />
 </p>
+<br /><br />
 
 ## ✨ 핵심 기능
 ### 🔐 Auth & User
@@ -49,6 +57,7 @@ Piece는 높은 보증금과 장기 계약 부담 없이 자신의 상품에 대
 * **공간/포트폴리오 관리**: 공간,포트폴리오 게시글(CRUD) 및 다중 이미지 업로드
 * **성능 최적화**: **Fetch Join** 및 **Batch Size** 설정을 통해 조회 시 발생하는 **N+1 문제 해결**
 * **스토리지 분리**: **AWS S3**를 연동하여 서버 스토리지 용량 한계를 극복하고 이미지를 안정적으로 관리
+<br /><br />
 
 
 ## 🛠 트러블 슈팅
