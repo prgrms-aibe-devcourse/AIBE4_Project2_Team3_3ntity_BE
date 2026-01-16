@@ -8,7 +8,7 @@ Piece는 높은 보증금과 장기 계약 부담 없이 자신의 상품에 대
 
 
 ## 🏗️ 시스템 아키텍처
-<p align="center"><img width="880" height="558" alt="Image" src="https://github.com/user-attachments/assets/8c37d2ea-f89f-4969-abc0-69b3769da6e9" /></p>
+<p align="center"><img width="800" height="470" alt="Image" src="https://github.com/user-attachments/assets/8c37d2ea-f89f-4969-abc0-69b3769da6e9" /></p>
 
 
 ## 🧩 ERD
