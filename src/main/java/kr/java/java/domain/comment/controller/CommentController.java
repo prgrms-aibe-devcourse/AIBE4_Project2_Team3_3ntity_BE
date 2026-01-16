@@ -1,5 +1,12 @@
 package kr.java.java.domain.comment.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import kr.java.java.domain.auth.security.CustomUserDetails;
 import kr.java.java.domain.comment.dto.CommentAnswerRequest;
@@ -21,13 +28,21 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/piece/comments")
 @RequiredArgsConstructor
+@Tag(name = "Comment", description = "문의 API")
 public class CommentController {
 
     private final CommentService commentService;
 
-    // 문의 등록 API
+    @Operation(summary = "문의 등록", description = "공간 또는 포트폴리오에 새 문의를 등록합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "문의 등록 성공 (생성된 ID 반환)"),
+            @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자", content = @Content(schema = @Schema(hidden = true))),
+            @ApiResponse(responseCode = "404", description = "대상(공간/포트폴리오)을 찾을 수 없음", content = @Content(schema = @Schema(hidden = true)))
+    })
     @PostMapping
-    public ResponseEntity<Long> createComment(@Valid @RequestBody CommentCreateRequest request, @AuthenticationPrincipal CustomUserDetails userDetails) {
+    public ResponseEntity<Long> createComment(
+            @Parameter(description = "문의 생성 요청 데이터", required = true) @Valid @RequestBody CommentCreateRequest request,
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails) {
         if (userDetails == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -40,11 +55,15 @@ public class CommentController {
         return ResponseEntity.ok(commentId);
     }
 
-    // 문의 단건 조회 API
+    @Operation(summary = "문의 단건 조회", description = "문의 상세 정보를 조회합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공", content = @Content(schema = @Schema(implementation = CommentResponse.class))),
+            @ApiResponse(responseCode = "404", description = "존재하지 않는 문의", content = @Content(schema = @Schema(hidden = true)))
+    })
     @GetMapping("/{commentId}")
     public ResponseEntity<CommentResponse> getComment(
-            @PathVariable Long commentId,
-            @AuthenticationPrincipal CustomUserDetails userDetails
+            @Parameter(description = "문의 ID", required = true) @PathVariable Long commentId,
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         UUID viewerUuid = (userDetails != null) ? userDetails.getUuid() : null;
 
@@ -57,11 +76,14 @@ public class CommentController {
         return ResponseEntity.ok(response);
     }
 
-    // 공간별 문의 조회 API
+    @Operation(summary = "공간별 문의 조회", description = "특정 공간에 등록된 문의 목록을 조회합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공", content = @Content(schema = @Schema(implementation = CommentResponse.class)))
+    })
     @GetMapping("/space/{spaceId}")
     public ResponseEntity<List<CommentResponse>> getCommentsBySpace(
-            @PathVariable Long spaceId,
-            @AuthenticationPrincipal CustomUserDetails userDetails
+            @Parameter(description = "공간 ID", required = true) @PathVariable Long spaceId,
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         UUID viewerUuid = (userDetails != null) ? userDetails.getUuid() : null;
 
@@ -74,11 +96,14 @@ public class CommentController {
         return ResponseEntity.ok(responses);
     }
 
-    // 포트폴리오별 문의 조회 API
+    @Operation(summary = "포트폴리오별 문의 조회", description = "특정 포트폴리오에 등록된 문의 목록을 조회합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공", content = @Content(schema = @Schema(implementation = CommentResponse.class)))
+    })
     @GetMapping("/portfolio/{portfolioId}")
     public ResponseEntity<List<CommentResponse>> getCommentsByPortfolio(
-            @PathVariable Long portfolioId,
-            @AuthenticationPrincipal CustomUserDetails userDetails
+            @Parameter(description = "포트폴리오 ID", required = true) @PathVariable Long portfolioId,
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         UUID viewerUuid = (userDetails != null) ? userDetails.getUuid() : null;
 
@@ -91,9 +116,15 @@ public class CommentController {
         return ResponseEntity.ok(responses);
     }
 
-    // 사용자별 문의 조회 API
+    @Operation(summary = "사용자별 문의 조회", description = "로그인한 사용자가 작성한 문의 목록을 조회합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공", content = @Content(schema = @Schema(implementation = CommentResponse.class))),
+            @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자", content = @Content(schema = @Schema(hidden = true)))
+    })
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<CommentResponse>> getMyComments(@AuthenticationPrincipal CustomUserDetails userDetails) {
+    public ResponseEntity<List<CommentResponse>> getMyComments(
+            @Parameter(description = "사용자 ID (URL 경로용)") @PathVariable Long userId,
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails) {
         if (userDetails == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -106,9 +137,16 @@ public class CommentController {
         return ResponseEntity.ok(responses);
     }
 
-    // 문의 삭제 API
+    @Operation(summary = "문의 삭제", description = "문의를 삭제합니다. (작성자 본인만 가능)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "삭제 성공"),
+            @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자", content = @Content(schema = @Schema(hidden = true))),
+            @ApiResponse(responseCode = "403", description = "삭제 권한 없음", content = @Content(schema = @Schema(hidden = true)))
+    })
     @DeleteMapping("/{commentId}")
-    public ResponseEntity<String> deleteComment(@PathVariable Long commentId, @AuthenticationPrincipal CustomUserDetails userDetails) {
+    public ResponseEntity<String> deleteComment(
+            @Parameter(description = "삭제할 문의 ID", required = true) @PathVariable Long commentId,
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails) {
         if (userDetails == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -122,12 +160,17 @@ public class CommentController {
         return ResponseEntity.ok("문의가 성공적으로 삭제되었습니다.");
     }
 
-    // 문의 수정 API
+    @Operation(summary = "문의 수정", description = "문의 내용을 수정합니다. (작성자 본인만 가능)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "수정 성공"),
+            @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자", content = @Content(schema = @Schema(hidden = true))),
+            @ApiResponse(responseCode = "403", description = "수정 권한 없음", content = @Content(schema = @Schema(hidden = true)))
+    })
     @PatchMapping("/{commentId}")
     public ResponseEntity<String> updateComment(
-            @PathVariable Long commentId,
-            @RequestBody CommentUpdateRequest request,
-            @AuthenticationPrincipal CustomUserDetails userDetails
+            @Parameter(description = "수정할 문의 ID", required = true) @PathVariable Long commentId,
+            @Parameter(description = "수정할 내용 데이터", required = true) @RequestBody CommentUpdateRequest request,
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         if (userDetails == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
@@ -142,12 +185,17 @@ public class CommentController {
         return ResponseEntity.ok("문의가 성공적으로 수정되었습니다.");
     }
 
-    // 문의 답변 등록 API
+    @Operation(summary = "문의 답변 등록", description = "공간/포트폴리오의 주인이 문의에 답변을 등록합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "답변 등록 성공"),
+            @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자", content = @Content(schema = @Schema(hidden = true))),
+            @ApiResponse(responseCode = "403", description = "답변 권한 없음 (주인이 아님)", content = @Content(schema = @Schema(hidden = true)))
+    })
     @PatchMapping("/{commentId}/answer")
     public ResponseEntity<String> registerAnswer(
-            @PathVariable Long commentId,
-            @Valid @RequestBody CommentAnswerRequest request,
-            @AuthenticationPrincipal CustomUserDetails userDetails
+            @Parameter(description = "답변할 문의 ID", required = true) @PathVariable Long commentId,
+            @Parameter(description = "답변 내용", required = true) @Valid @RequestBody CommentAnswerRequest request,
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         if (userDetails == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
