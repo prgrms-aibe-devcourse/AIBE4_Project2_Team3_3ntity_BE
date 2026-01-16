@@ -8,11 +8,12 @@ Piece는 높은 보증금과 장기 계약 부담 없이 자신의 상품에 대
 
 
 ## 🏗️ 시스템 아키텍처
-<img width="880" height="558" alt="Image" src="https://github.com/user-attachments/assets/8c37d2ea-f89f-4969-abc0-69b3769da6e9" />
+<p align="center"><img width="880" height="558" alt="Image" src="https://github.com/user-attachments/assets/8c37d2ea-f89f-4969-abc0-69b3769da6e9" /></p>
 
 
 ## 🧩 ERD
-<p align="center"><img width="2320" height="1132" alt="Image" src="https://github.com/user-attachments/assets/17127c74-b2d9-4b98-8c60-12c8321c79ed" /></p>
+<p align="center"><img width="2381" height="1143" alt="Image" src="https://github.com/user-attachments/assets/ff67a860-1d09-4750-b708-a50d877f4749" />
+</p>
 
 ## ✨ 핵심 기능
 ### 🔐 Auth & User
