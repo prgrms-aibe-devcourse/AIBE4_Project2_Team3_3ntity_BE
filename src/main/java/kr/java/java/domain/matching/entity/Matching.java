@@ -63,7 +63,7 @@ public class Matching {
     private LocalDateTime createdAt;
 
     @Builder
-    public Matching(User receiver, Space space, User user, String message, LocalDate startDate, int months) {
+    private Matching(User receiver, Space space, User user, String message, LocalDate startDate, int months) {
         this.user = user;
         this.receiver = receiver;
         this.space = space;
@@ -72,6 +72,31 @@ public class Matching {
         this.senderType = user.getId().equals(space.getUser().getId()) ? SenderType.HOST : SenderType.USER;
         this.startDate = startDate;
         this.endDate = startDate.plusMonths(months).minusDays(1);
+
+        validateDates();
+    }
+
+    private void validateDates() {
+        if (this.startDate == null) {
+            throw new MatchingException(MatchingErrorCode.INVALID_START_DATE);
+        }
+        if (this.startDate.isBefore(LocalDate.now())) {
+            throw new MatchingException(MatchingErrorCode.START_DATE_CANNOT_BE_PAST);
+        }
+        if (this.endDate.isBefore(this.startDate)) {
+            throw new MatchingException(MatchingErrorCode.INVALID_END_DATE);
+        }
+    }
+
+    public static Matching createMatching(User sender, User receiver, Space space, String message, LocalDate startDate, int months) {
+        return Matching.builder()
+                .user(sender)
+                .receiver(receiver)
+                .space(space)
+                .message(message)
+                .startDate(startDate)
+                .months(months)
+                .build();
     }
 
     public void updateStatus(MatchStatus newStatus){
@@ -79,13 +104,17 @@ public class Matching {
             return;
         }
 
-        if (this.status == MatchStatus.REJECTED ||
-                this.status == MatchStatus.CANCELLED ||
-                this.status == MatchStatus.COMPLETED) {
+        if (isFinalized()) {
             throw new MatchingException(MatchingErrorCode.ALREADY_FINALIZED_MATCHING);
         }
 
         this.status = newStatus;
+    }
+
+    private boolean isFinalized() {
+        return this.status == MatchStatus.REJECTED ||
+                this.status == MatchStatus.CANCELLED ||
+                this.status == MatchStatus.COMPLETED;
     }
 
     public void completeMatch(){
@@ -93,6 +122,21 @@ public class Matching {
     }
 
     public void rejectMatch(){
+        if(this.status != MatchStatus.WAITING) {
+            throw new MatchingException(MatchingErrorCode.INVALID_MATCH_STATUS);
+        }
         this.status = MatchStatus.REJECTED;
+    }
+
+    public String getRelatedUrl(MatchStatus status) {
+        Long notificationReceiverId = switch (status) {
+            case WAITING, CANCELLED -> this.receiver.getId();
+            case ONGOING, REJECTED -> this.user.getId();
+            default -> throw new MatchingException(MatchingErrorCode.MATCHING_NOT_FOUND);
+        };
+
+        String targetPath = notificationReceiverId.equals(this.space.getUser().getId()) ? "hosts" : "users";
+
+        return "/piece/matchings/" + targetPath + "?userId=" + notificationReceiverId + "&status=" + status;
     }
 }
