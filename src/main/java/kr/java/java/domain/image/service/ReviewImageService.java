@@ -57,7 +57,7 @@ public class ReviewImageService {
             MultipartFile file = files.get(i);
             if (file.isEmpty()) continue;
 
-            String url = s3StorageService.uploadFile(file);
+            String url = s3StorageService.uploadFile(file, "reviews");
             reviewImageRepository.save(ReviewImage.builder()
                     .fileUrl(url)
                     .sortOrder(i + 1)
@@ -98,7 +98,7 @@ public class ReviewImageService {
     private void uploadSingleImage(Long reviewId, MultipartFile file, int sortOrder) {
         if (file.isEmpty()) return;
         Review review = reviewRepository.findById(reviewId).orElseThrow();
-        String url = s3StorageService.uploadFile(file);
+        String url = s3StorageService.uploadFile(file, "reviews");
         reviewImageRepository.save(ReviewImage.builder()
                 .fileUrl(url)
                 .sortOrder(sortOrder)

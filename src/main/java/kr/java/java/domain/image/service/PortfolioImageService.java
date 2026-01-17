@@ -43,7 +43,7 @@ public class PortfolioImageService {
             MultipartFile file = files.get(i);
             if (file.isEmpty()) continue;
 
-            String fileUrl = s3StorageService.uploadFile(file);
+            String fileUrl = s3StorageService.uploadFile(file, "portfolios");
 
             PortfolioImage portfolioImage = PortfolioImage.builder()
                     .fileUrl(fileUrl)
@@ -87,7 +87,7 @@ public class PortfolioImageService {
     private void uploadSingleImage(Long portfolioId, MultipartFile file, int sortOrder) {
         if (file.isEmpty()) return;
         Portfolio portfolio = portfolioRepository.findById(portfolioId).orElseThrow();
-        String url = s3StorageService.uploadFile(file);
+        String url = s3StorageService.uploadFile(file, "prtfolios");
         portfolioImageRepository.save(PortfolioImage.builder()
                 .fileUrl(url)
                 .sortOrder(sortOrder)

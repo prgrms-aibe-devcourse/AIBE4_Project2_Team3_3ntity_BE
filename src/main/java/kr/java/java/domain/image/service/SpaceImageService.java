@@ -65,7 +65,7 @@ public class SpaceImageService {
             MultipartFile file = files.get(i);
             if (file.isEmpty()) continue;
 
-            String fileUrl = s3StorageService.uploadFile(file);
+            String fileUrl = s3StorageService.uploadFile(file, "spaces");
 
             SpaceImage spaceImage = SpaceImage.builder()
                     .fileUrl(fileUrl)
@@ -110,7 +110,7 @@ public class SpaceImageService {
     private void uploadSingleImage(Long spaceId, MultipartFile file, int sortOrder) {
         if (file.isEmpty()) return;
         Space space = spaceRepository.findById(spaceId).orElseThrow();
-        String url = s3StorageService.uploadFile(file);
+        String url = s3StorageService.uploadFile(file, "spaces");
         spaceImageRepository.save(SpaceImage.builder()
                 .fileUrl(url)
                 .sortOrder(sortOrder)
