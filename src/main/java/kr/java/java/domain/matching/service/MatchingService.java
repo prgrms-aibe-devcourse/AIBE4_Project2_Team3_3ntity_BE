@@ -116,7 +116,7 @@ public class MatchingService {
         matchingRepository.save(matching);
         log.info("[매칭 service] 매칭 생성 완료 - MatchingID: {}", matching.getId());
 
-        String relatedUrl = createMatchingRelatedUrl(matching, MatchStatus.WAITING);
+        String relatedUrl = matching.getRelatedUrl(MatchStatus.WAITING);
         applicationEventPublisher.publishEvent(new MatchingCreatedEvent(
                 matching.getReceiver().getUuid(),
                 matching.getUser().getNickname(),
@@ -124,22 +124,8 @@ public class MatchingService {
         ));
     }
 
-    private String createMatchingRelatedUrl(Matching matching, MatchStatus status)
-    {
-        Long notificationReceiverId = switch (status) {
-            case WAITING, CANCELLED -> matching.getReceiver().getId();
-            case ONGOING, REJECTED -> matching.getUser().getId();
-            default -> throw new MatchingException(MatchingErrorCode.MATCHING_NOT_FOUND);
-        };
-
-        String targetPath = notificationReceiverId.equals(matching.getSpace().getUser().getId()) ? "hosts" : "users";
-
-        return "/piece/matchings/" + targetPath + "?userId=" + notificationReceiverId + "&status=" + status;
-    }
-
     private void validateMatching(Space space, User sender, User receiver){
         if(sender.getId().equals(receiver.getId())){
-            log.warn("[매칭 검증 실패] 본인 매칭 시도 - UserId: {}", sender.getId());
             throw new MatchingException(MatchingErrorCode.SELF_MATCHING_NOT_ALLOWED);
         }
 
@@ -186,7 +172,6 @@ public class MatchingService {
             return Collections.emptyList();
         }
 
-
         List<Long> spaceIds = matchings.stream()
                 .map(m -> m.getSpace().getId())
                 .distinct()
@@ -195,6 +180,7 @@ public class MatchingService {
         List<Long> matchingIds = matchings.stream().map(Matching::getId).toList();
 
         Map<Long, String> thumbnailMap = spaceImageService.getThumbnailsBySpaceIds(spaceIds);
+
         Map<Long, Long> reviewMap = reviewRepository.findReviewIdsByMatchingIds(matchingIds)
                 .stream()
                 .collect(Collectors.toMap(
@@ -231,7 +217,7 @@ public class MatchingService {
             log.info("[매칭 수락 - USER] MatchingID: {}, 수락자: {}", matchingId, userUuid);
         }
 
-        String relatedUrl = createMatchingRelatedUrl(matching, MatchStatus.ONGOING);
+        String relatedUrl = matching.getRelatedUrl(MatchStatus.ONGOING);
         applicationEventPublisher.publishEvent(new MatchingAcceptedEvent(
                 matching.getUser().getUuid(),
                 matching.getReceiver().getNickname(),
@@ -259,7 +245,7 @@ public class MatchingService {
 
         matching.updateStatus(MatchStatus.REJECTED);
 
-        String relatedUrl = createMatchingRelatedUrl(matching, MatchStatus.REJECTED);
+        String relatedUrl = matching.getRelatedUrl(MatchStatus.REJECTED);
         applicationEventPublisher.publishEvent(new MatchingRejectedEvent(
                 matching.getUser().getUuid(),
                 matching.getReceiver().getNickname(),
@@ -291,7 +277,7 @@ public class MatchingService {
 
         matching.updateStatus(MatchStatus.CANCELLED);
 
-        String relatedUrl = createMatchingRelatedUrl(matching, MatchStatus.CANCELLED);
+        String relatedUrl = matching.getRelatedUrl(MatchStatus.CANCELLED);
         applicationEventPublisher.publishEvent(new MatchingCanceledEvent(
                 matching.getReceiver().getUuid(),
                 matching.getUser().getNickname(),
@@ -361,7 +347,7 @@ public class MatchingService {
                 MatchingRejectedEvent event = new MatchingRejectedEvent(
                         matching.getUser().getUuid(),
                         matching.getReceiver().getNickname(),
-                        createMatchingRelatedUrl(matching, MatchStatus.REJECTED));
+                        matching.getRelatedUrl(MatchStatus.REJECTED));
                 rejectedMatchingEvents.add(event);
 
                 log.info("[매칭 거절] ID: {}, 발신자: {}, 수신자: {}",

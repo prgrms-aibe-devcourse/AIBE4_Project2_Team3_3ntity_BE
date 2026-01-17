@@ -127,4 +127,16 @@ public class Matching {
         }
         this.status = MatchStatus.REJECTED;
     }
+
+    public String getRelatedUrl(MatchStatus status) {
+        Long notificationReceiverId = switch (status) {
+            case WAITING, CANCELLED -> this.receiver.getId();
+            case ONGOING, REJECTED -> this.user.getId();
+            default -> throw new MatchingException(MatchingErrorCode.MATCHING_NOT_FOUND);
+        };
+
+        String targetPath = notificationReceiverId.equals(this.space.getUser().getId()) ? "hosts" : "users";
+
+        return "/piece/matchings/" + targetPath + "?userId=" + notificationReceiverId + "&status=" + status;
+    }
 }
