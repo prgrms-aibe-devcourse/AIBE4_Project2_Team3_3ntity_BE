@@ -97,31 +97,21 @@ public class MatchingService {
     private void createMatchingInternal(
             CreateMatchingCommand command
     ) {
-        log.info("[매칭 service] 매칭 생성 시작");
         User sender = userRepository.findByUuid(command.senderUuid())
                 .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
         log.info("[매칭 service] 발신자 확인: ID={}, Nickname={}, UUID={}",
                 sender.getId(), sender.getNickname(), sender.getUuid());
-
-        // 2. 수신자(Receiver) 조회 및 로그
         User receiver = userRepository.findByUuid(command.receiverUuid())
                 .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
         log.info("[매칭 service] 수신자 확인: ID={}, Nickname={}, UUID={}",
                 receiver.getId(), receiver.getNickname(), receiver.getUuid());
-
         Space space = spaceRepository.findById(command.spaceId())
                 .orElseThrow(() -> new NotFoundSpaceException("해당 공간이 없습니다. id=" + command.spaceId()));
 
         validateMatching(space, sender, receiver);
+
         log.info("[매칭 service] validateMatching 통과");
-        Matching matching = Matching.builder()
-                .user(sender)
-                .receiver(receiver)
-                .space(space)
-                .message(command.message())
-                .startDate(command.startDate())
-                .months(command.months())
-                .build();
+        Matching matching = Matching.createMatching(sender, receiver, space, command.message(), command.startDate(), command.months());
 
         matchingRepository.save(matching);
         log.info("[매칭 service] 매칭 생성 완료 - MatchingID: {}", matching.getId());
@@ -195,6 +185,7 @@ public class MatchingService {
         if (matchings.isEmpty()) {
             return Collections.emptyList();
         }
+
 
         List<Long> spaceIds = matchings.stream()
                 .map(m -> m.getSpace().getId())

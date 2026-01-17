@@ -74,18 +74,33 @@ public class Matching {
         this.endDate = startDate.plusMonths(months).minusDays(1);
     }
 
+    public static Matching createMatching(User sender, User receiver, Space space, String message, LocalDate startDate, int months) {
+        return Matching.builder()
+                .user(sender)
+                .receiver(receiver)
+                .space(space)
+                .message(message)
+                .startDate(startDate)
+                .months(months)
+                .build();
+    }
+
     public void updateStatus(MatchStatus newStatus){
         if(this.status == newStatus){
             return;
         }
 
-        if (this.status == MatchStatus.REJECTED ||
-                this.status == MatchStatus.CANCELLED ||
-                this.status == MatchStatus.COMPLETED) {
+        if (isFinalized()) {
             throw new MatchingException(MatchingErrorCode.ALREADY_FINALIZED_MATCHING);
         }
 
         this.status = newStatus;
+    }
+
+    private boolean isFinalized() {
+        return this.status == MatchStatus.REJECTED ||
+                this.status == MatchStatus.CANCELLED ||
+                this.status == MatchStatus.COMPLETED;
     }
 
     public void completeMatch(){
@@ -93,6 +108,9 @@ public class Matching {
     }
 
     public void rejectMatch(){
+        if(this.status != MatchStatus.WAITING) {
+            throw new MatchingException(MatchingErrorCode.INVALID_MATCH_STATUS);
+        }
         this.status = MatchStatus.REJECTED;
     }
 }
