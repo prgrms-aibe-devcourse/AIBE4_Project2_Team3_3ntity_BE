@@ -13,7 +13,10 @@ public enum MatchingErrorCode {
     INVALID_MATCH_STATUS(HttpStatus.BAD_REQUEST, "유효하지 않은 매칭 상태입니다."),
     ALREADY_FINALIZED_MATCHING(HttpStatus.BAD_REQUEST, "이미 최종 처리된 매칭입니다."),
     MATCHING_REQUEST_ALREADY_RECEIVED(HttpStatus.CONFLICT, "상대방의 신청을 확인해주세요"),
-    HOST_CANNOT_MATCH_OTHER_SPACE(HttpStatus.FORBIDDEN, "해당 공간의 주인이 아닙니다.");
+    HOST_CANNOT_MATCH_OTHER_SPACE(HttpStatus.FORBIDDEN, "해당 공간의 주인이 아닙니다."),
+    INVALID_START_DATE(HttpStatus.BAD_REQUEST, "매칭 시작일은 필수 입력 항목입니다."),
+    START_DATE_CANNOT_BE_PAST(HttpStatus.BAD_REQUEST, "매칭 시작일은 오늘 이후여야 합니다."),
+    INVALID_END_DATE(HttpStatus.BAD_REQUEST, "매칭 종료일은 시작일보다 빠를 수 없습니다.");
 
     private final HttpStatus httpStatus;
     private final String message;

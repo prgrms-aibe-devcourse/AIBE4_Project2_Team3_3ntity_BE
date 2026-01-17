@@ -63,7 +63,7 @@ public class Matching {
     private LocalDateTime createdAt;
 
     @Builder
-    public Matching(User receiver, Space space, User user, String message, LocalDate startDate, int months) {
+    private Matching(User receiver, Space space, User user, String message, LocalDate startDate, int months) {
         this.user = user;
         this.receiver = receiver;
         this.space = space;
@@ -72,6 +72,20 @@ public class Matching {
         this.senderType = user.getId().equals(space.getUser().getId()) ? SenderType.HOST : SenderType.USER;
         this.startDate = startDate;
         this.endDate = startDate.plusMonths(months).minusDays(1);
+
+        validateDates();
+    }
+
+    private void validateDates() {
+        if (this.startDate == null) {
+            throw new MatchingException(MatchingErrorCode.INVALID_START_DATE);
+        }
+        if (this.startDate.isBefore(LocalDate.now())) {
+            throw new MatchingException(MatchingErrorCode.START_DATE_CANNOT_BE_PAST);
+        }
+        if (this.endDate.isBefore(this.startDate)) {
+            throw new MatchingException(MatchingErrorCode.INVALID_END_DATE);
+        }
     }
 
     public static Matching createMatching(User sender, User receiver, Space space, String message, LocalDate startDate, int months) {
