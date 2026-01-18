@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.awt.*;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -65,7 +66,7 @@ public class SpaceImageService {
             MultipartFile file = files.get(i);
             if (file.isEmpty()) continue;
 
-            String fileUrl = s3StorageService.uploadFile(file);
+            String fileUrl = s3StorageService.uploadFile(file, "spaces");
 
             SpaceImage spaceImage = SpaceImage.builder()
                     .fileUrl(fileUrl)
@@ -77,44 +78,49 @@ public class SpaceImageService {
         }
     }
 
+    @Transactional
     public void updateImages(Long spaceId, List<Long> remainImageIds, List<MultipartFile> newFiles) {
         List<SpaceImage> currentImages = spaceImageRepository.findAllBySpaceIdOrderBySortOrderAsc(spaceId);
 
-        // 삭제 로직
-        currentImages.stream()
-                .filter(img -> remainImageIds == null || !remainImageIds.contains(img.getId()))
-                .forEach(img -> {
-                    s3StorageService.deleteFile(img.getFileUrl());
-                    spaceImageRepository.delete(img);
-                });
+        List<SpaceImage> imagesToRemove = currentImages.stream()
+                .filter(img -> remainImageIds == null || !remainImageIds.contains(img.getId())).toList();
+
+        if (!imagesToRemove.isEmpty()) {
+            List<Long> idsToDelete = imagesToRemove.stream().map(SpaceImage::getId).toList();
+            spaceImageRepository.softDeleteByIds(idsToDelete);
+        }
+
+        Map<Long, SpaceImage> imageMap = currentImages.stream()
+                .collect(Collectors.toMap(SpaceImage::getId, img -> img));
 
         int currentSortOrder = 1;
-
-        for (Long imageId : remainImageIds) {
-            SpaceImage img = spaceImageRepository.findById(imageId)
-                    .orElse(null);
-            if (img != null) {
-                img.updateSortOrder(currentSortOrder++);
+        if (remainImageIds != null) {
+            for (Long imageId : remainImageIds) {
+                SpaceImage img = imageMap.get(imageId);
+                if (img != null) {
+                    img.updateSortOrder(currentSortOrder++);
+                }
             }
         }
 
         if (newFiles != null && !newFiles.isEmpty()) {
+            Space space = spaceRepository.findById(spaceId)
+                    .orElseThrow(() -> new NotFoundSpaceException("해당 공간을 찾을 수 없습니다."));
+
+            List<SpaceImage> newImages = new ArrayList<>();
             for (MultipartFile file : newFiles) {
-                if (!file.isEmpty()) {
-                    uploadSingleImage(spaceId, file, currentSortOrder++);
+                if (file != null && !file.isEmpty()) {
+                    // S3 업로드 시 도메인(spaces) 지정
+                    String url = s3StorageService.uploadFile(file, "spaces");
+
+                    newImages.add(SpaceImage.builder()
+                            .fileUrl(url)
+                            .sortOrder(currentSortOrder++)
+                            .space(space)
+                            .build());
                 }
             }
+            spaceImageRepository.saveAll(newImages);
         }
-    }
-
-    private void uploadSingleImage(Long spaceId, MultipartFile file, int sortOrder) {
-        if (file.isEmpty()) return;
-        Space space = spaceRepository.findById(spaceId).orElseThrow();
-        String url = s3StorageService.uploadFile(file);
-        spaceImageRepository.save(SpaceImage.builder()
-                .fileUrl(url)
-                .sortOrder(sortOrder)
-                .space(space)
-                .build());
     }
 }

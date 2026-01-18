@@ -30,35 +30,44 @@ public class S3StorageService {
 
     private static final List<String> ALLOWED_EXTENSIONS = Arrays.asList("jpg", "jpeg", "png", "gif", "webp");
 
-    public String uploadFile(MultipartFile file){
+    public String uploadFile(MultipartFile file, String domain){
         if (file == null || file.isEmpty()) return null;
 
         validateImageFile(file);
 
         String fileName = FileUtil.createFileName(file.getOriginalFilename());
+        String key = domain + "/" + fileName;
+
         try {
             s3Client.putObject(PutObjectRequest.builder()
                     .bucket(bucket)
-                    .key(fileName)
+                    .key(key)
                     .contentType(file.getContentType())
                     .build(), RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
         } catch (Exception e) {
-            log.error("이미지 업로드 실패: {}", e.getMessage(), e);
             throw new ImageException(ImageErrorCode.UPLOAD_FAILED);
         }
 
-        String fileUrl = String.format("%s/storage/v1/object/public/%s/%s", supabaseUrl, bucket, fileName);
+        String fileUrl = String.format("%s/storage/v1/object/public/%s/%s", supabaseUrl, bucket, key);
 
         return fileUrl;
     }
 
     public void deleteFile(String fileUrl) {
-        String fileName = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
-        s3Client.deleteObject(DeleteObjectRequest.builder().bucket(bucket).key(fileName).build());
+        String searchString = bucket + "/";
+        int bucketIndex = fileUrl.lastIndexOf(searchString);
+
+        if(bucketIndex != -1){
+            String key = fileUrl.substring(bucketIndex + searchString.length());
+            s3Client.deleteObject(DeleteObjectRequest.builder()
+                    .bucket(bucket)
+                    .key(key)
+                    .build());
+        }
     }
 
     public String uploadProfileImage(MultipartFile file){
-        return uploadFile(file);
+        return uploadFile(file, "profiles");
     }
 
     private void validateImageFile(MultipartFile file) {

@@ -1,6 +1,7 @@
 package kr.java.java.domain.space.entity;
 
 import jakarta.persistence.*;
+import kr.java.java.domain.image.entity.SpaceImage;
 import kr.java.java.domain.matching.entity.Matching;
 import kr.java.java.domain.space.dto.SpaceUpdateRequest;
 import kr.java.java.domain.space.enums.SpaceCategory;
@@ -75,6 +76,9 @@ public class Space {
 
     @OneToMany(mappedBy = "space")
     private List<Matching> matchings = new ArrayList<>();
+
+    @OneToMany(mappedBy = "space")
+    private List<SpaceImage> images = new ArrayList<>();
 
     @Builder
     public Space(String title, String description, SpaceCategory category, String address, String detailAddress, BigDecimal latitude, BigDecimal longitude, Integer pricePerMonth,LocalDateTime createdAt,User user){

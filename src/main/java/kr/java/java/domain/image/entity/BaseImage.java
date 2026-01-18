@@ -28,6 +28,9 @@ public abstract class BaseImage {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     protected BaseImage(String fileUrl, Integer sortOrder) {
         this.fileUrl = fileUrl;
         this.sortOrder = sortOrder;
