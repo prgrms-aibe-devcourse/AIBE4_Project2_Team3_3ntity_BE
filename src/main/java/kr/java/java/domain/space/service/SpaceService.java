@@ -3,6 +3,7 @@ package kr.java.java.domain.space.service;
 import kr.java.java.domain.auth.exception.AuthErrorCode;
 import kr.java.java.domain.auth.exception.AuthException;
 import kr.java.java.domain.image.dto.ImageResponse;
+import kr.java.java.domain.image.repository.SpaceImageRepository;
 import kr.java.java.domain.image.service.SpaceImageService;
 import kr.java.java.domain.matching.dto.MySpaceSummary;
 import kr.java.java.domain.review.dto.ReviewSummary;
@@ -36,6 +37,7 @@ public class SpaceService {
     private final SpaceImageService spaceImageService;
     private final ReviewService reviewService;
     private final AiRecommendationRepository aiRecommendationRepository;
+    private final SpaceImageRepository spaceImageRepository;
 
     @Transactional
     public void createSpace(SpaceRequest spaceRequest, List<MultipartFile> images, UUID userId) {
@@ -108,6 +110,7 @@ public class SpaceService {
         }
 
         try {
+            spaceImageRepository.softDeleteAllBySpaceId(id);
             spaceRepository.delete(space);
 
         } catch (DataIntegrityViolationException e) {
