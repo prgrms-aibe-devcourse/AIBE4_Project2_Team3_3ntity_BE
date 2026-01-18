@@ -23,4 +23,8 @@ public interface SpaceImageRepository extends JpaRepository<SpaceImage, Long> {
     @Query("UPDATE SpaceImage si SET si.deletedAt = NOW() " +
             "WHERE si.space.id = :spaceId AND si.deletedAt IS NULL")
     void softDeleteAllBySpaceId(@Param("spaceId") Long spaceId);
+
+    @Modifying
+    @Query("UPDATE SpaceImage si SET si.deletedAt = NOW() WHERE si.id IN :ids")
+    void softDeleteByIds(@Param("ids") List<Long> ids);
 }

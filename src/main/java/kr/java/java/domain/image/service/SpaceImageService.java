@@ -86,7 +86,8 @@ public class SpaceImageService {
                 .filter(img -> remainImageIds == null || !remainImageIds.contains(img.getId())).toList();
 
         if (!imagesToRemove.isEmpty()) {
-            spaceImageRepository.deleteAll(imagesToRemove);
+            List<Long> idsToDelete = imagesToRemove.stream().map(SpaceImage::getId).toList();
+            spaceImageRepository.softDeleteByIds(idsToDelete);
         }
 
         Map<Long, SpaceImage> imageMap = currentImages.stream()
