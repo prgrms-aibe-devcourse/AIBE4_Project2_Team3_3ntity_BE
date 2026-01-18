@@ -4,6 +4,7 @@ package kr.java.java.domain.portfolio.service;
 import kr.java.java.domain.auth.exception.AuthErrorCode;
 import kr.java.java.domain.auth.exception.AuthException;
 import kr.java.java.domain.image.dto.ImageResponse;
+import kr.java.java.domain.image.repository.PortfolioImageRepository;
 import kr.java.java.domain.image.service.PortfolioImageService;
 import kr.java.java.domain.portfolio.dto.*;
 import kr.java.java.domain.portfolio.entity.Portfolio;
@@ -33,6 +34,7 @@ public class PortfolioService {
     private final PortfolioRepository portfolioRepository;
     private final UserRepository userRepository;
     private final PortfolioImageService portfolioImageService;
+    private final PortfolioImageRepository portfolioImageRepository;
 
     @Transactional
     public void createPortfolio(PortfolioRequest portfolioRequest, UUID userId, List<MultipartFile> images){
@@ -95,6 +97,7 @@ public class PortfolioService {
         }
 
         try {
+            portfolioImageRepository.softDeleteAllByPortfolioId(id);
             portfolioRepository.delete(portfolio);
         } catch (Exception e) {
             log.error("포트폴리오 삭제 실패 (참조 데이터 존재)");

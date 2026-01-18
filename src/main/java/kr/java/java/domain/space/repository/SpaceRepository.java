@@ -28,4 +28,8 @@ public interface SpaceRepository extends JpaRepository<Space, Long>,
     int softDeleteAllByUserId(@Param("userId") UUID userId, @Param("deletedAt") LocalDateTime deletedAt);
     @Query(value = "SELECT * FROM spaces WHERE deleted_at IS NULL AND status = 'RECRUITING' ORDER BY RAND() LIMIT :limit", nativeQuery = true)
     List<Space> findRandomSpaces(@Param("limit") int limit);
+
+    @Modifying
+    @Query(value = "DELETE FROM spaces WHERE deleted_at <= :threshold", nativeQuery = true)
+    int hardDeleteByThreshold(@Param("threshold") LocalDateTime threshold);
 }

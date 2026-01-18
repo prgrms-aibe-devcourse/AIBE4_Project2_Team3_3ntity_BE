@@ -23,4 +23,7 @@ public interface PortfolioRepository extends JpaRepository<Portfolio, Long>, Por
     @Modifying(clearAutomatically = true) // 벌크 연산 후 영속성 컨텍스트 초기화 (필수!)
     @Query("UPDATE Portfolio p SET p.deletedAt = :deletedAt WHERE p.user.uuid = :userId AND p.deletedAt IS NULL")
     int softDeleteAllByUserId(@Param("userId") UUID userId, @Param("deletedAt") LocalDateTime deletedAt);
+    @Modifying
+    @Query(value = "DELETE FROM portfolios WHERE deleted_at <= :threshold", nativeQuery = true)
+    int hardDeleteByThreshold(@Param("threshold") LocalDateTime threshold);
 }
