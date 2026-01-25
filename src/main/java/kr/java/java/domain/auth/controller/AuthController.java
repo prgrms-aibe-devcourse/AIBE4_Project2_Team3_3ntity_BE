@@ -14,15 +14,11 @@ import kr.java.java.domain.auth.exception.AuthException;
 import kr.java.java.domain.auth.jwt.JwtTokenProvider;
 import kr.java.java.domain.auth.service.RefreshTokenService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
@@ -30,7 +26,6 @@ import java.util.UUID;
 @RequestMapping("/piece/auths")
 @RequiredArgsConstructor
 @Tag(name = "Auth", description = "인증/인가 API (로그인, 토큰 재발급, 로그아웃)")
-@Slf4j
 public class AuthController {
 
     private static final String REFRESH_TOKEN_COOKIE_NAME = "refreshToken";
@@ -51,13 +46,9 @@ public class AuthController {
     })
     @GetMapping("/oauth2-token")
     public ResponseEntity<TokenResponse> getOAuth2Token(HttpServletRequest request) {
-        log.info("OAuth2 token request received");
-        
         String refreshToken = getRefreshTokenFromCookie(request);
-        log.info("Refresh token from cookie: {}", refreshToken != null ? refreshToken.substring(0, 20) + "..." : "null");
 
         if (refreshToken == null) {
-            log.error("No refresh token found in cookies");
             throw new AuthException(AuthErrorCode.TOKEN_NOT_FOUND);
         }
 
@@ -115,7 +106,7 @@ public class AuthController {
         refreshTokenService.saveRefreshToken(uuid, newRefreshToken);
 
         ResponseCookie refreshCookie = createRefreshTokenCookie(newRefreshToken);
-        
+
         TokenResponse response = TokenResponse.of(
                 newAccessToken,
                 newRefreshToken,
@@ -168,15 +159,11 @@ public class AuthController {
 
     private String getRefreshTokenFromCookie(HttpServletRequest request) {
         if (request.getCookies() != null) {
-            log.debug("Found {} cookies", request.getCookies().length);
             for (Cookie cookie : request.getCookies()) {
-                log.debug("Cookie: {} = {}", cookie.getName(), cookie.getValue() != null ? cookie.getValue().substring(0, 10) + "..." : "null");
                 if (REFRESH_TOKEN_COOKIE_NAME.equals(cookie.getName())) {
                     return cookie.getValue();
                 }
             }
-        } else {
-            log.debug("No cookies found in request");
         }
         return null;
     }
