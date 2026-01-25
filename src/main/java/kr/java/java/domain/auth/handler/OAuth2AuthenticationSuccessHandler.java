@@ -67,7 +67,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     }
 
     private boolean isCrossDomain(HttpServletRequest request) {
-        String serverName = request.getServerName(); // 백엔드 호스트 (예: localhost 또는 api.piece.com)
+        String serverName = request.getServerName();
         try {
             String frontendHost = frontendUrl.replace("http://", "").replace("https://", "").split("/")[0].split(":")[0];
             return !frontendHost.equals(serverName);
