@@ -31,14 +31,14 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     @Value("${app.cookie.secure:false}")
     private boolean cookieSecure;
 
-    String sameSitePolicy = determineSameSitePolicy(request);
-
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
                                         Authentication authentication) throws IOException {
 
         CustomOAuth2User oauth2User = (CustomOAuth2User) authentication.getPrincipal();
         UUID uuid = oauth2User.getUuid();
+        
+        String sameSitePolicy = determineSameSitePolicy(request);
         
         log.info("OAuth2 Success - UUID: {}, Frontend URL: {}, Cookie Secure: {}, SameSite: {}", 
                 uuid, frontendUrl, cookieSecure, sameSitePolicy);
@@ -76,7 +76,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         String referer = request.getHeader("Referer");
         String origin = request.getHeader("Origin");
         String serverName = request.getServerName();
-        
+
         // 프론트엔드 URL과 백엔드 도메인 비교
         try {
             String frontendHost = java.net.URLDecoder.decode(frontendUrl, "UTF-8");
@@ -86,10 +86,11 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                 frontendHost = frontendHost.substring(8);
             }
             frontendHost = frontendHost.split("/")[0]; // 경로 부분 제거
-            
+
             return !frontendHost.equals(serverName);
         } catch (Exception e) {
             log.warn("Failed to determine cross-domain, defaulting to None", e);
             return true; // 안전하게 크로스 도메인으로 가정
         }
+    }
 }
