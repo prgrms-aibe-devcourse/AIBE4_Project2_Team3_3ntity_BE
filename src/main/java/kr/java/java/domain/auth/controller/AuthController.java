@@ -37,6 +37,8 @@ public class AuthController {
     @Value("${app.cookie.secure:false}")
     private boolean cookieSecure;
 
+    String sameSitePolicy = cookieSecure ? "None" : "Lax";
+
     @Operation(summary = "OAuth2 토큰 발급", description = "쿠키에 저장된 Refresh Token을 검증하여 초기 Access Token을 발급합니다. (소셜 로그인 직후 호출)")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "토큰 발급 성공", content = @Content(schema = @Schema(implementation = TokenResponse.class))),
@@ -172,7 +174,7 @@ public class AuthController {
                 .path("/")
                 .httpOnly(true)
                 .secure(cookieSecure)
-                .sameSite("None")
+                .sameSite(sameSitePolicy)
                 .build();
     }
 
