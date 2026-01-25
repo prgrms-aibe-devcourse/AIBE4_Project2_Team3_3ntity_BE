@@ -26,6 +26,7 @@ import java.util.UUID;
 @RequestMapping("/piece/auths")
 @RequiredArgsConstructor
 @Tag(name = "Auth", description = "인증/인가 API (로그인, 토큰 재발급, 로그아웃)")
+@Slf4j
 public class AuthController {
 
     private static final String REFRESH_TOKEN_COOKIE_NAME = "refreshToken";
@@ -46,9 +47,13 @@ public class AuthController {
     })
     @GetMapping("/oauth2-token")
     public ResponseEntity<TokenResponse> getOAuth2Token(HttpServletRequest request) {
+        log.info("OAuth2 token request received");
+        
         String refreshToken = getRefreshTokenFromCookie(request);
+        log.info("Refresh token from cookie: {}", refreshToken != null ? refreshToken.substring(0, 20) + "..." : "null");
 
         if (refreshToken == null) {
+            log.error("No refresh token found in cookies");
             throw new AuthException(AuthErrorCode.TOKEN_NOT_FOUND);
         }
 
@@ -159,11 +164,15 @@ public class AuthController {
 
     private String getRefreshTokenFromCookie(HttpServletRequest request) {
         if (request.getCookies() != null) {
+            log.debug("Found {} cookies", request.getCookies().length);
             for (Cookie cookie : request.getCookies()) {
+                log.debug("Cookie: {} = {}", cookie.getName(), cookie.getValue() != null ? cookie.getValue().substring(0, 10) + "..." : "null");
                 if (REFRESH_TOKEN_COOKIE_NAME.equals(cookie.getName())) {
                     return cookie.getValue();
                 }
             }
+        } else {
+            log.debug("No cookies found in request");
         }
         return null;
     }
