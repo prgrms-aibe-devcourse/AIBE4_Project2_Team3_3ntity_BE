@@ -172,7 +172,7 @@ public class AuthController {
                 .path("/")
                 .httpOnly(true)
                 .secure(cookieSecure)
-                .sameSite("Lax")
+                .sameSite("None")
                 .build();
     }
 
